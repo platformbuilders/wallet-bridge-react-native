@@ -77,9 +77,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "builderswallet.example"
+    namespace "br.com.pefisa.pefisa.hml"
     defaultConfig {
-        applicationId "builderswallet.example"
+        applicationId "br.com.pefisa.pefisa.hml"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

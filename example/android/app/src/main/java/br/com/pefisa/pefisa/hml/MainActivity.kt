@@ -1,4 +1,4 @@
-package builderswallet.example
+package br.com.pefisa.pefisa.hml
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

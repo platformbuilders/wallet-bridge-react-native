@@ -1,5 +1,12 @@
 import BuildersWallet from './NativeBuildersWallet';
+import type {
+  PushTokenizeRequest,
+  UserAddress,
+  PaymentCard,
+} from './NativeBuildersWallet';
 
-export function multiply(a: number, b: number): number {
-  return BuildersWallet.multiply(a, b);
+export type { PushTokenizeRequest, UserAddress, PaymentCard };
+
+export function pushTokenize(request: PushTokenizeRequest): Promise<string> {
+  return BuildersWallet.pushTokenize(request);
 }

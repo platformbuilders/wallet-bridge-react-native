@@ -1,4 +1,4 @@
-package builderswallet.example
+package br.com.pefisa.pefisa.hml
 
 import android.app.Application
 import com.facebook.react.PackageList
