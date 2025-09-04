@@ -536,18 +536,6 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
     return NAME
   }
 
-  // Example method
-  // See https://reactnative.dev/docs/native-modules-android
-  @ReactMethod
-  fun multiply(a: Double, b: Double, promise: Promise) {
-    try {
-      val result = a * b
-      promise.resolve(result)
-    } catch (e: Exception) {
-      promise.reject("MULTIPLY_ERROR", "Error multiplying numbers", e)
-    }
-  }
-
   companion object {
     const val NAME = "BuildersWallet"
 

@@ -1,9 +1,10 @@
 import { Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { pushTokenize } from 'react-native-builders-wallet';
+import { pushTokenize, getConstants } from 'react-native-builders-wallet';
 import type { PushTokenizeRequest } from 'react-native-builders-wallet';
 
 export default function App() {
   const handleGPayPush = async () => {
+    const constants = await getConstants();
     const data_card = {
       push_data: {
         sender: 'pefisa',
@@ -40,8 +41,8 @@ export default function App() {
         },
         card: {
           opaquePaymentCard: data_card.push_data.cardDescriptor,
-          network: 12, // Mock network value
-          tokenServiceProvider: 14, // Mock token service provider
+          network: constants.CARD_NETWORK_ELO,
+          tokenServiceProvider: constants.TOKEN_PROVIDER_ELO,
           displayName: data_card.additional_info.name,
           lastDigits: data_card.additional_info.last_4_digits,
         },
