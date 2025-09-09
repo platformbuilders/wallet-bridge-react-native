@@ -141,6 +141,14 @@
       "javaPackageName": "com.builders.wallet"
     }
   },
+  "react-native": {
+    "android": {
+      "sourceDir": "./android",
+      "packageImportPath": "import com.builders.wallet.BuildersWalletPackage;",
+      "packageImportPathGoogleWallet": "import com.builders.wallet.GoogleWalletPackage;",
+      "packageImportPathSamsungWallet": "import com.builders.wallet.SamsungWalletPackage;"
+    }
+  },
   "create-react-native-library": {
     "languages": "kotlin-objc",
     "type": "turbo-module",

@@ -1,10 +1,12 @@
-import BuildersWallet from './NativeBuildersWallet';
+import BuildersWallet, { GoogleWalletModule, SamsungWalletModule } from './NativeBuildersWallet';
 import type {
   GetConstantsResponse,
   WalletData,
   AndroidCardData,
   CardStatus,
-} from './types';
+  GoogleWalletCompatibilitySpec,
+  SamsungWalletCompatibilitySpec,
+} from './types/index';
 
 // Re-exporta types utilizados
 export type {
@@ -12,6 +14,8 @@ export type {
   WalletData,
   AndroidCardData,
   CardStatus,
+  GoogleWalletCompatibilitySpec,
+  SamsungWalletCompatibilitySpec,
   // Types específicos do Google Pay
   GOOGLE_WALLET_STATUS,
   GOOGLE_WALLET_STATUS_CODE,
@@ -20,7 +24,7 @@ export type {
   GOOGLE_ENVIRONMENT,
   GOOGLE_TOKEN_PROVIDER,
   GOOGLE_CARD_NETWORK,
-} from './types';
+} from './types/index';
 
 // Re-exporta enums com nomes de compatibilidade
 export {
@@ -32,6 +36,76 @@ export {
   TOKEN_PROVIDER,
   CARD_NETWORK,
 } from './NativeBuildersWallet';
+
+// ============================================================================
+// MÓDULOS ESPECÍFICOS
+// ============================================================================
+
+// GoogleWallet - Classe específica para Google Pay
+export class GoogleWallet implements GoogleWalletCompatibilitySpec {
+  checkWalletAvailability(): Promise<boolean> {
+    return GoogleWalletModule.checkWalletAvailability();
+  }
+
+  getSecureWalletInfo(): Promise<WalletData> {
+    return GoogleWalletModule.getSecureWalletInfo();
+  }
+
+  getCardStatusBySuffix(lastDigits: string): Promise<any> {
+    return GoogleWalletModule.getCardStatusBySuffix(lastDigits);
+  }
+
+  getCardStatusByIdentifier(identifier: string, tsp: number): Promise<any> {
+    return GoogleWalletModule.getCardStatusByIdentifier(identifier, tsp);
+  }
+
+  addCardToWallet(cardData: any): Promise<string> {
+    return GoogleWalletModule.addCardToWallet(cardData);
+  }
+
+  createWalletIfNeeded(): Promise<boolean> {
+    return GoogleWalletModule.createWalletIfNeeded();
+  }
+
+  getConstants(): Promise<any> {
+    return GoogleWalletModule.getConstants();
+  }
+}
+
+// SamsungWallet - Classe específica para Samsung Pay
+export class SamsungWallet implements SamsungWalletCompatibilitySpec {
+  checkWalletAvailability(): Promise<boolean> {
+    return SamsungWalletModule.checkWalletAvailability();
+  }
+
+  getSecureWalletInfo(): Promise<WalletData> {
+    return SamsungWalletModule.getSecureWalletInfo();
+  }
+
+  getCardStatusBySuffix(lastDigits: string): Promise<any> {
+    return SamsungWalletModule.getCardStatusBySuffix(lastDigits);
+  }
+
+  getCardStatusByIdentifier(identifier: string, tsp: number): Promise<any> {
+    return SamsungWalletModule.getCardStatusByIdentifier(identifier, tsp);
+  }
+
+  addCardToWallet(cardData: any): Promise<string> {
+    return SamsungWalletModule.addCardToWallet(cardData);
+  }
+
+  createWalletIfNeeded(): Promise<boolean> {
+    return SamsungWalletModule.createWalletIfNeeded();
+  }
+
+  getConstants(): Promise<any> {
+    return SamsungWalletModule.getConstants();
+  }
+}
+
+// ============================================================================
+// API UNIFICADA (MANTIDA PARA COMPATIBILIDADE)
+// ============================================================================
 
 // Novos métodos da API simplificada
 export function checkWalletAvailability(): Promise<boolean> {

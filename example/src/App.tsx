@@ -6,14 +6,7 @@ import {
   ScrollView,
 } from 'react-native';
 import {
-  checkWalletAvailability,
-  getSecureWalletInfo,
-  getCardStatusBySuffix,
-  addCardToWallet,
-  getAvailableWallets,
-  switchWallet,
-  getConstants,
-  createWalletIfNeeded,
+  GoogleWallet,
 } from 'react-native-builders-wallet';
 import type {
   AndroidCardData,
@@ -22,18 +15,20 @@ import type {
 } from 'react-native-builders-wallet';
 
 export default function App() {
+  const googleWallet = new GoogleWallet();
+
   const handleCheckAvailability = async () => {
     try {
       console.log('🔍 [JS] Iniciando verificação de disponibilidade...');
-      const isAvailable = await checkWalletAvailability();
+      const isAvailable = await googleWallet.checkWalletAvailability();
       console.log('✅ [JS] Disponibilidade verificada:', isAvailable);
       Alert.alert(
         'Disponibilidade',
-        `Wallet disponível: ${isAvailable ? 'Sim' : 'Não'}`
+        `Google Wallet disponível: ${isAvailable ? 'Sim' : 'Não'}`
       );
     } catch (err) {
-      console.error('❌ [JS] Erro ao verificar disponibilidade:', err);
-      console.error(
+      console.log('❌ [JS] Erro ao verificar disponibilidade:', err);
+      console.log(
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
@@ -45,15 +40,15 @@ export default function App() {
   const handleGetWalletInfo = async () => {
     try {
       console.log('🔍 [JS] Iniciando obtenção de informações da wallet...');
-      const walletInfo: WalletData = await getSecureWalletInfo();
+      const walletInfo: WalletData = await googleWallet.getSecureWalletInfo();
       console.log('✅ [JS] Informações da wallet obtidas:', walletInfo);
       Alert.alert(
-        'Informações da Wallet',
+        'Informações da Google Wallet',
         `Device ID: ${walletInfo.deviceID}\nWallet Account ID: ${walletInfo.walletAccountID}`
       );
     } catch (err) {
-      console.error('❌ [JS] Erro ao obter informações da wallet:', err);
-      console.error(
+      console.log('❌ [JS] Erro ao obter informações da wallet:', err);
+      console.log(
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
@@ -65,12 +60,12 @@ export default function App() {
   const handleGetCardStatus = async () => {
     try {
       console.log('🔍 [JS] Iniciando verificação de status do cartão...');
-      const status: CardStatus = await getCardStatusBySuffix('6890');
+      const status: CardStatus = await googleWallet.getCardStatusBySuffix('6890');
       console.log('✅ [JS] Status do cartão obtido:', status);
       Alert.alert('Status do Cartão', `Status: ${status}`);
     } catch (err) {
-      console.error('❌ [JS] Erro ao obter status do cartão:', err);
-      console.error(
+      console.log('❌ [JS] Erro ao obter status do cartão:', err);
+      console.log(
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
@@ -84,7 +79,7 @@ export default function App() {
       console.log('🔍 [JS] Iniciando processo de adição de cartão...');
 
       console.log('🔍 [JS] Obtendo constantes...');
-      const constants = await getConstants();
+      const constants = await googleWallet.getConstants();
       console.log('✅ [JS] Constantes obtidas:', constants);
 
       const cardData: AndroidCardData = {
@@ -116,16 +111,16 @@ export default function App() {
       });
 
       console.log('🔍 [JS] Chamando addCardToWallet...');
-      const tokenId = await addCardToWallet(cardData);
+      const tokenId = await googleWallet.addCardToWallet(cardData);
       console.log('✅ [JS] Cartão adicionado com sucesso! Token ID:', tokenId);
       Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
     } catch (err) {
-      console.error('❌ [JS] Erro ao adicionar cartão:', err);
-      console.error(
+      console.log('❌ [JS] Erro ao adicionar cartão:', err);
+      console.log(
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      console.error('❌ [JS] Error details:', {
+      console.log('❌ [JS] Error details:', {
         name: err instanceof Error ? err.name : 'Unknown',
         message: err instanceof Error ? err.message : String(err),
         code: (err as any)?.code || 'N/A',
@@ -136,59 +131,20 @@ export default function App() {
     }
   };
 
-  const handleGetAvailableWallets = async () => {
-    try {
-      console.log('🔍 [JS] Iniciando obtenção de wallets disponíveis...');
-      const wallets = await getAvailableWallets();
-      console.log('✅ [JS] Wallets disponíveis obtidas:', wallets);
-      Alert.alert(
-        'Wallets Disponíveis',
-        `Módulos: ${wallets.modules.join(', ')}\n` +
-          `Nomes: ${wallets.moduleNames.join(', ')}\n` +
-          `Atual: ${wallets.currentModule}`
-      );
-    } catch (err) {
-      console.error('❌ [JS] Erro ao obter wallets disponíveis:', err);
-      console.error(
-        '❌ [JS] Stack trace:',
-        err instanceof Error ? err.stack : 'N/A'
-      );
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Erro', `Erro ao obter wallets: ${errorMessage}`);
-    }
-  };
-
-  const handleSwitchWallet = async () => {
-    try {
-      console.log('🔍 [JS] Iniciando troca de wallet para Google Pay...');
-      const result = await switchWallet('google');
-      console.log('✅ [JS] Wallet trocada com sucesso:', result);
-      Alert.alert('Sucesso', result);
-    } catch (err) {
-      console.error('❌ [JS] Erro ao trocar wallet:', err);
-      console.error(
-        '❌ [JS] Stack trace:',
-        err instanceof Error ? err.stack : 'N/A'
-      );
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Erro', `Erro ao trocar wallet: ${errorMessage}`);
-    }
-  };
-
   const handleCreateWallet = async () => {
     try {
       console.log('🔍 [JS] Iniciando criação de carteira...');
-      const walletCreated = await createWalletIfNeeded();
+      const walletCreated = await googleWallet.createWalletIfNeeded();
       console.log('✅ [JS] Resultado da criação de carteira:', walletCreated);
       
       if (walletCreated) {
-        Alert.alert('Sucesso', 'Carteira criada com sucesso!');
+        Alert.alert('Sucesso', 'Google Wallet criada com sucesso!');
       } else {
-        Alert.alert('Informação', 'Carteira já existia.');
+        Alert.alert('Informação', 'Google Wallet já existia.');
       }
     } catch (err) {
-      console.error('❌ [JS] Erro ao criar carteira:', err);
-      console.error(
+      console.log('❌ [JS] Erro ao criar carteira:', err);
+      console.log(
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
@@ -199,14 +155,14 @@ export default function App() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Builders Wallet - Nova API</Text>
+      <Text style={styles.title}>Google Wallet - Exemplo</Text>
 
       <TouchableOpacity style={styles.button} onPress={handleCheckAvailability}>
         <Text style={styles.buttonText}>Verificar Disponibilidade</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
-        <Text style={styles.buttonText}>Criar Carteira</Text>
+        <Text style={styles.buttonText}>Criar Google Wallet</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
@@ -219,17 +175,6 @@ export default function App() {
 
       <TouchableOpacity style={styles.button} onPress={handleAddCard}>
         <Text style={styles.buttonText}>Adicionar Cartão</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleGetAvailableWallets}
-      >
-        <Text style={styles.buttonText}>Wallets Disponíveis</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleSwitchWallet}>
-        <Text style={styles.buttonText}>Trocar para Google Pay</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -245,7 +190,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
     color: '#333',
   },
   button: {

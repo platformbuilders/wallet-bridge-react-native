@@ -10,14 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import {
-  checkWalletAvailability,
-  getSecureWalletInfo,
-  getCardStatusBySuffix,
-  getCardStatusByIdentifier,
-  addCardToWallet,
-  getAvailableWallets,
-  switchWallet,
-  createWalletIfNeeded,
+  GoogleWallet,
 } from 'react-native-builders-wallet';
 import type {
   AndroidCardData,
@@ -28,17 +21,15 @@ import type {
 interface WalletState {
   isAvailable: boolean | null;
   walletInfo: WalletData | null;
-  availableWallets: string[];
-  currentModule: string;
   isLoading: boolean;
 }
 
 export default function AppImproved() {
+  const googleWallet = new GoogleWallet();
+  
   const [walletState, setWalletState] = useState<WalletState>({
     isAvailable: null,
     walletInfo: null,
-    availableWallets: [],
-    currentModule: '',
     isLoading: false,
   });
 
@@ -70,31 +61,26 @@ export default function AppImproved() {
   const initializeWallet = async () => {
     setWalletState((prev) => ({ ...prev, isLoading: true }));
     try {
-      const [isAvailable, wallets] = await Promise.all([
-        checkWalletAvailability(),
-        getAvailableWallets(),
-      ]);
+      const isAvailable = await googleWallet.checkWalletAvailability();
 
       setWalletState((prev) => ({
         ...prev,
         isAvailable,
-        availableWallets: wallets.modules,
-        currentModule: wallets.currentModule,
         isLoading: false,
       }));
     } catch (error) {
-      console.error('Erro ao inicializar wallet:', error);
+      console.error('Erro ao inicializar Google Wallet:', error);
       setWalletState((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
   const handleCheckAvailability = async () => {
     try {
-      const isAvailable = await checkWalletAvailability();
+      const isAvailable = await googleWallet.checkWalletAvailability();
       setWalletState((prev) => ({ ...prev, isAvailable }));
       Alert.alert(
         'Disponibilidade',
-        `Wallet disponível: ${isAvailable ? 'Sim' : 'Não'}`
+        `Google Wallet disponível: ${isAvailable ? 'Sim' : 'Não'}`
       );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -104,10 +90,10 @@ export default function AppImproved() {
 
   const handleGetWalletInfo = async () => {
     try {
-      const walletInfo: WalletData = await getSecureWalletInfo();
+      const walletInfo: WalletData = await googleWallet.getSecureWalletInfo();
       setWalletState((prev) => ({ ...prev, walletInfo }));
       Alert.alert(
-        'Informações da Wallet',
+        'Informações da Google Wallet',
         `Device ID: ${walletInfo.deviceID}\nWallet Account ID: ${walletInfo.walletAccountID}`
       );
     } catch (err) {
@@ -118,7 +104,7 @@ export default function AppImproved() {
 
   const handleGetCardStatusBySuffix = async () => {
     try {
-      const status: CardStatus = await getCardStatusBySuffix(
+      const status: CardStatus = await googleWallet.getCardStatusBySuffix(
         cardData.lastDigits
       );
       Alert.alert('Status do Cartão (Suffix)', `Status: ${status}`);
@@ -130,7 +116,7 @@ export default function AppImproved() {
 
   const handleGetCardStatusByIdentifier = async () => {
     try {
-      const status: CardStatus = await getCardStatusByIdentifier(
+      const status: CardStatus = await googleWallet.getCardStatusByIdentifier(
         cardData.identifier,
         cardData.tsp
       );
@@ -152,7 +138,7 @@ export default function AppImproved() {
         userAddress: addressData,
       };
 
-      const tokenId = await addCardToWallet(androidCardData);
+      const tokenId = await googleWallet.addCardToWallet(androidCardData);
       Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -160,48 +146,18 @@ export default function AppImproved() {
     }
   };
 
-  const handleRefreshWallets = async () => {
-    try {
-      const wallets = await getAvailableWallets();
-      setWalletState((prev) => ({
-        ...prev,
-        availableWallets: wallets.modules,
-        currentModule: wallets.currentModule,
-      }));
-      Alert.alert(
-        'Wallets Atualizadas',
-        `Módulos: ${wallets.modules.join(', ')}\n` +
-          `Atual: ${wallets.currentModule}`
-      );
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Erro', `Erro ao obter wallets: ${errorMessage}`);
-    }
-  };
-
-  const handleSwitchWallet = async (walletType: string) => {
-    try {
-      const result = await switchWallet(walletType);
-      setWalletState((prev) => ({ ...prev, currentModule: walletType }));
-      Alert.alert('Sucesso', result);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Erro', `Erro ao trocar wallet: ${errorMessage}`);
-    }
-  };
-
   const handleCreateWallet = async () => {
     try {
       console.log('🔍 [JS] Iniciando criação de carteira...');
-      const walletCreated = await createWalletIfNeeded();
+      const walletCreated = await googleWallet.createWalletIfNeeded();
       console.log('✅ [JS] Resultado da criação de carteira:', walletCreated);
       
       if (walletCreated) {
-        Alert.alert('Sucesso', 'Carteira criada com sucesso!');
+        Alert.alert('Sucesso', 'Google Wallet criada com sucesso!');
         // Refresh wallet info after creation
         handleGetWalletInfo();
       } else {
-        Alert.alert('Informação', 'Carteira já existia.');
+        Alert.alert('Informação', 'Google Wallet já existia.');
       }
     } catch (err) {
       console.error('❌ [JS] Erro ao criar carteira:', err);
@@ -214,27 +170,20 @@ export default function AppImproved() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4285F4" />
-        <Text style={styles.loadingText}>Inicializando Wallet...</Text>
+        <Text style={styles.loadingText}>Inicializando Google Wallet...</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Builders Wallet - Interface Avançada</Text>
+      <Text style={styles.title}>Google Wallet - Interface Avançada</Text>
 
       {/* Status da Wallet */}
       <View style={styles.statusContainer}>
-        <Text style={styles.statusTitle}>Status da Wallet</Text>
+        <Text style={styles.statusTitle}>Status da Google Wallet</Text>
         <Text style={styles.statusText}>
           Disponível: {walletState.isAvailable ? '✅ Sim' : '❌ Não'}
-        </Text>
-        <Text style={styles.statusText}>
-          Módulo Atual: {walletState.currentModule || 'Nenhum'}
-        </Text>
-        <Text style={styles.statusText}>
-          Wallets Disponíveis:{' '}
-          {walletState.availableWallets.join(', ') || 'Nenhuma'}
         </Text>
       </View>
 
@@ -254,11 +203,7 @@ export default function AppImproved() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
-          <Text style={styles.buttonText}>Criar Carteira</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button} onPress={handleRefreshWallets}>
-          <Text style={styles.buttonText}>Atualizar Wallets</Text>
+          <Text style={styles.buttonText}>Criar Google Wallet</Text>
         </TouchableOpacity>
       </View>
 
@@ -328,27 +273,6 @@ export default function AppImproved() {
         </TouchableOpacity>
       </View>
 
-      {/* Troca de Wallets */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Trocar Wallet</Text>
-
-        {walletState.availableWallets.map((wallet) => (
-          <TouchableOpacity
-            key={wallet}
-            style={[
-              styles.button,
-              walletState.currentModule === wallet
-                ? styles.activeButton
-                : styles.inactiveButton,
-            ]}
-            onPress={() => handleSwitchWallet(wallet.toLowerCase())}
-          >
-            <Text style={styles.buttonText}>
-              {wallet} {walletState.currentModule === wallet ? '(Atual)' : ''}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
 
       {/* Informações da Wallet */}
       {walletState.walletInfo && (

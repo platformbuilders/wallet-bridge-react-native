@@ -1,0 +1,26 @@
+// ============================================================================
+// TYPES PRINCIPAIS - RE-EXPORT DOS TYPES ESPECÍFICOS
+// ============================================================================
+
+// Google Wallet Types
+export * from './google-wallet.types';
+
+// Samsung Wallet Types
+export * from './samsung-wallet.types';
+
+// Common Types e Compatibilidade
+export * from './common.types';
+
+// ============================================================================
+// NOTA: ESTE ARQUIVO MANTÉM COMPATIBILIDADE
+// ============================================================================
+// 
+// Este arquivo re-exporta todos os types dos arquivos separados para manter
+// compatibilidade com imports existentes como:
+// import { GoogleWalletStatus } from 'react-native-builders-wallet'
+//
+// Para melhor organização, use imports específicos:
+// import { GoogleWalletStatus } from 'react-native-builders-wallet/types/google-wallet.types'
+// import { SamsungPayStatus } from 'react-native-builders-wallet/types/samsung-wallet.types'
+//
+// ============================================================================

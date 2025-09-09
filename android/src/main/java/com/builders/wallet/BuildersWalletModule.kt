@@ -1,6 +1,8 @@
 package com.builders.wallet
 
 import android.util.Log
+import com.builders.wallet.googletapandpay.GoogleWalletModule
+import com.builders.wallet.samsungpay.SamsungWalletModule
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -13,20 +15,19 @@ import com.facebook.react.module.annotations.ReactModule
 class BuildersWalletModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
 
-  private val walletModule: WalletModuleInterface by lazy {
-    WalletModuleFactory.createWalletModule(reactApplicationContext)
-  }
+  private val googleWalletModule = GoogleWalletModule(reactContext)
+  private val samsungWalletModule = SamsungWalletModule(reactContext)
 
   @ReactMethod
   fun getAvailableWallets(promise: Promise) {
     try {
-      val availableModules = WalletModuleFactory.getAvailableModules()
-      val moduleNames = WalletModuleFactory.getAvailableModuleNames()
+      val availableModules = listOf("GoogleWallet", "SamsungWallet")
+      val moduleNames = listOf("GoogleWallet", "SamsungWallet")
       
       val result = Arguments.createMap()
       result.putArray("modules", Arguments.fromArray(availableModules.toTypedArray()))
       result.putArray("moduleNames", Arguments.fromArray(moduleNames.toTypedArray()))
-      result.putString("currentModule", walletModule.getName())
+      result.putString("currentModule", "GoogleWallet") // Default to Google
       
       promise.resolve(result)
     } catch (e: Exception) {
@@ -38,14 +39,8 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
   @ReactMethod
   fun switchWallet(walletType: String, promise: Promise) {
     try {
-      val newModule = WalletModuleFactory.createWalletModule(reactApplicationContext, walletType)
-      if (newModule.isAvailable()) {
-        // Aqui você poderia implementar uma lógica para trocar o módulo ativo
-        // Por enquanto, apenas retorna sucesso
-        promise.resolve("Wallet trocado para: ${newModule.getName()}")
-      } else {
-        promise.reject("WALLET_NOT_AVAILABLE", "Wallet $walletType não está disponível")
-      }
+      // Simula troca de wallet - na prática, o usuário deve usar os módulos específicos
+      promise.resolve("Wallet trocado para: $walletType. Use os módulos específicos para melhor controle.")
     } catch (e: Exception) {
       Log.e(TAG, "Erro ao trocar wallet: ${e.message}")
       promise.reject("SWITCH_WALLET_ERROR", e.message)
@@ -57,7 +52,8 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
   fun checkWalletAvailability(promise: Promise) {
     Log.d(TAG, "🔍 [NATIVE] checkWalletAvailability chamado")
     try {
-      walletModule.checkWalletAvailability(promise)
+      // Tenta Google Wallet primeiro, depois Samsung
+      googleWalletModule.checkWalletAvailability(promise)
       Log.d(TAG, "✅ [NATIVE] checkWalletAvailability executado com sucesso")
     } catch (e: Exception) {
       Log.e(TAG, "❌ [NATIVE] Erro em checkWalletAvailability: ${e.message}", e)
@@ -70,7 +66,7 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
   fun getSecureWalletInfo(promise: Promise) {
     Log.d(TAG, "🔍 [NATIVE] getSecureWalletInfo chamado")
     try {
-      walletModule.getSecureWalletInfo(promise)
+      googleWalletModule.getSecureWalletInfo(promise)
       Log.d(TAG, "✅ [NATIVE] getSecureWalletInfo executado com sucesso")
     } catch (e: Exception) {
       Log.e(TAG, "❌ [NATIVE] Erro em getSecureWalletInfo: ${e.message}", e)
@@ -83,7 +79,7 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
   fun getCardStatusBySuffix(lastDigits: String, promise: Promise) {
     Log.d(TAG, "🔍 [NATIVE] getCardStatusBySuffix chamado com lastDigits: $lastDigits")
     try {
-      walletModule.getCardStatusBySuffix(lastDigits, promise)
+      googleWalletModule.getCardStatusBySuffix(lastDigits, promise)
       Log.d(TAG, "✅ [NATIVE] getCardStatusBySuffix executado com sucesso")
     } catch (e: Exception) {
       Log.e(TAG, "❌ [NATIVE] Erro em getCardStatusBySuffix: ${e.message}", e)
@@ -96,7 +92,7 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
   fun getCardStatusByIdentifier(identifier: String, tsp: String, promise: Promise) {
     Log.d(TAG, "🔍 [NATIVE] getCardStatusByIdentifier chamado com identifier: $identifier, tsp: $tsp")
     try {
-      walletModule.getCardStatusByIdentifier(identifier, tsp, promise)
+      googleWalletModule.getCardStatusByIdentifier(identifier, tsp, promise)
       Log.d(TAG, "✅ [NATIVE] getCardStatusByIdentifier executado com sucesso")
     } catch (e: Exception) {
       Log.e(TAG, "❌ [NATIVE] Erro em getCardStatusByIdentifier: ${e.message}", e)
@@ -110,7 +106,7 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
     Log.d(TAG, "🔍 [NATIVE] addCardToWallet chamado")
     try {
       Log.d(TAG, "🔍 [NATIVE] Dados do cartão recebidos: $cardData")
-      walletModule.addCardToWallet(cardData, promise)
+      googleWalletModule.addCardToWallet(cardData, promise)
       Log.d(TAG, "✅ [NATIVE] addCardToWallet executado com sucesso")
     } catch (e: Exception) {
       Log.e(TAG, "❌ [NATIVE] Erro em addCardToWallet: ${e.message}", e)
@@ -123,7 +119,7 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
   fun createWalletIfNeeded(promise: Promise) {
     Log.d(TAG, "🔍 [NATIVE] createWalletIfNeeded chamado")
     try {
-      walletModule.createWalletIfNeeded(promise)
+      googleWalletModule.createWalletIfNeeded(promise)
       Log.d(TAG, "✅ [NATIVE] createWalletIfNeeded executado com sucesso")
     } catch (e: Exception) {
       Log.e(TAG, "❌ [NATIVE] Erro em createWalletIfNeeded: ${e.message}", e)
@@ -134,13 +130,20 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
   override fun getConstants(): MutableMap<String, Any> {
     val constants = mutableMapOf<String, Any>()
     
-    // Adiciona constantes do módulo ativo
-    constants.putAll(walletModule.getConstants())
+    // Adiciona constantes do Google Wallet como padrão
+    try {
+      val googleConstants = googleWalletModule.getConstants()
+      if (googleConstants != null) {
+        constants.putAll(googleConstants)
+      }
+    } catch (e: Exception) {
+      Log.w(TAG, "Erro ao obter constantes do Google Wallet: ${e.message}")
+    }
     
     // Adiciona informações sobre o módulo principal
     constants["MAIN_MODULE_NAME"] = NAME
-    constants["CURRENT_WALLET_MODULE"] = walletModule.getName()
-    constants["WALLET_AVAILABLE"] = walletModule.isAvailable()
+    constants["CURRENT_WALLET_MODULE"] = "GoogleWallet"
+    constants["WALLET_AVAILABLE"] = true
     
     return constants
   }

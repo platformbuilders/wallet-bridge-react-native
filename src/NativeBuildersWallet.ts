@@ -16,7 +16,10 @@ import type {
   GetConstantsResponse,
   Token,
   IsTokenizedParams,
-} from './types';
+  // Types para módulos específicos
+  GoogleWalletSpec,
+  SamsungWalletSpec,
+} from './types/index';
 import {
   // Types específicos do Google Pay
   GOOGLE_WALLET_STATUS,
@@ -26,7 +29,7 @@ import {
   GOOGLE_ENVIRONMENT,
   GOOGLE_TOKEN_PROVIDER,
   GOOGLE_CARD_NETWORK,
-} from './types';
+} from './types/index';
 
 // ============================================================================
 // RE-EXPORTS PARA COMPATIBILIDADE
@@ -59,10 +62,35 @@ export type {
   GetConstantsResponse,
   Token,
   IsTokenizedParams,
+  GoogleWalletSpec,
+  SamsungWalletSpec,
 };
 
 // ============================================================================
-// INTERFACE PRINCIPAL DA BIBLIOTECA
+// MÓDULOS ESPECÍFICOS
+// ============================================================================
+
+const { GoogleWallet, SamsungWallet } = NativeModules;
+
+// Verificação de disponibilidade dos módulos
+if (!GoogleWallet) {
+  console.warn(
+    'GoogleWallet native module is not available. Make sure you have properly installed the library and rebuilt your app.'
+  );
+}
+
+if (!SamsungWallet) {
+  console.warn(
+    'SamsungWallet native module is not available. Make sure you have properly installed the library and rebuilt your app.'
+  );
+}
+
+// Exporta os módulos específicos
+export const GoogleWalletModule = GoogleWallet as GoogleWalletSpec;
+export const SamsungWalletModule = SamsungWallet as SamsungWalletSpec;
+
+// ============================================================================
+// INTERFACE PRINCIPAL DA BIBLIOTECA (MANTIDA PARA COMPATIBILIDADE)
 // ============================================================================
 
 // Interface simplificada com apenas os métodos essenciais
