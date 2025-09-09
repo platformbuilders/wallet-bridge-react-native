@@ -17,10 +17,10 @@ export * from './common.types';
 // 
 // Este arquivo re-exporta todos os types dos arquivos separados para manter
 // compatibilidade com imports existentes como:
-// import { GoogleWalletStatus } from 'react-native-builders-wallet'
+// import { GoogleWalletStatus } from '@platformbuilders/wallet-bridge-react-native'
 //
 // Para melhor organização, use imports específicos:
-// import { GoogleWalletStatus } from 'react-native-builders-wallet/types/google-wallet.types'
-// import { SamsungPayStatus } from 'react-native-builders-wallet/types/samsung-wallet.types'
+// import { GoogleWalletStatus } from '@platformbuilders/wallet-bridge-react-native/types/google-wallet.types'
+// import { SamsungPayStatus } from '@platformbuilders/wallet-bridge-react-native/types/samsung-wallet.types'
 //
 // ============================================================================

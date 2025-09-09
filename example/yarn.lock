@@ -1759,6 +1759,29 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@platformbuilders/wallet-bridge-react-native-example@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@platformbuilders/wallet-bridge-react-native-example@workspace:."
+  dependencies:
+    "@babel/core": ^7.25.2
+    "@babel/preset-env": ^7.25.3
+    "@babel/runtime": ^7.25.0
+    "@react-native-community/cli": 20.0.0
+    "@react-native-community/cli-platform-android": 20.0.0
+    "@react-native-community/cli-platform-ios": 20.0.0
+    "@react-native/babel-preset": 0.81.0
+    "@react-native/metro-config": 0.81.0
+    "@react-native/new-app-screen": 0.81.0
+    "@react-native/typescript-config": 0.81.0
+    "@types/react": ^19.1.0
+    react: 19.1.0
+    react-native: 0.81.0
+    react-native-builder-bob: ^0.40.13
+    react-native-monorepo-config: ^0.1.9
+    react-native-safe-area-context: ^5.5.2
+  languageName: unknown
+  linkType: soft
+
 "@react-native-community/cli-clean@npm:20.0.0":
   version: 20.0.0
   resolution: "@react-native-community/cli-clean@npm:20.0.0"
@@ -5679,29 +5702,6 @@ __metadata:
   checksum: 3140749ce4c2b4362502b2074ef2a6de92e03ab1a49bdbfc8058fbea0335a000d0554d012d9ce857b18bc395a2d6796c011d922725089e4688d6760f0b56b519
   languageName: node
   linkType: hard
-
-"react-native-builders-wallet-example@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "react-native-builders-wallet-example@workspace:."
-  dependencies:
-    "@babel/core": ^7.25.2
-    "@babel/preset-env": ^7.25.3
-    "@babel/runtime": ^7.25.0
-    "@react-native-community/cli": 20.0.0
-    "@react-native-community/cli-platform-android": 20.0.0
-    "@react-native-community/cli-platform-ios": 20.0.0
-    "@react-native/babel-preset": 0.81.0
-    "@react-native/metro-config": 0.81.0
-    "@react-native/new-app-screen": 0.81.0
-    "@react-native/typescript-config": 0.81.0
-    "@types/react": ^19.1.0
-    react: 19.1.0
-    react-native: 0.81.0
-    react-native-builder-bob: ^0.40.13
-    react-native-monorepo-config: ^0.1.9
-    react-native-safe-area-context: ^5.5.2
-  languageName: unknown
-  linkType: soft
 
 "react-native-monorepo-config@npm:^0.1.8, react-native-monorepo-config@npm:^0.1.9":
   version: 0.1.9

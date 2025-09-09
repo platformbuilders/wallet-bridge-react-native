@@ -91,17 +91,17 @@ Ponto de entrada da biblioteca que:
 
 ### Importar Types Específicos do Google Pay
 ```typescript
-import { GOOGLE_WALLET_STATUS, GOOGLE_TOKEN_PROVIDER } from 'react-native-builders-wallet';
+import { GOOGLE_WALLET_STATUS, GOOGLE_TOKEN_PROVIDER } from '@platformbuilders/wallet-bridge-react-native';
 ```
 
 ### Importar Types Genéricos
 ```typescript
-import { CardStatus, WalletData, AndroidCardData } from 'react-native-builders-wallet';
+import { CardStatus, WalletData, AndroidCardData } from '@platformbuilders/wallet-bridge-react-native';
 ```
 
 ### Importar com Compatibilidade (Recomendado)
 ```typescript
-import { WALLET_STATUS, TOKEN_PROVIDER, CardStatus } from 'react-native-builders-wallet';
+import { WALLET_STATUS, TOKEN_PROVIDER, CardStatus } from '@platformbuilders/wallet-bridge-react-native';
 ```
 
 ## 🔮 **Futuro: Samsung Pay**

@@ -11,12 +11,12 @@ import {
 } from 'react-native';
 import {
   GoogleWallet,
-} from 'react-native-builders-wallet';
+} from '@platformbuilders/wallet-bridge-react-native';
 import type {
   AndroidCardData,
   WalletData,
   CardStatus,
-} from 'react-native-builders-wallet';
+} from '@platformbuilders/wallet-bridge-react-native';
 
 interface WalletState {
   isAvailable: boolean | null;

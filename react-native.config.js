@@ -1,6 +1,6 @@
 module.exports = {
   dependencies: {
-    'react-native-builders-wallet': {
+    '@platformbuilders/wallet-bridge-react-native': {
       platforms: {
         android: {
           sourceDir: '../android/',

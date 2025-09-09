@@ -7,12 +7,12 @@ import {
 } from 'react-native';
 import {
   GoogleWallet,
-} from 'react-native-builders-wallet';
+} from '@platformbuilders/wallet-bridge-react-native';
 import type {
   AndroidCardData,
   WalletData,
   CardStatus,
-} from 'react-native-builders-wallet';
+} from '@platformbuilders/wallet-bridge-react-native';
 
 export default function App() {
   const googleWallet = new GoogleWallet();
