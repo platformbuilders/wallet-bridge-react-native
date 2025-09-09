@@ -87,6 +87,17 @@ class SamsungPayAdapter(
         )
     }
 
+    override fun createWalletIfNeeded(promise: Promise) {
+        if (!isSDKAvailable) {
+            promise.reject("SDK_NOT_AVAILABLE", "Samsung Pay SDK não está disponível")
+            return
+        }
+        
+        // Samsung Pay doesn't need explicit wallet creation
+        // The wallet is created automatically when needed
+        promise.resolve(false) // false = wallet already existed (or not needed)
+    }
+
     override fun getConstants(): MutableMap<String, Any> {
         return hashMapOf(
             "SDK_AVAILABLE" to isSDKAvailable,

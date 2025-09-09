@@ -25,6 +25,10 @@ class StubWalletModule : WalletModuleInterface {
         promise.reject("SDK_NOT_AVAILABLE", "Nenhum SDK de wallet disponível")
     }
 
+    override fun createWalletIfNeeded(promise: Promise) {
+        promise.reject("SDK_NOT_AVAILABLE", "Nenhum SDK de wallet disponível")
+    }
+
     override fun getConstants(): MutableMap<String, Any> {
         return hashMapOf(
             "SDK_AVAILABLE" to false,

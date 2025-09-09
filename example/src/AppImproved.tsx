@@ -17,6 +17,7 @@ import {
   addCardToWallet,
   getAvailableWallets,
   switchWallet,
+  createWalletIfNeeded,
 } from 'react-native-builders-wallet';
 import type {
   AndroidCardData,
@@ -189,6 +190,26 @@ export default function AppImproved() {
     }
   };
 
+  const handleCreateWallet = async () => {
+    try {
+      console.log('🔍 [JS] Iniciando criação de carteira...');
+      const walletCreated = await createWalletIfNeeded();
+      console.log('✅ [JS] Resultado da criação de carteira:', walletCreated);
+      
+      if (walletCreated) {
+        Alert.alert('Sucesso', 'Carteira criada com sucesso!');
+        // Refresh wallet info after creation
+        handleGetWalletInfo();
+      } else {
+        Alert.alert('Informação', 'Carteira já existia.');
+      }
+    } catch (err) {
+      console.error('❌ [JS] Erro ao criar carteira:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      Alert.alert('Erro', `Erro ao criar carteira: ${errorMessage}`);
+    }
+  };
+
   if (walletState.isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -230,6 +251,10 @@ export default function AppImproved() {
 
         <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
           <Text style={styles.buttonText}>Obter Informações da Wallet</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
+          <Text style={styles.buttonText}>Criar Carteira</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={handleRefreshWallets}>

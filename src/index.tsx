@@ -57,6 +57,10 @@ export function addCardToWallet(cardData: AndroidCardData): Promise<string> {
   return BuildersWallet.addCardToWallet(cardData);
 }
 
+export function createWalletIfNeeded(): Promise<boolean> {
+  return BuildersWallet.createWalletIfNeeded();
+}
+
 export function getAvailableWallets(): Promise<{
   modules: string[];
   moduleNames: string[];

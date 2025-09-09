@@ -76,6 +76,7 @@ export interface Spec {
     tsp: number
   ): Promise<CardStatus>;
   addCardToWallet(cardData: AndroidCardData): Promise<string>;
+  createWalletIfNeeded(): Promise<boolean>;
 
   // Métodos de gerenciamento de módulos
   getAvailableWallets(): Promise<{

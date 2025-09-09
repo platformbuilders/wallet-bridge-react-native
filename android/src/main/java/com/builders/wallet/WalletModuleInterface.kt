@@ -19,6 +19,9 @@ interface WalletModuleInterface {
     // Add card to wallet (Push Provisioning)
     fun addCardToWallet(cardData: ReadableMap, promise: Promise)
     
+    // Create wallet if it doesn't exist
+    fun createWalletIfNeeded(promise: Promise)
+    
     // Utility methods
     fun getConstants(): MutableMap<String, Any>
     fun getName(): String

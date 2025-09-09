@@ -133,7 +133,7 @@ class GoogleTapAndPayModule(private val reactContext: ReactApplicationContext) :
             CREATE_WALLET_REQUEST -> {
               if (resultCode == Activity.RESULT_OK) {
                 Log.i(TAG, "- createWallet OK")
-                resolve("Carteira criada")
+                resolve(true) // true = wallet was created
               } else {
                 Log.i(TAG, "Couldn't createWallet - $resultCode")
                 reject(E_CREATE_WALLET, "Falha ao criar carteira - código: $resultCode")
@@ -224,6 +224,42 @@ class GoogleTapAndPayModule(private val reactContext: ReactApplicationContext) :
               TAG,
               "Couldn't getActiveWalletId - ${task.exception?.message}"
             )
+            promise.reject(E_GET_ACTIVE_WALLET_ID, task.exception)
+          }
+        }
+      }
+  }
+
+  // Get secure wallet information (device ID + wallet account ID)
+  @ReactMethod
+  fun getSecureWalletInfo(promise: Promise) {
+    Log.i(TAG, "--")
+    Log.i(TAG, "> getSecureWalletInfo started")
+    
+    tapAndPayClient.activeWalletId
+      .addOnCompleteListener { task: Task<String> ->
+        if (task.isSuccessful) {
+          val walletAccountID = task.result
+          val deviceID = android.provider.Settings.Secure.getString(
+            reactContext.contentResolver,
+            android.provider.Settings.Secure.ANDROID_ID
+          ) ?: ""
+          
+          val result: WritableMap = Arguments.createMap()
+          result.putString("deviceID", deviceID)
+          result.putString("walletAccountID", walletAccountID)
+          
+          Log.i(TAG, "- getSecureWalletInfo deviceID: $deviceID")
+          Log.i(TAG, "- getSecureWalletInfo walletAccountID: $walletAccountID")
+          promise.resolve(result)
+        } else {
+          val apiException = task.exception as ApiException?
+          val statusCode = apiException?.statusCode ?: -1
+          if (statusCode == TapAndPayStatusCodes.TAP_AND_PAY_NO_ACTIVE_WALLET) {
+            Log.i(TAG, "Couldn't getSecureWalletInfo - Sem carteira ativa")
+            promise.reject(E_GET_ACTIVE_WALLET_ID, "Sem carteira ativa")
+          } else {
+            Log.i(TAG, "Couldn't getSecureWalletInfo - ${task.exception?.message}")
             promise.reject(E_GET_ACTIVE_WALLET_ID, task.exception)
           }
         }
@@ -515,6 +551,38 @@ class GoogleTapAndPayModule(private val reactContext: ReactApplicationContext) :
       activity,
       CREATE_WALLET_REQUEST
     )
+  }
+
+  // Create wallet if it doesn't exist
+  @ReactMethod
+  fun createWalletIfNeeded(promise: Promise) {
+    Log.i(TAG, "--")
+    Log.i(TAG, "> createWalletIfNeeded started")
+    
+    // First check if wallet already exists
+    tapAndPayClient.activeWalletId
+      .addOnCompleteListener { task: Task<String> ->
+        if (task.isSuccessful) {
+          // Wallet already exists
+          Log.i(TAG, "- Wallet já existe: ${task.result}")
+          promise.resolve(false) // false = wallet already existed
+        } else {
+          val apiException = task.exception as ApiException?
+          val statusCode = apiException?.statusCode ?: -1
+          if (statusCode == TapAndPayStatusCodes.TAP_AND_PAY_NO_ACTIVE_WALLET) {
+            // No wallet exists, create one
+            Log.i(TAG, "- Nenhuma carteira encontrada, criando nova...")
+            mPickerPromise = promise
+            tapAndPayClient.createWallet(
+              activity,
+              CREATE_WALLET_REQUEST
+            )
+          } else {
+            Log.i(TAG, "Couldn't check wallet status - ${task.exception?.message}")
+            promise.reject(E_CREATE_WALLET, task.exception)
+          }
+        }
+      }
   }
 
   override fun getConstants(): MutableMap<String, Any> {

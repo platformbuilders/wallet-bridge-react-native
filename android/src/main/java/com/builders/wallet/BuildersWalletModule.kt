@@ -118,6 +118,19 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  // Create wallet if it doesn't exist
+  @ReactMethod
+  fun createWalletIfNeeded(promise: Promise) {
+    Log.d(TAG, "🔍 [NATIVE] createWalletIfNeeded chamado")
+    try {
+      walletModule.createWalletIfNeeded(promise)
+      Log.d(TAG, "✅ [NATIVE] createWalletIfNeeded executado com sucesso")
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ [NATIVE] Erro em createWalletIfNeeded: ${e.message}", e)
+      promise.reject("CREATE_WALLET_IF_NEEDED_ERROR", e.message, e)
+    }
+  }
+
   override fun getConstants(): MutableMap<String, Any> {
     val constants = mutableMapOf<String, Any>()
     

@@ -47,7 +47,7 @@ class GoogleTapAndPayAdapter(
         }
         
         // Get wallet information for secure transactions
-        googleTapAndPayModule.getActiveWalletId(promise)
+        googleTapAndPayModule.getSecureWalletInfo(promise)
     }
 
     override fun getCardStatusBySuffix(lastDigits: String, promise: Promise) {
@@ -87,6 +87,16 @@ class GoogleTapAndPayAdapter(
         
         // Add card using push tokenization
         googleTapAndPayModule.pushTokenize(cardData, promise)
+    }
+
+    override fun createWalletIfNeeded(promise: Promise) {
+        if (!isSDKAvailable) {
+            promise.reject("SDK_NOT_AVAILABLE", "Google Pay SDK não está disponível")
+            return
+        }
+        
+        // Create wallet if it doesn't exist
+        googleTapAndPayModule.createWalletIfNeeded(promise)
     }
 
     override fun getConstants(): MutableMap<String, Any> {

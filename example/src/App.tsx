@@ -13,6 +13,7 @@ import {
   getAvailableWallets,
   switchWallet,
   getConstants,
+  createWalletIfNeeded,
 } from 'react-native-builders-wallet';
 import type {
   AndroidCardData,
@@ -174,12 +175,38 @@ export default function App() {
     }
   };
 
+  const handleCreateWallet = async () => {
+    try {
+      console.log('🔍 [JS] Iniciando criação de carteira...');
+      const walletCreated = await createWalletIfNeeded();
+      console.log('✅ [JS] Resultado da criação de carteira:', walletCreated);
+      
+      if (walletCreated) {
+        Alert.alert('Sucesso', 'Carteira criada com sucesso!');
+      } else {
+        Alert.alert('Informação', 'Carteira já existia.');
+      }
+    } catch (err) {
+      console.error('❌ [JS] Erro ao criar carteira:', err);
+      console.error(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      Alert.alert('Erro', `Erro ao criar carteira: ${errorMessage}`);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Builders Wallet - Nova API</Text>
 
       <TouchableOpacity style={styles.button} onPress={handleCheckAvailability}>
         <Text style={styles.buttonText}>Verificar Disponibilidade</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
+        <Text style={styles.buttonText}>Criar Carteira</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
