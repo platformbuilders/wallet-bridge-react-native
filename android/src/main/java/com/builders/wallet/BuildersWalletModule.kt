@@ -1,6 +1,7 @@
 package com.builders.wallet
 
 import android.util.Log
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -22,11 +23,10 @@ class BuildersWalletModule(reactContext: ReactApplicationContext) :
       val availableModules = WalletModuleFactory.getAvailableModules()
       val moduleNames = WalletModuleFactory.getAvailableModuleNames()
       
-      val result = mapOf(
-        "modules" to availableModules,
-        "moduleNames" to moduleNames,
-        "currentModule" to walletModule.getName()
-      )
+      val result = Arguments.createMap()
+      result.putArray("modules", Arguments.fromArray(availableModules.toTypedArray()))
+      result.putArray("moduleNames", Arguments.fromArray(moduleNames.toTypedArray()))
+      result.putString("currentModule", walletModule.getName())
       
       promise.resolve(result)
     } catch (e: Exception) {
