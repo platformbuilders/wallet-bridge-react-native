@@ -1,4 +1,4 @@
-package com.builders.wallet
+package com.builders.wallet.googletapandpay
 
 import com.google.android.gms.tapandpay.issuer.TokenInfo
 import java.io.Serializable

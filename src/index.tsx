@@ -1,32 +1,28 @@
 import BuildersWallet from './NativeBuildersWallet';
 import type {
-  PushTokenizeRequest,
-  UserAddress,
-  PaymentCard,
-  GetTokenStatusParams,
-  ViewTokenParams,
-  Address,
-  Card,
-  PushTokenizeParams,
   GetConstantsResponse,
-  Token,
-  IsTokenizedParams,
-} from './NativeBuildersWallet';
+  WalletData,
+  AndroidCardData,
+  CardStatus,
+} from './types';
 
+// Re-exporta types utilizados
 export type {
-  PushTokenizeRequest,
-  UserAddress,
-  PaymentCard,
-  GetTokenStatusParams,
-  ViewTokenParams,
-  Address,
-  Card,
-  PushTokenizeParams,
   GetConstantsResponse,
-  Token,
-  IsTokenizedParams,
-};
+  WalletData,
+  AndroidCardData,
+  CardStatus,
+  // Types específicos do Google Pay
+  GOOGLE_WALLET_STATUS,
+  GOOGLE_WALLET_STATUS_CODE,
+  GOOGLE_STATUS_TOKEN,
+  GOOGLE_CONSTANTS,
+  GOOGLE_ENVIRONMENT,
+  GOOGLE_TOKEN_PROVIDER,
+  GOOGLE_CARD_NETWORK,
+} from './types';
 
+// Re-exporta enums com nomes de compatibilidade
 export {
   WALLET_STATUS,
   WALLET_STATUS_CODE,
@@ -37,48 +33,42 @@ export {
   CARD_NETWORK,
 } from './NativeBuildersWallet';
 
-export function pushTokenize(request: PushTokenizeRequest): Promise<string> {
-  return BuildersWallet.pushTokenize(request);
+// Novos métodos da API simplificada
+export function checkWalletAvailability(): Promise<boolean> {
+  return BuildersWallet.checkWalletAvailability();
 }
 
-export function getActiveWalletId(): Promise<any> {
-  return BuildersWallet.getActiveWalletId();
+export function getSecureWalletInfo(): Promise<WalletData> {
+  return BuildersWallet.getSecureWalletInfo();
 }
 
-export function getTokenStatus(params: GetTokenStatusParams): Promise<any> {
-  return BuildersWallet.getTokenStatus(params);
+export function getCardStatusBySuffix(lastDigits: string): Promise<CardStatus> {
+  return BuildersWallet.getCardStatusBySuffix(lastDigits);
 }
 
-export function getEnvironment(): Promise<any> {
-  return BuildersWallet.getEnvironment();
+export function getCardStatusByIdentifier(
+  identifier: string,
+  tsp: number
+): Promise<CardStatus> {
+  return BuildersWallet.getCardStatusByIdentifier(identifier, tsp);
 }
 
-export function getStableHardwareId(): Promise<string> {
-  return BuildersWallet.getStableHardwareId();
+export function addCardToWallet(cardData: AndroidCardData): Promise<string> {
+  return BuildersWallet.addCardToWallet(cardData);
 }
 
-export function listTokens(): Promise<Token[]> {
-  return BuildersWallet.listTokens();
+export function getAvailableWallets(): Promise<{
+  modules: string[];
+  moduleNames: string[];
+  currentModule: string;
+}> {
+  return BuildersWallet.getAvailableWallets();
 }
 
-export function isTokenized(params: IsTokenizedParams): Promise<boolean> {
-  return BuildersWallet.isTokenized(params);
-}
-
-export function viewToken(params: ViewTokenParams): Promise<string> {
-  return BuildersWallet.viewToken(params);
-}
-
-export function pushTokenizeWithParams(
-  params: PushTokenizeParams
-): Promise<string> {
-  return BuildersWallet.pushTokenizeWithParams(params);
+export function switchWallet(walletType: string): Promise<string> {
+  return BuildersWallet.switchWallet(walletType);
 }
 
 export function getConstants(): Promise<GetConstantsResponse> {
   return BuildersWallet.getConstants();
-}
-
-export function createWallet(): Promise<any> {
-  return BuildersWallet.createWallet();
 }
