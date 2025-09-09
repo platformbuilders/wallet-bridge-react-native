@@ -383,35 +383,17 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun getConstants(promise: Promise) {
-    try {
-      val constants = hashMapOf(
-        "SDK_AVAILABLE" to isSDKAvailable,
-        "SDK_NAME" to "GoogleWallet",
-        "CARD_NETWORK_ELO" to 12,
-        "TOKEN_PROVIDER_ELO" to 14,
-        "TOKEN_STATE_ACTIVE" to 5,
-        "TOKEN_STATE_PENDING" to 2,
-        "TOKEN_STATE_SUSPENDED" to 4,
-        "TOKEN_STATE_UNTOKENIZED" to 1
-      )
-      
-      val result = Arguments.createMap()
-      constants.forEach { (key, value) ->
-        when (value) {
-          is String -> result.putString(key, value)
-          is Int -> result.putInt(key, value)
-          is Boolean -> result.putBoolean(key, value)
-          is Double -> result.putDouble(key, value)
-          else -> result.putString(key, value.toString())
-        }
-      }
-      
-      promise.resolve(result)
-    } catch (e: Exception) {
-      Log.e(TAG, "❌ [GOOGLE] Erro em getConstants: ${e.message}", e)
-      promise.reject("GET_CONSTANTS_ERROR", e.message, e)
-    }
+  override fun getConstants(): MutableMap<String, Any> {
+    return hashMapOf(
+      "SDK_AVAILABLE" to isSDKAvailable,
+      "SDK_NAME" to "GoogleWallet",
+      "CARD_NETWORK_ELO" to 12,
+      "TOKEN_PROVIDER_ELO" to 14,
+      "TOKEN_STATE_ACTIVE" to 5,
+      "TOKEN_STATE_PENDING" to 2,
+      "TOKEN_STATE_SUSPENDED" to 4,
+      "TOKEN_STATE_UNTOKENIZED" to 1
+    )
   }
 
   override fun getName(): String {

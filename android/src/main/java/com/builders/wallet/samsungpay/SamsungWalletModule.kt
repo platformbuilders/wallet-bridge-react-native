@@ -137,30 +137,12 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun getConstants(promise: Promise) {
-    try {
-      val constants = hashMapOf<String, Any>(
-        "SDK_AVAILABLE" to isSDKAvailable,
-        "SDK_NAME" to "SamsungWallet",
-        "MODULE_NAME" to getName()
-      )
-      
-      val result = Arguments.createMap()
-      constants.forEach { (key, value) ->
-        when (value) {
-          is String -> result.putString(key, value)
-          is Int -> result.putInt(key, value)
-          is Boolean -> result.putBoolean(key, value)
-          is Double -> result.putDouble(key, value)
-          else -> result.putString(key, value.toString())
-        }
-      }
-      
-      promise.resolve(result)
-    } catch (e: Exception) {
-      Log.e(TAG, "❌ [SAMSUNG] Erro em getConstants: ${e.message}", e)
-      promise.reject("GET_CONSTANTS_ERROR", e.message, e)
-    }
+  override fun getConstants(): MutableMap<String, Any> {
+    return hashMapOf<String, Any>(
+      "SDK_AVAILABLE" to isSDKAvailable,
+      "SDK_NAME" to "SamsungWallet",
+      "MODULE_NAME" to getName()
+    )
   }
 
   override fun getName(): String {

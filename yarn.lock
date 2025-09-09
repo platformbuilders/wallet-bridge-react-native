@@ -2118,6 +2118,7 @@ __metadata:
     "@babel/core": ^7.25.2
     "@babel/preset-env": ^7.25.3
     "@babel/runtime": ^7.25.0
+    "@platformbuilders/wallet-bridge-react-native": "file:.yalc/@platformbuilders/wallet-bridge-react-native"
     "@react-native-community/cli": 20.0.0
     "@react-native-community/cli-platform-android": 20.0.0
     "@react-native-community/cli-platform-ios": 20.0.0
@@ -2133,6 +2134,16 @@ __metadata:
     react-native-safe-area-context: ^5.5.2
   languageName: unknown
   linkType: soft
+
+"@platformbuilders/wallet-bridge-react-native@file:.yalc/@platformbuilders/wallet-bridge-react-native::locator=%40platformbuilders%2Fwallet-bridge-react-native-example%40workspace%3Aexample":
+  version: 0.1.0
+  resolution: "@platformbuilders/wallet-bridge-react-native@file:.yalc/@platformbuilders/wallet-bridge-react-native#.yalc/@platformbuilders/wallet-bridge-react-native::hash=81dcb2&locator=%40platformbuilders%2Fwallet-bridge-react-native-example%40workspace%3Aexample"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 098f410f0b5e5a8f1b3cdff7e3d076372da19d716834299862d8358b55a3c715f31e726e387c781ee4d9a65484e366e920114e2980e3c7c615e30fce6b8c1621
+  languageName: node
+  linkType: hard
 
 "@platformbuilders/wallet-bridge-react-native@workspace:.":
   version: 0.0.0-use.local
