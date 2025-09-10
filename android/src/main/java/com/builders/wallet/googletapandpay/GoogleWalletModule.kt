@@ -384,16 +384,49 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
 
   @ReactMethod
   override fun getConstants(): MutableMap<String, Any> {
-    return hashMapOf(
-      "SDK_AVAILABLE" to isSDKAvailable,
-      "SDK_NAME" to "GoogleWallet",
-      "CARD_NETWORK_ELO" to 12,
-      "TOKEN_PROVIDER_ELO" to 14,
-      "TOKEN_STATE_ACTIVE" to 5,
-      "TOKEN_STATE_PENDING" to 2,
-      "TOKEN_STATE_SUSPENDED" to 4,
-      "TOKEN_STATE_UNTOKENIZED" to 1
-    )
+    Log.i(TAG, "--")
+    Log.i(TAG, "> getConstants started")
+    
+    val constants = hashMapOf<String, Any>()
+    
+    // Adiciona constantes básicas sempre
+    constants["SDK_AVAILABLE"] = isSDKAvailable
+    constants["SDK_NAME"] = "GoogleWallet"
+    
+    // Adiciona constantes do SDK se estiver disponível
+    if (isSDKAvailable) {
+      Log.i(TAG, "> SDK disponível, obtendo constantes do TapAndPay")
+      
+      // Usa reflection para acessar as constantes do TapAndPay de forma segura
+      val tapAndPayClass = Class.forName("com.google.android.gms.tapandpay.TapAndPay")
+      
+      // Obtém as constantes usando reflection
+      constants["TOKEN_PROVIDER_ELO"] = tapAndPayClass.getField("TOKEN_PROVIDER_ELO").getInt(null)
+      constants["CARD_NETWORK_ELO"] = tapAndPayClass.getField("CARD_NETWORK_ELO").getInt(null)
+      constants["TOKEN_STATE_UNTOKENIZED"] = tapAndPayClass.getField("TOKEN_STATE_UNTOKENIZED").getInt(null)
+      constants["TOKEN_STATE_PENDING"] = tapAndPayClass.getField("TOKEN_STATE_PENDING").getInt(null)
+      constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = tapAndPayClass.getField("TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION").getInt(null)
+      constants["TOKEN_STATE_SUSPENDED"] = tapAndPayClass.getField("TOKEN_STATE_SUSPENDED").getInt(null)
+      constants["TOKEN_STATE_ACTIVE"] = tapAndPayClass.getField("TOKEN_STATE_ACTIVE").getInt(null)
+      constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = tapAndPayClass.getField("TOKEN_STATE_FELICA_PENDING_PROVISIONING").getInt(null)
+      
+      Log.i(TAG, "> Constantes do TapAndPay obtidas com sucesso")
+    } else {
+      Log.w(TAG, "> SDK não disponível, retornando null para constantes")
+      
+      // Retorna null quando SDK não está disponível
+      constants["TOKEN_PROVIDER_ELO"] = null
+      constants["CARD_NETWORK_ELO"] = null
+      constants["TOKEN_STATE_UNTOKENIZED"] = null
+      constants["TOKEN_STATE_PENDING"] = null
+      constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = null
+      constants["TOKEN_STATE_SUSPENDED"] = null
+      constants["TOKEN_STATE_ACTIVE"] = null
+      constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = null
+    }
+    
+    Log.i(TAG, "> getConstants completed")
+    return constants
   }
 
   override fun getName(): String {
