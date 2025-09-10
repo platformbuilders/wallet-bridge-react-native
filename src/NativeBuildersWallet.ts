@@ -116,13 +116,3 @@ export interface Spec {
   // Método para obter constantes
   getConstants(): Promise<GetConstantsResponse>;
 }
-
-const { BuildersWallet } = NativeModules;
-
-if (!BuildersWallet) {
-  throw new Error(
-    'BuildersWallet native module is not available. Make sure you have properly installed the library and rebuilt your app.'
-  );
-}
-
-export default BuildersWallet as Spec;

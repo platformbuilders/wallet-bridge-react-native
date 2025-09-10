@@ -6,7 +6,7 @@ import {
   ScrollView,
 } from 'react-native';
 import {
-  GoogleWallet,
+  GoogleWalletClient,
 } from '@platformbuilders/wallet-bridge-react-native';
 import type {
   AndroidCardData,
@@ -15,7 +15,18 @@ import type {
 } from '@platformbuilders/wallet-bridge-react-native';
 
 export default function App() {
-  const googleWallet = new GoogleWallet();
+  const googleWallet = new GoogleWalletClient();
+  
+  // Verificar se o módulo está disponível
+  if (!googleWallet) {
+    return (
+      <ScrollView style={styles.container}>
+        <Text style={styles.errorText}>
+          GoogleWalletClient não está disponível. Verifique se o módulo nativo foi instalado corretamente.
+        </Text>
+      </ScrollView>
+    );
+  }
 
   const handleCheckAvailability = async () => {
     try {
@@ -79,7 +90,7 @@ export default function App() {
       console.log('🔍 [JS] Iniciando processo de adição de cartão...');
 
       console.log('🔍 [JS] Obtendo constantes...');
-      const constants = await googleWallet.getConstants();
+      const constants = googleWallet.getConstants();
       console.log('✅ [JS] Constantes obtidas:', constants);
 
       const cardData: AndroidCardData = {
@@ -210,5 +221,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 50,
+    padding: 20,
   },
 });

@@ -382,7 +382,6 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  @ReactMethod
   override fun getConstants(): MutableMap<String, Any> {
     Log.i(TAG, "--")
     Log.i(TAG, "> getConstants started")

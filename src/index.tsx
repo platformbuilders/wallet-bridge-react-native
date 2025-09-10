@@ -1,9 +1,6 @@
-import BuildersWallet, { GoogleWalletModule, SamsungWalletModule } from './NativeBuildersWallet';
+import  { GoogleWalletModule, SamsungWalletModule } from './NativeBuildersWallet';
 import type {
-  GetConstantsResponse,
   WalletData,
-  AndroidCardData,
-  CardStatus,
   GoogleWalletCompatibilitySpec,
   SamsungWalletCompatibilitySpec,
 } from './types/index';
@@ -41,8 +38,8 @@ export {
 // MÓDULOS ESPECÍFICOS
 // ============================================================================
 
-// GoogleWallet - Classe específica para Google Pay
-export class GoogleWallet implements GoogleWalletCompatibilitySpec {
+// GoogleWalletClient - Classe específica para Google Pay
+export class GoogleWalletClient implements GoogleWalletCompatibilitySpec {
   checkWalletAvailability(): Promise<boolean> {
     return GoogleWalletModule.checkWalletAvailability();
   }
@@ -67,13 +64,13 @@ export class GoogleWallet implements GoogleWalletCompatibilitySpec {
     return GoogleWalletModule.createWalletIfNeeded();
   }
 
-  getConstants(): Promise<any> {
+  getConstants(): any {
     return GoogleWalletModule.getConstants();
   }
 }
 
-// SamsungWallet - Classe específica para Samsung Pay
-export class SamsungWallet implements SamsungWalletCompatibilitySpec {
+// SamsungWalletClient - Classe específica para Samsung Pay
+export class SamsungWalletClient implements SamsungWalletCompatibilitySpec {
   checkWalletAvailability(): Promise<boolean> {
     return SamsungWalletModule.checkWalletAvailability();
   }
@@ -101,52 +98,4 @@ export class SamsungWallet implements SamsungWalletCompatibilitySpec {
   getConstants(): Promise<any> {
     return SamsungWalletModule.getConstants();
   }
-}
-
-// ============================================================================
-// API UNIFICADA (MANTIDA PARA COMPATIBILIDADE)
-// ============================================================================
-
-// Novos métodos da API simplificada
-export function checkWalletAvailability(): Promise<boolean> {
-  return BuildersWallet.checkWalletAvailability();
-}
-
-export function getSecureWalletInfo(): Promise<WalletData> {
-  return BuildersWallet.getSecureWalletInfo();
-}
-
-export function getCardStatusBySuffix(lastDigits: string): Promise<CardStatus> {
-  return BuildersWallet.getCardStatusBySuffix(lastDigits);
-}
-
-export function getCardStatusByIdentifier(
-  identifier: string,
-  tsp: number
-): Promise<CardStatus> {
-  return BuildersWallet.getCardStatusByIdentifier(identifier, tsp);
-}
-
-export function addCardToWallet(cardData: AndroidCardData): Promise<string> {
-  return BuildersWallet.addCardToWallet(cardData);
-}
-
-export function createWalletIfNeeded(): Promise<boolean> {
-  return BuildersWallet.createWalletIfNeeded();
-}
-
-export function getAvailableWallets(): Promise<{
-  modules: string[];
-  moduleNames: string[];
-  currentModule: string;
-}> {
-  return BuildersWallet.getAvailableWallets();
-}
-
-export function switchWallet(walletType: string): Promise<string> {
-  return BuildersWallet.switchWallet(walletType);
-}
-
-export function getConstants(): Promise<GetConstantsResponse> {
-  return BuildersWallet.getConstants();
 }

@@ -123,7 +123,7 @@ export interface GoogleWalletSpec {
   getCardStatusByIdentifier(identifier: string, tsp: number): Promise<string>;
   addCardToWallet(cardData: GooglePushTokenizeRequest): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
-  getConstants(): Promise<GoogleWalletConstants>;
+  getConstants(): GoogleWalletConstants;
 }
 
 // Google Wallet - Interface de Compatibilidade (para código existente)
@@ -134,5 +134,5 @@ export interface GoogleWalletCompatibilitySpec {
   getCardStatusByIdentifier(identifier: string, tsp: number): Promise<string>;
   addCardToWallet(cardData: any): Promise<string>; // Aceita qualquer tipo para compatibilidade
   createWalletIfNeeded(): Promise<boolean>;
-  getConstants(): Promise<any>; // Aceita qualquer tipo para compatibilidade
+  getConstants(): any; // Aceita qualquer tipo para compatibilidade
 }
