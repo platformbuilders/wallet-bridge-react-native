@@ -412,17 +412,17 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
       
       Log.i(TAG, "> Constantes do TapAndPay obtidas com sucesso")
     } else {
-      Log.w(TAG, "> SDK não disponível, retornando null para constantes")
+      Log.w(TAG, "> SDK não disponível, retornando valores padrão para constantes")
       
-      // Retorna null quando SDK não está disponível
-      constants["TOKEN_PROVIDER_ELO"] = null
-      constants["CARD_NETWORK_ELO"] = null
-      constants["TOKEN_STATE_UNTOKENIZED"] = null
-      constants["TOKEN_STATE_PENDING"] = null
-      constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = null
-      constants["TOKEN_STATE_SUSPENDED"] = null
-      constants["TOKEN_STATE_ACTIVE"] = null
-      constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = null
+      // Retorna valores padrão quando SDK não está disponível
+      constants["TOKEN_PROVIDER_ELO"] = -1
+      constants["CARD_NETWORK_ELO"] = -1
+      constants["TOKEN_STATE_UNTOKENIZED"] = -1
+      constants["TOKEN_STATE_PENDING"] = -1
+      constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = -1
+      constants["TOKEN_STATE_SUSPENDED"] = -1
+      constants["TOKEN_STATE_ACTIVE"] = -1
+      constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = -1
     }
     
     Log.i(TAG, "> getConstants completed")
