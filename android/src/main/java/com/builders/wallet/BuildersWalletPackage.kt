@@ -12,7 +12,6 @@ import com.facebook.react.uimanager.ViewManager
 class BuildersWalletPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     return listOf(
-      BuildersWalletModule(reactContext),
       GoogleWalletModule(reactContext),
       SamsungWalletModule(reactContext)
     )
