@@ -74,6 +74,47 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation 'com.google.android.gms:play-services-tapandpay:+'
-  implementation files("libs/samsungpay_2.22.00.jar")
+}
+
+// Adiciona Google Play Services Tap and Pay condicionalmente
+// Só adiciona se a propriedade estiver definida como true
+if (project.hasProperty('includeGooglePlayServices') && 
+    project.property('includeGooglePlayServices') == 'true') {
+  dependencies {
+    implementation 'com.google.android.gms:play-services-tapandpay:+'
+  }
+  println "✅ Google Play Services Tap and Pay incluído"
+} else {
+  println "⚠️ Google Play Services Tap and Pay não incluído (defina includeGooglePlayServices=true para incluir)"
+}
+
+// Adiciona Samsung Pay SDK condicionalmente
+// Só adiciona se a propriedade estiver definida como true
+if (project.hasProperty('enableSamsungPay') && 
+    project.property('enableSamsungPay') == 'true') {
+  
+  def samsungPayVersion = project.hasProperty('samsungPayVersion') ? 
+    project.property('samsungPayVersion') : '2.22.00'
+  
+  // Tenta encontrar o JAR na pasta libs do app que está usando esta biblioteca
+  def appLibsPath = "${rootProject.projectDir}/android/app/libs"
+  def samsungPayJar = "samsungpay_${samsungPayVersion}.jar"
+  def jarFile = "${appLibsPath}/${samsungPayJar}"
+  
+  if (new File(jarFile).exists()) {
+    println "✅ Samsung Pay SDK encontrado em: ${jarFile}"
+  } else {
+    println "⚠️ Samsung Pay SDK não encontrado em: ${jarFile}"
+    println "⚠️ Certifique-se de que o arquivo ${samsungPayJar} está na pasta android/app/libs do seu app"
+    jarFile = null
+  }
+  
+  if (jarFile) {
+    dependencies {
+      implementation files(jarFile)
+    }
+    println "✅ Samsung Pay SDK v${samsungPayVersion} incluído de: ${jarFile}"
+  }
+} else {
+  println "⚠️ Samsung Pay SDK não incluído (defina enableSamsungPay=true para incluir)"
 }

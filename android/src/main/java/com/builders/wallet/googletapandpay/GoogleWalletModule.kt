@@ -104,9 +104,15 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   fun checkWalletAvailability(promise: Promise) {
     Log.d(TAG, "🔍 [GOOGLE] checkWalletAvailability chamado")
     try {
+      // Verificar se o SDK está disponível
+      if (!isSDKAvailable) {
+        Log.w(TAG, "❌ [GOOGLE] Google Pay SDK não está disponível")
+        throw Exception("Google Pay SDK não está disponível")
+      }
+      
       // Verificar se é Android e acima do ICE_CREAM_SANDWICH
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-        Log.d(TAG, "✅ [GOOGLE] Android ${Build.VERSION.SDK_INT} suportado")
+        Log.d(TAG, "✅ [GOOGLE] Android ${Build.VERSION.SDK_INT} suportado e SDK disponível")
         promise.resolve(true)
       } else {
         Log.w(TAG, "❌ [GOOGLE] Android ${Build.VERSION.SDK_INT} não suportado")

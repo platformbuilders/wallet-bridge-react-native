@@ -1785,11 +1785,11 @@ __metadata:
 
 "@platformbuilders/wallet-bridge-react-native@file:.yalc/@platformbuilders/wallet-bridge-react-native::locator=%40platformbuilders%2Fwallet-bridge-react-native-example%40workspace%3A.":
   version: 0.1.0
-  resolution: "@platformbuilders/wallet-bridge-react-native@file:.yalc/@platformbuilders/wallet-bridge-react-native#.yalc/@platformbuilders/wallet-bridge-react-native::hash=273951&locator=%40platformbuilders%2Fwallet-bridge-react-native-example%40workspace%3A."
+  resolution: "@platformbuilders/wallet-bridge-react-native@file:.yalc/@platformbuilders/wallet-bridge-react-native#.yalc/@platformbuilders/wallet-bridge-react-native::hash=d243dc&locator=%40platformbuilders%2Fwallet-bridge-react-native-example%40workspace%3A."
   peerDependencies:
     react: "*"
     react-native: "*"
-  checksum: 3ba3374d78f6eb82d22519acb7e861120db53f544710b61ddd470459bdb3003b4fb0d2353cdb17186227e73dd486c2b5745c3a875dde299c3d5f65bc92f340a0
+  checksum: 9e79b721fbdee5bc7c1b37bf8cdd1b64b255f146843f29c57191d2fe04b8581cd86a603e915a1e0bfdfffc742a09ec94259df46fd2f2bed9ee1a35a6eddbfbf9
   languageName: node
   linkType: hard
 
