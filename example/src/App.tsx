@@ -4,6 +4,10 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  TextInput,
+  Image,
+  View,
+  Clipboard,
 } from 'react-native';
 import {
   GoogleWalletClient,
@@ -13,9 +17,15 @@ import type {
   WalletData,
   CardStatus,
 } from '@platformbuilders/wallet-bridge-react-native';
+import { useState } from 'react';
 
 export default function App() {
   const googleWallet = new GoogleWalletClient();
+  
+  // Estado para o OPC (Opaque Payment Card)
+  const [opcValue, setOpcValue] = useState(
+    'M0VGNkZENjRFMEM1MTdEOTgwOEU4N0RGMzRCNkE0M0U4QURBNUEyNjIzQjgyQzEzODZEQkZGN0JEQzM3NzI4NjQ0ODMzRDhBODlFREEwODhDREI2NkMwODM2NkQxRERCN0EzQ0U0RkZFMjJERUZFMEYwM0VCQjlBRkVGNDEzNUQxMjhFODg4NkIzMjBFREZENzk5OUMyODQ4ODRCMzNBMURCNDA0MjQwRDYxMEJDNzRFMjQzMTcwRkNBQzEzRjgzQ0Y4ODI0RTc1QkE4RENGRTY3MjRDQ0U4MEIxM0RCOUMwRjA2MkYzQkIzMjJBNjlE'
+  );
   
   // Verificar se o módulo está disponível
   if (!googleWallet) {
@@ -85,7 +95,7 @@ export default function App() {
     }
   };
 
-  const handleAddCard = async () => {
+  const handleAddCard = async (opc?: string) => {
     try {
       console.log('🔍 [JS] Iniciando processo de adição de cartão...');
 
@@ -96,8 +106,7 @@ export default function App() {
       const cardData: AndroidCardData = {
         network: constants.CARD_NETWORK_ELO.toString(),
         tokenServiceProvider: constants.TOKEN_PROVIDER_ELO,
-        opaquePaymentCard:
-          'MUNEQzlBQUFBODM2MjRFQTg0RTBCNEVEMkU4NjI2MEQ5OEU3NEIyODA5NTJCMjMzMTlEODYyNzkxQzUwRjQ2RTM0NERFMjAxMDUzOUU2ODQxNjAxNzQxNjI4QTk1NEU2MDgwOTA0Mjc0NjBFNkFCN0ZDM0MxMzc3OTUwOEI2RDlBMDc4RDQ5NzJDQ0YyMjk0MDRDNEMzMzRCQzc1NDc0N0E2MzNCNTFEMDM2RjdFMjJCQjQxOEFDMzkwRTNGODVERDQxRjNGM0ZDRjVEQTA4ODBEQzJFMEVBNjc1MjA0MjVEQzJBQ0MyMUREQTExMzRDRjdGNkU0MEJDRUEzNEVDMg==',
+        opaquePaymentCard: opc || opcValue,
         cardHolderName: 'Caleb Pedro Souza',
         lastDigits: '6890',
         userAddress: {
@@ -164,6 +173,27 @@ export default function App() {
     }
   };
 
+  const handleClearOPC = () => {
+    setOpcValue('');
+    console.log('🧹 [JS] OPC limpo');
+  };
+
+  const handlePasteOPC = async () => {
+    try {
+      const clipboardContent = await Clipboard.getString();
+      if (clipboardContent.trim()) {
+        setOpcValue(clipboardContent.trim());
+        console.log('📋 [JS] OPC colado da área de transferência');
+        Alert.alert('Sucesso', 'OPC colado da área de transferência!');
+      } else {
+        Alert.alert('Aviso', 'Área de transferência está vazia');
+      }
+    } catch (err) {
+      console.log('❌ [JS] Erro ao colar OPC:', err);
+      Alert.alert('Erro', 'Erro ao acessar área de transferência');
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Google Wallet - Exemplo</Text>
@@ -184,9 +214,48 @@ export default function App() {
         <Text style={styles.buttonText}>Status do Cartão</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleAddCard}>
-        <Text style={styles.buttonText}>Adicionar Cartão</Text>
-      </TouchableOpacity>
+      {/* Seção para adicionar cartão com OPC personalizado */}
+      <View style={styles.addCardSection}>
+        <Text style={styles.sectionTitle}>Adicionar Cartão à Google Wallet</Text>
+        
+        <Text style={styles.inputLabel}>OPC (Opaque Payment Card):</Text>
+        <TextInput
+          style={styles.opcInput}
+          value={opcValue}
+          onChangeText={setOpcValue}
+          placeholder="Cole aqui o OPC do seu cartão"
+          multiline
+          numberOfLines={3}
+        />
+        
+        {/* Botões de ação para o OPC */}
+        <View style={styles.opcButtonsContainer}>
+          <TouchableOpacity 
+            style={styles.clearButton} 
+            onPress={handleClearOPC}
+          >
+            <Text style={styles.clearButtonText}>🧹 Limpar OPC</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.pasteButton} 
+            onPress={handlePasteOPC}
+          >
+            <Text style={styles.pasteButtonText}>📋 Colar OPC</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.googleWalletButton} 
+          onPress={() => handleAddCard(opcValue)}
+        >
+          <Image 
+            source={require('./assets/br_add_to_google_wallet_add-wallet-badge.png')} 
+            style={styles.googleWalletBadge}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -228,5 +297,90 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 50,
     padding: 20,
+  },
+  addCardSection: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 8,
+  },
+  opcInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#f9f9f9',
+    textAlignVertical: 'top',
+    marginBottom: 16,
+    fontFamily: 'monospace',
+  },
+  googleWalletButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleWalletBadge: {
+    width: 200,
+    height: 60,
+  },
+  opcButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 12,
+  },
+  clearButton: {
+    flex: 1,
+    backgroundColor: '#ff6b6b',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  clearButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pasteButton: {
+    flex: 1,
+    backgroundColor: '#4ecdc4',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  pasteButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
