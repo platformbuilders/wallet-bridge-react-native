@@ -78,14 +78,14 @@ dependencies {
 
 // Adiciona Google Play Services Tap and Pay condicionalmente
 // Só adiciona se a propriedade estiver definida como true
-if (project.hasProperty('includeGooglePlayServices') && 
-    project.property('includeGooglePlayServices') == 'true') {
+if (project.hasProperty('includeGooglePay') && 
+    project.property('includeGooglePay') == 'true') {
   dependencies {
     implementation 'com.google.android.gms:play-services-tapandpay:+'
   }
   println "✅ Google Play Services Tap and Pay incluído"
 } else {
-  println "⚠️ Google Play Services Tap and Pay não incluído (defina includeGooglePlayServices=true para incluir)"
+  println "⚠️ Google Play Services Tap and Pay não incluído (defina includeGooglePay=true para incluir)"
 }
 
 // Adiciona Samsung Pay SDK condicionalmente
@@ -93,27 +93,45 @@ if (project.hasProperty('includeGooglePlayServices') &&
 if (project.hasProperty('enableSamsungPay') && 
     project.property('enableSamsungPay') == 'true') {
   
-  def samsungPayVersion = project.hasProperty('samsungPayVersion') ? 
-    project.property('samsungPayVersion') : '2.22.00'
+  // Tenta encontrar o JAR na pasta libs do projeto
+  def libsPath = "${rootProject.projectDir}/libs"
+  def libsDir = new File(libsPath)
   
-  // Tenta encontrar o JAR na pasta libs do app que está usando esta biblioteca
-  def appLibsPath = "${rootProject.projectDir}/android/app/libs"
-  def samsungPayJar = "samsungpay_${samsungPayVersion}.jar"
-  def jarFile = "${appLibsPath}/${samsungPayJar}"
+  def samsungPayJar = null
+  def samsungPayVersion = "desconhecida"
   
-  if (new File(jarFile).exists()) {
-    println "✅ Samsung Pay SDK encontrado em: ${jarFile}"
+  if (libsDir.exists() && libsDir.isDirectory()) {
+    // Procura por arquivos que comecem com "samsungpay_" e terminem com ".jar"
+    def jarFiles = libsDir.listFiles(new FilenameFilter() {
+      boolean accept(File dir, String name) {
+        return name.startsWith("samsungpay_") && name.endsWith(".jar")
+      }
+    })
+    
+    if (jarFiles && jarFiles.length > 0) {
+      samsungPayJar = jarFiles[0]
+      // Extrai a versão do nome do arquivo
+      def fileName = samsungPayJar.getName()
+      def versionMatch = fileName =~ /samsungpay_(.+)\.jar/
+      if (versionMatch) {
+        samsungPayVersion = versionMatch[0][1]
+      }
+      println "✅ Samsung Pay SDK encontrado: ${samsungPayJar.getName()}"
+      println "✅ Versão detectada: ${samsungPayVersion}"
+    } else {
+      println "⚠️ Nenhum arquivo samsungpay_*.jar encontrado em: ${libsPath}"
+      println "⚠️ Certifique-se de que existe um arquivo que comece com 'samsungpay_' e termine com '.jar'"
+    }
   } else {
-    println "⚠️ Samsung Pay SDK não encontrado em: ${jarFile}"
-    println "⚠️ Certifique-se de que o arquivo ${samsungPayJar} está na pasta android/app/libs do seu app"
-    jarFile = null
+    println "⚠️ Pasta libs não encontrada: ${libsPath}"
+    println "⚠️ Certifique-se de que a pasta android/libs existe no seu projeto"
   }
   
-  if (jarFile) {
+  if (samsungPayJar) {
     dependencies {
-      implementation files(jarFile)
+      implementation files(samsungPayJar)
     }
-    println "✅ Samsung Pay SDK v${samsungPayVersion} incluído de: ${jarFile}"
+    println "✅ Samsung Pay SDK v${samsungPayVersion} incluído de: ${samsungPayJar.getAbsolutePath()}"
   }
 } else {
   println "⚠️ Samsung Pay SDK não incluído (defina enableSamsungPay=true para incluir)"
