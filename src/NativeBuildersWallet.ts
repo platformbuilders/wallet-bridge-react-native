@@ -99,6 +99,7 @@ export interface Spec {
   checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<WalletData>;
   getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<any>;
+  getEnvironment(): Promise<string>;
   addCardToWallet(cardData: AndroidCardData): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<any[]>;

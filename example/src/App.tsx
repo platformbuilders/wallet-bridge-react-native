@@ -104,6 +104,23 @@ export default function App() {
     }
   };
 
+  const handleGetEnvironment = async () => {
+    try {
+      console.log('🔍 [JS] Iniciando obtenção do environment...');
+      const environment = await googleWallet.getEnvironment();
+      console.log('✅ [JS] Environment obtido:', environment);
+      Alert.alert('Environment', `Environment: ${environment}`);
+    } catch (err) {
+      console.log('❌ [JS] Erro ao obter environment:', err);
+      console.log(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      Alert.alert('Erro', `Erro ao obter environment: ${errorMessage}`);
+    }
+  };
+
   const handleAddCard = async (opc?: string) => {
     try {
       console.log('🔍 [JS] Iniciando processo de adição de cartão...');
@@ -250,6 +267,10 @@ export default function App() {
 
       <TouchableOpacity style={styles.button} onPress={handleGetTokenStatus}>
         <Text style={styles.buttonText}>Status do Token</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleGetEnvironment}>
+        <Text style={styles.buttonText}>Obter Environment</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={handleListTokens}>

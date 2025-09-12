@@ -363,6 +363,107 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun getEnvironment(promise: Promise) {
+    Log.i(TAG, "--")
+    Log.i(TAG, "> getEnvironment started")
+    try {
+      if (!isSDKAvailable) {
+        Log.w(TAG, "Google Pay SDK não está disponível")
+        promise.reject("SDK_NOT_AVAILABLE", "Google Pay SDK não está disponível")
+        return
+      }
+      
+      if (tapAndPayClient == null) {
+        Log.w(TAG, "Cliente TapAndPay não foi inicializado")
+        promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+        return
+      }
+      
+      try {
+        // Obter environment usando reflexão - environment é um método, não um campo
+        val environmentMethod = tapAndPayClient?.javaClass?.getMethod("getEnvironment")
+        val environmentTask = environmentMethod?.invoke(tapAndPayClient) as? Any
+        
+        if (environmentTask != null) {
+          Log.d(TAG, "🔍 [GOOGLE] Environment task obtida, configurando listener...")
+          
+          // Criar OnCompleteListener usando reflexão
+          val onCompleteListenerClass = Class.forName("com.google.android.gms.tasks.OnCompleteListener")
+          val onCompleteListener = java.lang.reflect.Proxy.newProxyInstance(
+            onCompleteListenerClass.classLoader,
+            arrayOf(onCompleteListenerClass)
+          ) { _, method, args ->
+            if (method.name == "onComplete") {
+              try {
+                val completedTask = args?.get(0) as? Any
+                if (completedTask != null) {
+                  Log.d(TAG, "🔍 [GOOGLE] Callback executado, processando resultado...")
+                  
+                  val isSuccessfulMethod = completedTask.javaClass.getMethod("isSuccessful")
+                  val isSuccessful = isSuccessfulMethod.invoke(completedTask) as Boolean
+                  
+                  Log.d(TAG, "🔍 [GOOGLE] Task bem-sucedida: $isSuccessful")
+                  
+                  if (isSuccessful) {
+                    val getResultMethod = completedTask.javaClass.getMethod("getResult")
+                    val environment = getResultMethod.invoke(completedTask) as? String
+                    
+                    if (environment != null) {
+                      Log.i(TAG, "- getEnvironment = $environment")
+                      promise.resolve(environment)
+                    } else {
+                      Log.w(TAG, "❌ [GOOGLE] Environment é null")
+                      promise.reject("GET_ENVIRONMENT_ERROR", "Environment é null")
+                    }
+                  } else {
+                    // Tentar obter o código de erro da task
+                    var errorMessage = "Falha ao obter environment - task não foi bem-sucedida"
+                    try {
+                      val getExceptionMethod = completedTask.javaClass.getMethod("getException")
+                      val exception = getExceptionMethod.invoke(completedTask) as? Exception
+                      if (exception != null) {
+                        errorMessage = "Falha ao obter environment - Erro: ${exception.message}"
+                        Log.w(TAG, "❌ [GOOGLE] Exception da task: ${exception.message}")
+                      }
+                    } catch (e: Exception) {
+                      Log.w(TAG, "❌ [GOOGLE] Não foi possível obter exception da task: ${e.message}")
+                    }
+                    
+                    Log.w(TAG, "❌ [GOOGLE] $errorMessage")
+                    promise.reject("GET_ENVIRONMENT_ERROR", errorMessage)
+                  }
+                } else {
+                  Log.w(TAG, "❌ [GOOGLE] CompletedTask é null")
+                  promise.reject("GET_ENVIRONMENT_ERROR", "CompletedTask é null")
+                }
+              } catch (e: Exception) {
+                Log.e(TAG, "❌ [GOOGLE] Erro ao processar resultado do environment: ${e.message}", e)
+                promise.reject("GET_ENVIRONMENT_ERROR", "Erro ao processar resultado do environment: ${e.message}")
+              }
+            }
+            null
+          }
+          
+          val addOnCompleteListenerMethod = environmentTask.javaClass.getMethod("addOnCompleteListener", onCompleteListenerClass)
+          addOnCompleteListenerMethod.invoke(environmentTask, onCompleteListener)
+          
+          Log.d(TAG, "✅ [GOOGLE] Listener configurado com sucesso")
+        } else {
+          Log.w(TAG, "❌ [GOOGLE] Não foi possível obter environment task")
+          promise.reject("GET_ENVIRONMENT_ERROR", "Não foi possível obter environment task")
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "❌ [GOOGLE] Erro ao obter environment: ${e.message}", e)
+        promise.reject("GET_ENVIRONMENT_ERROR", "Erro ao obter environment: ${e.message}")
+      }
+      
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ [GOOGLE] Erro em getEnvironment: ${e.message}", e)
+      promise.reject("GET_ENVIRONMENT_ERROR", e.message, e)
+    }
+  }
+
+  @ReactMethod
   fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
     Log.d(TAG, "🔍 [GOOGLE] addCardToWallet chamado")
     try {

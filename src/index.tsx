@@ -52,6 +52,10 @@ export class GoogleWalletClient implements GoogleWalletCompatibilitySpec {
     return GoogleWalletModule.getTokenStatus(tokenServiceProvider, tokenReferenceId);
   }
 
+  getEnvironment(): Promise<string> {
+    return GoogleWalletModule.getEnvironment();
+  }
+
   addCardToWallet(cardData: any): Promise<string> {
     return GoogleWalletModule.addCardToWallet(cardData);
   }
@@ -81,6 +85,10 @@ export class SamsungWalletClient implements SamsungWalletCompatibilitySpec {
 
   getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<any> {
     return SamsungWalletModule.getTokenStatus(tokenServiceProvider, tokenReferenceId);
+  }
+
+  getEnvironment(): Promise<string> {
+    return SamsungWalletModule.getEnvironment();
   }
 
   addCardToWallet(cardData: any): Promise<string> {
