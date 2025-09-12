@@ -55,6 +55,15 @@ export interface SamsungCardData {
   isSamsungPayCard: boolean;
 }
 
+// Samsung Pay - TokenInfo simplificado para listTokens
+export interface SamsungTokenInfoSimple {
+  cardId: string;
+  cardLast4Fpan: string;
+  cardIssuer: string;
+  cardStatus: string;
+  cardBrand: string;
+}
+
 // Samsung Pay - UserInfo (baseado no SDK do Samsung Pay)
 export interface SamsungUserInfo {
   userId: string;
@@ -87,14 +96,20 @@ export interface SamsungWalletConstants {
   MODULE_NAME: string;
 }
 
+// Samsung Pay - TokenStatus
+export interface SamsungTokenStatus {
+  tokenState: number;
+  isSelected: boolean;
+}
+
 // Samsung Pay - Interface do Módulo
 export interface SamsungWalletSpec {
   checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<SamsungWalletData>;
-  getCardStatusBySuffix(lastDigits: string): Promise<string>;
-  getCardStatusByIdentifier(identifier: string, tsp: number): Promise<string>;
+  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<SamsungTokenStatus>;
   addCardToWallet(cardData: SamsungCardData): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
+  listTokens(): Promise<SamsungTokenInfoSimple[]>;
   getConstants(): Promise<SamsungWalletConstants>;
 }
 
@@ -102,9 +117,9 @@ export interface SamsungWalletSpec {
 export interface SamsungWalletCompatibilitySpec {
   checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<any>; // Aceita qualquer tipo para compatibilidade
-  getCardStatusBySuffix(lastDigits: string): Promise<string>;
-  getCardStatusByIdentifier(identifier: string, tsp: number): Promise<string>;
+  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<SamsungTokenStatus>;
   addCardToWallet(cardData: any): Promise<string>; // Aceita qualquer tipo para compatibilidade
   createWalletIfNeeded(): Promise<boolean>;
+  listTokens(): Promise<SamsungTokenInfoSimple[]>;
   getConstants(): Promise<any>; // Aceita qualquer tipo para compatibilidade
 }

@@ -98,13 +98,10 @@ export interface Spec {
   // Métodos da nova API simplificada
   checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<WalletData>;
-  getCardStatusBySuffix(lastDigits: string): Promise<CardStatus>;
-  getCardStatusByIdentifier(
-    identifier: string,
-    tsp: number
-  ): Promise<CardStatus>;
+  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<any>;
   addCardToWallet(cardData: AndroidCardData): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
+  listTokens(): Promise<any[]>;
 
   // Métodos de gerenciamento de módulos
   getAvailableWallets(): Promise<{

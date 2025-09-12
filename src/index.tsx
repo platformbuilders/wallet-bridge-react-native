@@ -48,12 +48,8 @@ export class GoogleWalletClient implements GoogleWalletCompatibilitySpec {
     return GoogleWalletModule.getSecureWalletInfo();
   }
 
-  getCardStatusBySuffix(lastDigits: string): Promise<any> {
-    return GoogleWalletModule.getCardStatusBySuffix(lastDigits);
-  }
-
-  getCardStatusByIdentifier(identifier: string, tsp: number): Promise<any> {
-    return GoogleWalletModule.getCardStatusByIdentifier(identifier, tsp);
+  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<any> {
+    return GoogleWalletModule.getTokenStatus(tokenServiceProvider, tokenReferenceId);
   }
 
   addCardToWallet(cardData: any): Promise<string> {
@@ -62,6 +58,10 @@ export class GoogleWalletClient implements GoogleWalletCompatibilitySpec {
 
   createWalletIfNeeded(): Promise<boolean> {
     return GoogleWalletModule.createWalletIfNeeded();
+  }
+
+  listTokens(): Promise<any[]> {
+    return GoogleWalletModule.listTokens();
   }
 
   getConstants(): any {
@@ -79,12 +79,8 @@ export class SamsungWalletClient implements SamsungWalletCompatibilitySpec {
     return SamsungWalletModule.getSecureWalletInfo();
   }
 
-  getCardStatusBySuffix(lastDigits: string): Promise<any> {
-    return SamsungWalletModule.getCardStatusBySuffix(lastDigits);
-  }
-
-  getCardStatusByIdentifier(identifier: string, tsp: number): Promise<any> {
-    return SamsungWalletModule.getCardStatusByIdentifier(identifier, tsp);
+  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<any> {
+    return SamsungWalletModule.getTokenStatus(tokenServiceProvider, tokenReferenceId);
   }
 
   addCardToWallet(cardData: any): Promise<string> {
@@ -93,6 +89,10 @@ export class SamsungWalletClient implements SamsungWalletCompatibilitySpec {
 
   createWalletIfNeeded(): Promise<boolean> {
     return SamsungWalletModule.createWalletIfNeeded();
+  }
+
+  listTokens(): Promise<any[]> {
+    return SamsungWalletModule.listTokens();
   }
 
   getConstants(): Promise<any> {

@@ -15,7 +15,6 @@ import {
 import type {
   AndroidCardData,
   WalletData,
-  CardStatus,
 } from '@platformbuilders/wallet-bridge-react-native';
 import { useState } from 'react';
 
@@ -78,20 +77,30 @@ export default function App() {
     }
   };
 
-  const handleGetCardStatus = async () => {
+  const handleGetTokenStatus = async () => {
     try {
-      console.log('🔍 [JS] Iniciando verificação de status do cartão...');
-      const status: CardStatus = await googleWallet.getCardStatusBySuffix('6890');
-      console.log('✅ [JS] Status do cartão obtido:', status);
-      Alert.alert('Status do Cartão', `Status: ${status}`);
+      console.log('🔍 [JS] Iniciando verificação de status do token...');
+      
+      // Obter constantes para usar o tokenServiceProvider
+      const constants = googleWallet.getConstants();
+      const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
+      const tokenReferenceId = 'test-token-id'; // ID de exemplo
+      
+      const tokenStatus = await googleWallet.getTokenStatus(tokenServiceProvider, tokenReferenceId);
+      console.log('✅ [JS] Status do token obtido:', tokenStatus);
+      
+      Alert.alert(
+        'Status do Token', 
+        `Estado: ${tokenStatus.tokenState}\nSelecionado: ${tokenStatus.isSelected ? 'Sim' : 'Não'}`
+      );
     } catch (err) {
-      console.log('❌ [JS] Erro ao obter status do cartão:', err);
+      console.log('❌ [JS] Erro ao obter status do token:', err);
       console.log(
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
       const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Erro', `Erro ao obter status: ${errorMessage}`);
+      Alert.alert('Erro', `Erro ao obter status do token: ${errorMessage}`);
     }
   };
 
@@ -173,6 +182,35 @@ export default function App() {
     }
   };
 
+  const handleListTokens = async () => {
+    try {
+      console.log('🔍 [JS] Iniciando listagem de tokens...');
+      const tokens = await googleWallet.listTokens();
+      console.log('✅ [JS] Tokens obtidos:', tokens);
+      
+      if (tokens && tokens.length > 0) {
+        const tokenInfo = tokens.map((token, index) => 
+          `${index + 1}. ID: ${token.issuerTokenId}\n   Últimos dígitos: ${token.lastDigits}\n   Nome: ${token.displayName}\n   Estado: ${token.tokenState}\n   Rede: ${token.network}`
+        ).join('\n\n');
+        
+        Alert.alert(
+          'Tokens na Carteira', 
+          `Encontrados ${tokens.length} token(s):\n\n${tokenInfo}`
+        );
+      } else {
+        Alert.alert('Tokens na Carteira', 'Nenhum token encontrado na carteira.');
+      }
+    } catch (err) {
+      console.log('❌ [JS] Erro ao listar tokens:', err);
+      console.log(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      Alert.alert('Erro', `Erro ao listar tokens: ${errorMessage}`);
+    }
+  };
+
   const handleClearOPC = () => {
     setOpcValue('');
     console.log('🧹 [JS] OPC limpo');
@@ -210,8 +248,12 @@ export default function App() {
         <Text style={styles.buttonText}>Obter Informações da Wallet</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleGetCardStatus}>
-        <Text style={styles.buttonText}>Status do Cartão</Text>
+      <TouchableOpacity style={styles.button} onPress={handleGetTokenStatus}>
+        <Text style={styles.buttonText}>Status do Token</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleListTokens}>
+        <Text style={styles.buttonText}>Listar Tokens</Text>
       </TouchableOpacity>
 
       {/* Seção para adicionar cartão com OPC personalizado */}

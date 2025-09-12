@@ -97,6 +97,15 @@ export interface GoogleTokenInfo {
   portfolioName: string;
 }
 
+// Google Wallet - TokenInfo simplificado para listTokens
+export interface GoogleTokenInfoSimple {
+  issuerTokenId: string;
+  lastDigits: string;
+  displayName: string;
+  tokenState: number;
+  network: number;
+}
+
 // Google Wallet - WalletData
 export interface GoogleWalletData {
   deviceID: string;
@@ -115,14 +124,20 @@ export interface GoogleWalletConstants {
   TOKEN_STATE_UNTOKENIZED: number;
 }
 
+// Google Wallet - TokenStatus
+export interface GoogleTokenStatus {
+  tokenState: number;
+  isSelected: boolean;
+}
+
 // Google Wallet - Interface do Módulo
 export interface GoogleWalletSpec {
   checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<GoogleWalletData>;
-  getCardStatusBySuffix(lastDigits: string): Promise<string>;
-  getCardStatusByIdentifier(identifier: string, tsp: number): Promise<string>;
+  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<GoogleTokenStatus>;
   addCardToWallet(cardData: GooglePushTokenizeRequest): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
+  listTokens(): Promise<GoogleTokenInfoSimple[]>;
   getConstants(): GoogleWalletConstants;
 }
 
@@ -130,9 +145,9 @@ export interface GoogleWalletSpec {
 export interface GoogleWalletCompatibilitySpec {
   checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<GoogleWalletData>;
-  getCardStatusBySuffix(lastDigits: string): Promise<string>;
-  getCardStatusByIdentifier(identifier: string, tsp: number): Promise<string>;
+  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<GoogleTokenStatus>;
   addCardToWallet(cardData: any): Promise<string>; // Aceita qualquer tipo para compatibilidade
   createWalletIfNeeded(): Promise<boolean>;
+  listTokens(): Promise<GoogleTokenInfoSimple[]>;
   getConstants(): any; // Aceita qualquer tipo para compatibilidade
 }
