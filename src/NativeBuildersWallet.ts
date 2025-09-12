@@ -101,6 +101,7 @@ export interface Spec {
   getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<any>;
   getEnvironment(): Promise<string>;
   isTokenized(fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number): Promise<boolean>;
+  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean>;
   addCardToWallet(cardData: AndroidCardData): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<any[]>;

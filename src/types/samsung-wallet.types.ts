@@ -109,6 +109,7 @@ export interface SamsungWalletSpec {
   getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<SamsungTokenStatus>;
   getEnvironment(): Promise<string>;
   isTokenized(fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number): Promise<boolean>;
+  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean>;
   addCardToWallet(cardData: SamsungCardData): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<SamsungTokenInfoSimple[]>;
@@ -122,6 +123,7 @@ export interface SamsungWalletCompatibilitySpec {
   getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<SamsungTokenStatus>;
   getEnvironment(): Promise<string>;
   isTokenized(fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number): Promise<boolean>;
+  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean>;
   addCardToWallet(cardData: any): Promise<string>; // Aceita qualquer tipo para compatibilidade
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<SamsungTokenInfoSimple[]>;

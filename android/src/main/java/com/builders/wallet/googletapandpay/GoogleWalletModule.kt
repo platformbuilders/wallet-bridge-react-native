@@ -588,6 +588,142 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun viewToken(
+    tokenServiceProvider: Int,
+    issuerTokenId: String,
+    promise: Promise
+  ) {
+    Log.i(TAG, "--")
+    Log.i(TAG, "> viewToken started")
+    try {
+      if (!isSDKAvailable) {
+        Log.w(TAG, "Google Pay SDK não está disponível")
+        promise.reject("SDK_NOT_AVAILABLE", "Google Pay SDK não está disponível")
+        return
+      }
+      
+      if (tapAndPayClient == null) {
+        Log.w(TAG, "Cliente TapAndPay não foi inicializado")
+        promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+        return
+      }
+      
+      // Obter atividade atual
+      activity = reactApplicationContext.currentActivity
+      if (activity == null) {
+        promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
+        return
+      }
+      
+      try {
+        // Criar ViewTokenRequest usando reflexão
+        val viewTokenRequestClass = Class.forName("com.google.android.gms.tapandpay.issuer.ViewTokenRequest")
+        val builderClass = Class.forName("com.google.android.gms.tapandpay.issuer.ViewTokenRequest\$Builder")
+        val builder = builderClass.newInstance()
+        
+        // Configurar parâmetros do builder
+        builderClass.getMethod("setTokenServiceProvider", Int::class.java)
+          .invoke(builder, tokenServiceProvider)
+        builderClass.getMethod("setIssuerTokenId", String::class.java)
+          .invoke(builder, issuerTokenId)
+        
+        val request = builderClass.getMethod("build").invoke(builder)
+        
+        // Chamar viewToken usando reflexão
+        val viewTokenMethod = tapAndPayClient?.javaClass?.getMethod("viewToken", viewTokenRequestClass)
+        val task = viewTokenMethod?.invoke(tapAndPayClient, request) as? Any
+        
+        if (task != null) {
+          Log.d(TAG, "🔍 [GOOGLE] Task obtida, configurando listener...")
+          
+          // Criar OnCompleteListener usando reflexão
+          val onCompleteListenerClass = Class.forName("com.google.android.gms.tasks.OnCompleteListener")
+          val onCompleteListener = java.lang.reflect.Proxy.newProxyInstance(
+            onCompleteListenerClass.classLoader,
+            arrayOf(onCompleteListenerClass)
+          ) { _, method, args ->
+            if (method.name == "onComplete") {
+              try {
+                val completedTask = args?.get(0) as? Any
+                if (completedTask != null) {
+                  Log.d(TAG, "🔍 [GOOGLE] Callback executado, processando resultado...")
+                  
+                  val isSuccessfulMethod = completedTask.javaClass.getMethod("isSuccessful")
+                  val isSuccessful = isSuccessfulMethod.invoke(completedTask) as Boolean
+                  
+                  Log.d(TAG, "🔍 [GOOGLE] Task bem-sucedida: $isSuccessful")
+                  
+                  if (isSuccessful) {
+                    val getResultMethod = completedTask.javaClass.getMethod("getResult")
+                    val pendingIntent = getResultMethod.invoke(completedTask)
+                    
+                    if (pendingIntent != null) {
+                      Log.i(TAG, "- viewToken will send intent")
+                      
+                      try {
+                        // Enviar o PendingIntent
+                        val sendMethod = pendingIntent.javaClass.getMethod("send")
+                        sendMethod.invoke(pendingIntent)
+                        
+                        Log.d(TAG, "✅ [GOOGLE] PendingIntent enviado com sucesso")
+                        promise.resolve(true)
+                      } catch (e: Exception) {
+                        Log.w(TAG, "❌ [GOOGLE] Erro ao enviar PendingIntent: ${e.message}")
+                        promise.reject("VIEW_TOKEN_ERROR", "Erro ao enviar PendingIntent: ${e.message}")
+                      }
+                    } else {
+                      Log.w(TAG, "❌ [GOOGLE] PendingIntent é null")
+                      promise.reject("VIEW_TOKEN_ERROR", "PendingIntent é null")
+                    }
+                  } else {
+                    // Tentar obter o código de erro da task
+                    var errorMessage = "Falha ao visualizar token - task não foi bem-sucedida"
+                    try {
+                      val getExceptionMethod = completedTask.javaClass.getMethod("getException")
+                      val exception = getExceptionMethod.invoke(completedTask) as? Exception
+                      if (exception != null) {
+                        errorMessage = "Falha ao visualizar token - Erro: ${exception.message}"
+                        Log.w(TAG, "❌ [GOOGLE] Exception da task: ${exception.message}")
+                      }
+                    } catch (e: Exception) {
+                      Log.w(TAG, "❌ [GOOGLE] Não foi possível obter exception da task: ${e.message}")
+                    }
+                    
+                    Log.w(TAG, "❌ [GOOGLE] $errorMessage")
+                    promise.reject("VIEW_TOKEN_ERROR", errorMessage)
+                  }
+                } else {
+                  Log.w(TAG, "❌ [GOOGLE] CompletedTask é null")
+                  promise.reject("VIEW_TOKEN_ERROR", "CompletedTask é null")
+                }
+              } catch (e: Exception) {
+                Log.e(TAG, "❌ [GOOGLE] Erro ao processar resultado do viewToken: ${e.message}", e)
+                promise.reject("VIEW_TOKEN_ERROR", "Erro ao processar resultado do viewToken: ${e.message}")
+              }
+            }
+            null
+          }
+          
+          val addOnCompleteListenerMethod = task.javaClass.getMethod("addOnCompleteListener", onCompleteListenerClass)
+          addOnCompleteListenerMethod.invoke(task, onCompleteListener)
+          
+          Log.d(TAG, "✅ [GOOGLE] Listener configurado com sucesso")
+        } else {
+          Log.w(TAG, "❌ [GOOGLE] Não foi possível obter task do viewToken")
+          promise.reject("VIEW_TOKEN_ERROR", "Não foi possível obter task do viewToken")
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "❌ [GOOGLE] Erro ao visualizar token: ${e.message}", e)
+        promise.reject("VIEW_TOKEN_ERROR", "Erro ao visualizar token: ${e.message}")
+      }
+      
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ [GOOGLE] Erro em viewToken: ${e.message}", e)
+      promise.reject("VIEW_TOKEN_ERROR", e.message, e)
+    }
+  }
+
+  @ReactMethod
   fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
     Log.d(TAG, "🔍 [GOOGLE] addCardToWallet chamado")
     try {

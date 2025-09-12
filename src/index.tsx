@@ -60,6 +60,10 @@ export class GoogleWalletClient implements GoogleWalletCompatibilitySpec {
     return GoogleWalletModule.isTokenized(fpanLastFour, cardNetwork, tokenServiceProvider);
   }
 
+  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean> {
+    return GoogleWalletModule.viewToken(tokenServiceProvider, issuerTokenId);
+  }
+
   addCardToWallet(cardData: any): Promise<string> {
     return GoogleWalletModule.addCardToWallet(cardData);
   }
@@ -97,6 +101,10 @@ export class SamsungWalletClient implements SamsungWalletCompatibilitySpec {
 
   isTokenized(fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number): Promise<boolean> {
     return SamsungWalletModule.isTokenized(fpanLastFour, cardNetwork, tokenServiceProvider);
+  }
+
+  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean> {
+    return SamsungWalletModule.viewToken(tokenServiceProvider, issuerTokenId);
   }
 
   addCardToWallet(cardData: any): Promise<string> {

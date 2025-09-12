@@ -137,6 +137,7 @@ export interface GoogleWalletSpec {
   getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<GoogleTokenStatus>;
   getEnvironment(): Promise<string>;
   isTokenized(fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number): Promise<boolean>;
+  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean>;
   addCardToWallet(cardData: GooglePushTokenizeRequest): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<GoogleTokenInfoSimple[]>;
@@ -150,6 +151,7 @@ export interface GoogleWalletCompatibilitySpec {
   getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<GoogleTokenStatus>;
   getEnvironment(): Promise<string>;
   isTokenized(fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number): Promise<boolean>;
+  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean>;
   addCardToWallet(cardData: any): Promise<string>; // Aceita qualquer tipo para compatibilidade
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<GoogleTokenInfoSimple[]>;

@@ -151,6 +151,34 @@ export default function App() {
     }
   };
 
+  const handleViewToken = async () => {
+    try {
+      console.log('🔍 [JS] Iniciando visualização de token...');
+      
+      // Obter constantes para usar os valores corretos
+      const constants = googleWallet.getConstants();
+      const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
+      const issuerTokenId = 'test-token-id'; // ID de exemplo
+      
+      const success = await googleWallet.viewToken(tokenServiceProvider, issuerTokenId);
+      console.log('✅ [JS] Resultado viewToken:', success);
+      
+      if (success) {
+        Alert.alert('Sucesso', 'Google Pay foi aberto para visualizar o token!');
+      } else {
+        Alert.alert('Aviso', 'Não foi possível abrir o Google Pay');
+      }
+    } catch (err) {
+      console.log('❌ [JS] Erro ao visualizar token:', err);
+      console.log(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      Alert.alert('Erro', `Erro ao visualizar token: ${errorMessage}`);
+    }
+  };
+
   const handleAddCard = async (opc?: string) => {
     try {
       console.log('🔍 [JS] Iniciando processo de adição de cartão...');
@@ -349,6 +377,10 @@ export default function App() {
 
       <TouchableOpacity style={styles.button} onPress={handleIsTokenized}>
         <Text style={styles.buttonText}>Verificar Tokenização</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleViewToken}>
+        <Text style={styles.buttonText}>Visualizar Token</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={handleListTokens}>
