@@ -2,7 +2,7 @@
   "version": "v1",
   "packages": {
     "@platformbuilders/wallet-bridge-react-native": {
-      "signature": "2ba77a0d3942d3423300cc5fb706259e",
+      "signature": "a26715ed4885377ffdfc9bfd42d83a76",
       "file": true
     }
   }

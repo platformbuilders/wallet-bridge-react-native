@@ -18,6 +18,8 @@ import type {
 } from '@platformbuilders/wallet-bridge-react-native';
 import { useState } from 'react';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 export default function App() {
   const googleWallet = new GoogleWalletClient();
   
@@ -118,6 +120,34 @@ export default function App() {
       );
       const errorMessage = err instanceof Error ? err.message : String(err);
       Alert.alert('Erro', `Erro ao obter environment: ${errorMessage}`);
+    }
+  };
+
+  const handleIsTokenized = async () => {
+    try {
+      console.log('🔍 [JS] Iniciando verificação se está tokenizado...');
+      
+      // Obter constantes para usar os valores corretos
+      const constants = googleWallet.getConstants();
+      const cardNetwork = constants.CARD_NETWORK_ELO;
+      const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
+      const fpanLastFour = '6890'; // Últimos 4 dígitos de exemplo
+      
+      const isTokenized = await googleWallet.isTokenized(fpanLastFour, cardNetwork, tokenServiceProvider);
+      console.log('✅ [JS] Resultado isTokenized:', isTokenized);
+      
+      Alert.alert(
+        'Verificação de Tokenização', 
+        `Cartão terminado em ${fpanLastFour} está tokenizado: ${isTokenized ? 'Sim' : 'Não'}`
+      );
+    } catch (err) {
+      console.log('❌ [JS] Erro ao verificar se está tokenizado:', err);
+      console.log(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      Alert.alert('Erro', `Erro ao verificar tokenização: ${errorMessage}`);
     }
   };
 
@@ -250,7 +280,8 @@ export default function App() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+    <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 40}}>
       <Text style={styles.title}>Google Wallet - Exemplo</Text>
 
       {/* Seção para adicionar cartão com OPC personalizado */}
@@ -316,16 +347,25 @@ export default function App() {
         <Text style={styles.buttonText}>Obter Environment</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.button} onPress={handleIsTokenized}>
+        <Text style={styles.buttonText}>Verificar Tokenização</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.button} onPress={handleListTokens}>
         <Text style={styles.buttonText}>Listar Tokens</Text>
       </TouchableOpacity>
 
       
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   container: {
     flex: 1,
     padding: 20,

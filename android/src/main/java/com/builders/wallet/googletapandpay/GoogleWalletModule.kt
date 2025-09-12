@@ -464,6 +464,130 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun isTokenized(
+    fpanLastFour: String,
+    cardNetwork: Int,
+    tokenServiceProvider: Int,
+    promise: Promise
+  ) {
+    Log.i(TAG, "--")
+    Log.i(TAG, "> isTokenized started")
+    try {
+      if (!isSDKAvailable) {
+        Log.w(TAG, "Google Pay SDK não está disponível")
+        promise.reject("SDK_NOT_AVAILABLE", "Google Pay SDK não está disponível")
+        return
+      }
+      
+      if (tapAndPayClient == null) {
+        Log.w(TAG, "Cliente TapAndPay não foi inicializado")
+        promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+        return
+      }
+      
+      try {
+        // Criar IsTokenizedRequest usando reflexão
+        val isTokenizedRequestClass = Class.forName("com.google.android.gms.tapandpay.issuer.IsTokenizedRequest")
+        val builderClass = Class.forName("com.google.android.gms.tapandpay.issuer.IsTokenizedRequest\$Builder")
+        val builder = builderClass.newInstance()
+        
+        // Configurar parâmetros do builder
+        builderClass.getMethod("setIdentifier", String::class.java)
+          .invoke(builder, fpanLastFour)
+        builderClass.getMethod("setNetwork", Int::class.java)
+          .invoke(builder, cardNetwork)
+        builderClass.getMethod("setTokenServiceProvider", Int::class.java)
+          .invoke(builder, tokenServiceProvider)
+        
+        val request = builderClass.getMethod("build").invoke(builder)
+        
+        // Chamar isTokenized usando reflexão
+        val isTokenizedMethod = tapAndPayClient?.javaClass?.getMethod("isTokenized", isTokenizedRequestClass)
+        val task = isTokenizedMethod?.invoke(tapAndPayClient, request) as? Any
+        
+        if (task != null) {
+          Log.d(TAG, "🔍 [GOOGLE] Task obtida, configurando listener...")
+          
+          // Criar OnCompleteListener usando reflexão
+          val onCompleteListenerClass = Class.forName("com.google.android.gms.tasks.OnCompleteListener")
+          val onCompleteListener = java.lang.reflect.Proxy.newProxyInstance(
+            onCompleteListenerClass.classLoader,
+            arrayOf(onCompleteListenerClass)
+          ) { _, method, args ->
+            if (method.name == "onComplete") {
+              try {
+                val completedTask = args?.get(0) as? Any
+                if (completedTask != null) {
+                  Log.d(TAG, "🔍 [GOOGLE] Callback executado, processando resultado...")
+                  
+                  val isSuccessfulMethod = completedTask.javaClass.getMethod("isSuccessful")
+                  val isSuccessful = isSuccessfulMethod.invoke(completedTask) as Boolean
+                  
+                  Log.d(TAG, "🔍 [GOOGLE] Task bem-sucedida: $isSuccessful")
+                  
+                  if (isSuccessful) {
+                    val getResultMethod = completedTask.javaClass.getMethod("getResult")
+                    val isTokenized = getResultMethod.invoke(completedTask) as? Boolean
+                    
+                    if (isTokenized != null) {
+                      if (isTokenized) {
+                        Log.d(TAG, "Found a token with last four digits $fpanLastFour.")
+                      }
+                      Log.i(TAG, "- isTokenized = $isTokenized")
+                      promise.resolve(isTokenized)
+                    } else {
+                      Log.w(TAG, "❌ [GOOGLE] Resultado isTokenized é null")
+                      promise.reject("IS_TOKENIZED_ERROR", "Resultado isTokenized é null")
+                    }
+                  } else {
+                    // Tentar obter o código de erro da task
+                    var errorMessage = "Falha ao verificar se está tokenizado - task não foi bem-sucedida"
+                    try {
+                      val getExceptionMethod = completedTask.javaClass.getMethod("getException")
+                      val exception = getExceptionMethod.invoke(completedTask) as? Exception
+                      if (exception != null) {
+                        errorMessage = "Falha ao verificar se está tokenizado - Erro: ${exception.message}"
+                        Log.w(TAG, "❌ [GOOGLE] Exception da task: ${exception.message}")
+                      }
+                    } catch (e: Exception) {
+                      Log.w(TAG, "❌ [GOOGLE] Não foi possível obter exception da task: ${e.message}")
+                    }
+                    
+                    Log.w(TAG, "❌ [GOOGLE] $errorMessage")
+                    promise.reject("IS_TOKENIZED_ERROR", errorMessage)
+                  }
+                } else {
+                  Log.w(TAG, "❌ [GOOGLE] CompletedTask é null")
+                  promise.reject("IS_TOKENIZED_ERROR", "CompletedTask é null")
+                }
+              } catch (e: Exception) {
+                Log.e(TAG, "❌ [GOOGLE] Erro ao processar resultado do isTokenized: ${e.message}", e)
+                promise.reject("IS_TOKENIZED_ERROR", "Erro ao processar resultado do isTokenized: ${e.message}")
+              }
+            }
+            null
+          }
+          
+          val addOnCompleteListenerMethod = task.javaClass.getMethod("addOnCompleteListener", onCompleteListenerClass)
+          addOnCompleteListenerMethod.invoke(task, onCompleteListener)
+          
+          Log.d(TAG, "✅ [GOOGLE] Listener configurado com sucesso")
+        } else {
+          Log.w(TAG, "❌ [GOOGLE] Não foi possível obter task do isTokenized")
+          promise.reject("IS_TOKENIZED_ERROR", "Não foi possível obter task do isTokenized")
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "❌ [GOOGLE] Erro ao verificar se está tokenizado: ${e.message}", e)
+        promise.reject("IS_TOKENIZED_ERROR", "Erro ao verificar se está tokenizado: ${e.message}")
+      }
+      
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ [GOOGLE] Erro em isTokenized: ${e.message}", e)
+      promise.reject("IS_TOKENIZED_ERROR", e.message, e)
+    }
+  }
+
+  @ReactMethod
   fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
     Log.d(TAG, "🔍 [GOOGLE] addCardToWallet chamado")
     try {
