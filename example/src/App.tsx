@@ -253,30 +253,6 @@ export default function App() {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Google Wallet - Exemplo</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleCheckAvailability}>
-        <Text style={styles.buttonText}>Verificar Disponibilidade</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
-        <Text style={styles.buttonText}>Criar Google Wallet</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
-        <Text style={styles.buttonText}>Obter Informações da Wallet</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleGetTokenStatus}>
-        <Text style={styles.buttonText}>Status do Token</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleGetEnvironment}>
-        <Text style={styles.buttonText}>Obter Environment</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleListTokens}>
-        <Text style={styles.buttonText}>Listar Tokens</Text>
-      </TouchableOpacity>
-
       {/* Seção para adicionar cartão com OPC personalizado */}
       <View style={styles.addCardSection}>
         <Text style={styles.sectionTitle}>Adicionar Cartão à Google Wallet</Text>
@@ -319,6 +295,32 @@ export default function App() {
           />
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity style={styles.button} onPress={handleCheckAvailability}>
+        <Text style={styles.buttonText}>Verificar Disponibilidade</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
+        <Text style={styles.buttonText}>Criar Google Wallet</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
+        <Text style={styles.buttonText}>Obter Informações da Wallet</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleGetTokenStatus}>
+        <Text style={styles.buttonText}>Status do Token</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleGetEnvironment}>
+        <Text style={styles.buttonText}>Obter Environment</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleListTokens}>
+        <Text style={styles.buttonText}>Listar Tokens</Text>
+      </TouchableOpacity>
+
+      
     </ScrollView>
   );
 }
@@ -362,7 +364,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   addCardSection: {
-    marginTop: 20,
+    marginBottom: 20,
     padding: 16,
     backgroundColor: 'white',
     borderRadius: 12,
