@@ -4,14 +4,53 @@ Este repositório contém um pacote React Native para integração com carteiras
 
 ## Installation
 
-
 ```sh
 npm install @platformbuilders/wallet-bridge-react-native
 ```
 
+## Configuration
+
+### Google Wallet Mock Mode
+
+Para desenvolvimento e testes, você pode usar a implementação mock do Google Wallet que simula todas as funcionalidades sem depender do SDK real.
+
+#### Como ativar o Mock:
+
+1. **Abra o arquivo `gradle.properties`** do seu projeto Android
+2. **Adicione ou modifique** a seguinte linha:
+
+```properties
+# Ativar modo mock para desenvolvimento/testes
+GOOGLE_WALLET_USE_MOCK=true
+
+# Para produção, use:
+# GOOGLE_WALLET_USE_MOCK=false
+```
+
+3. **Rebuild da aplicação** para aplicar a configuração
+
+#### Verificando o modo atual:
+```js
+import { NativeModules } from 'react-native';
+const { GoogleWallet } = NativeModules;
+
+const constants = GoogleWallet.getConstants();
+console.log('Modo mock ativo:', constants.useMock);
+console.log('SDK Name:', constants.SDK_NAME);
+```
+
+#### Comportamento do Mock:
+- **checkWalletAvailability()**: Sempre retorna `true`
+- **getSecureWalletInfo()**: Retorna dados simulados
+- **getTokenStatus()**: Retorna status ativo
+- **getEnvironment()**: Retorna "PRODUCTION"
+- **isTokenized()**: Retorna `true` apenas para cartões terminados em "1234"
+- **addCardToWallet()**: Simula adição com delay de 2 segundos
+- **listTokens()**: Retorna 2 tokens simulados (Visa e Mastercard)
+
+> **Importante**: A configuração é definida no arquivo `gradle.properties` e não pode ser alterada em tempo de execução. É necessário rebuild da aplicação para alterar o modo.
 
 ## Usage
-
 
 ```js
 import { GoogleWallet, SamsungWallet } from '@platformbuilders/wallet-bridge-react-native';
