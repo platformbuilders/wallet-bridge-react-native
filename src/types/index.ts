@@ -11,6 +11,9 @@ export * from './samsung-wallet.types';
 // Common Types e Compatibilidade
 export * from './common.types';
 
+// Exportação específica do GoogleWalletIntentEvent para garantir disponibilidade
+export type { GoogleWalletIntentEvent } from './google-wallet.types';
+
 // ============================================================================
 // NOTA: ESTE ARQUIVO MANTÉM COMPATIBILIDADE
 // ============================================================================

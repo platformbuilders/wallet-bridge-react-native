@@ -19,6 +19,7 @@ import type {
   // Types para módulos específicos
   GoogleWalletSpec,
   SamsungWalletSpec,
+  GoogleWalletIntentEvent,
 } from './types/index';
 import {
   // Types específicos do Google Pay
@@ -64,6 +65,7 @@ export type {
   IsTokenizedParams,
   GoogleWalletSpec,
   SamsungWalletSpec,
+  GoogleWalletIntentEvent,
 };
 
 // ============================================================================

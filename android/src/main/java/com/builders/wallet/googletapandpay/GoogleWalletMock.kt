@@ -184,6 +184,30 @@ class GoogleWalletMock : GoogleWalletContract {
         }
     }
 
+    override fun setIntentListener(promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] setIntentListener chamado")
+        try {
+            // Simular ativação do listener
+            Log.d(TAG, "✅ [MOCK] Listener de intent ativado (simulado)")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro em setIntentListener: ${e.message}", e)
+            promise.reject("SET_INTENT_LISTENER_ERROR", e.message, e)
+        }
+    }
+
+    override fun removeIntentListener(promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] removeIntentListener chamado")
+        try {
+            // Simular desativação do listener
+            Log.d(TAG, "✅ [MOCK] Listener de intent desativado (simulado)")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro em removeIntentListener: ${e.message}", e)
+            promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
+        }
+    }
+
     override fun getConstants(): MutableMap<String, Any> {
         Log.d(TAG, "🔍 [MOCK] getConstants chamado")
         

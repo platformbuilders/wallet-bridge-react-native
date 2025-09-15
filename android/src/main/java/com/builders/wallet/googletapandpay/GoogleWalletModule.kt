@@ -89,6 +89,16 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
     googleWalletImplementation.listTokens(promise)
   }
 
+  @ReactMethod
+  fun setIntentListener(promise: Promise) {
+    googleWalletImplementation.setIntentListener(promise)
+  }
+
+  @ReactMethod
+  fun removeIntentListener(promise: Promise) {
+    googleWalletImplementation.removeIntentListener(promise)
+  }
+
   override fun getConstants(): MutableMap<String, Any> {
     val constants = googleWalletImplementation.getConstants().toMutableMap()
     

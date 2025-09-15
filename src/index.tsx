@@ -1,8 +1,10 @@
+import { NativeEventEmitter } from 'react-native';
 import  { GoogleWalletModule, SamsungWalletModule } from './NativeBuildersWallet';
 import type {
   WalletData,
   GoogleWalletCompatibilitySpec,
   SamsungWalletCompatibilitySpec,
+  GoogleWalletIntentEvent,
 } from './types/index';
 
 // Re-exporta types utilizados
@@ -13,6 +15,7 @@ export type {
   CardStatus,
   GoogleWalletCompatibilitySpec,
   SamsungWalletCompatibilitySpec,
+  GoogleWalletIntentEvent,
   // Types específicos do Google Pay
   GOOGLE_WALLET_STATUS,
   GOOGLE_WALLET_STATUS_CODE,
@@ -79,6 +82,14 @@ export class GoogleWalletClient implements GoogleWalletCompatibilitySpec {
   getConstants(): any {
     return GoogleWalletModule.getConstants();
   }
+
+  setIntentListener(): Promise<boolean> {
+    return GoogleWalletModule.setIntentListener();
+  }
+
+  removeIntentListener(): Promise<boolean> {
+    return GoogleWalletModule.removeIntentListener();
+  }
 }
 
 // SamsungWalletClient - Classe específica para Samsung Pay
@@ -121,5 +132,60 @@ export class SamsungWalletClient implements SamsungWalletCompatibilitySpec {
 
   getConstants(): Promise<any> {
     return SamsungWalletModule.getConstants();
+  }
+}
+
+// ============================================================================
+// EVENT EMITTER PARA GOOGLE WALLET
+// ============================================================================
+
+export class GoogleWalletEventEmitter {
+  private eventEmitter: NativeEventEmitter;
+  private listeners: Map<string, (event: GoogleWalletIntentEvent) => void> = new Map();
+
+  constructor() {
+    // Usar o módulo nativo diretamente para o EventEmitter
+    const { GoogleWallet } = require('react-native').NativeModules;
+    this.eventEmitter = new NativeEventEmitter(GoogleWallet);
+  }
+
+  /**
+   * Adiciona um listener para eventos de intent do Google Wallet
+   * @param callback Função que será chamada quando um evento for recebido
+   * @returns Função para remover o listener
+   */
+  addIntentListener(callback: (event: GoogleWalletIntentEvent) => void): () => void {
+    const listenerId = `listener_${Date.now()}_${Math.random()}`;
+    
+    // Armazenar o callback
+    this.listeners.set(listenerId, callback);
+    
+    // Criar o listener do NativeEventEmitter
+    const subscription = this.eventEmitter.addListener('GoogleWalletIntentReceived', (event: any) => {
+      const walletEvent = event as GoogleWalletIntentEvent;
+      console.log('🎯 [GoogleWalletEventEmitter] Intent recebido:', walletEvent);
+      callback(walletEvent);
+    });
+
+    // Retornar função de cleanup
+    return () => {
+      this.listeners.delete(listenerId);
+      subscription.remove();
+    };
+  }
+
+  /**
+   * Remove todos os listeners ativos
+   */
+  removeAllListeners(): void {
+    this.listeners.clear();
+    this.eventEmitter.removeAllListeners('GoogleWalletIntentReceived');
+  }
+
+  /**
+   * Obtém o número de listeners ativos
+   */
+  getListenerCount(): number {
+    return this.listeners.size;
   }
 }

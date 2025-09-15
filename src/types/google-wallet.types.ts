@@ -23,6 +23,47 @@ export enum GoogleWalletStatusCode {
   TAP_AND_PAY_UNAVAILABLE = '15009',
 }
 
+export enum CommonStatusCode {
+  /** A operação foi bem-sucedida. */
+  SUCCESS = '0',  //ALERTA: Quando é cancelado, ele retorna 0 também
+  /** A operação foi bem-sucedida, mas usou o cache do dispositivo. */
+  SUCCESS_CACHE = '-1',
+  /** A versão instalada do Google Play services está desatualizada. */
+  SERVICE_VERSION_UPDATE_REQUIRED = '2',
+  /** A versão instalada do Google Play services foi desabilitada neste dispositivo. */
+  SERVICE_DISABLED = '3',
+  /** O cliente tentou conectar ao serviço, mas o usuário não está logado. */
+  SIGN_IN_REQUIRED = '4',
+  /** O cliente tentou conectar ao serviço com um nome de conta inválido especificado. */
+  INVALID_ACCOUNT = '5',
+  /** Completar a operação requer alguma forma de resolução. */
+  RESOLUTION_REQUIRED = '6',
+  /** Ocorreu um erro de rede. Tentar novamente deve resolver o problema. */
+  NETWORK_ERROR = '7',
+  /** Ocorreu um erro interno. Tentar novamente deve resolver o problema. */
+  INTERNAL_ERROR = '8',
+  /** O aplicativo está mal configurado. Este erro não é recuperável. */
+  DEVELOPER_ERROR = '10',
+  /** A operação falhou sem informações mais detalhadas. */
+  ERROR = '13',
+  /** Uma chamada bloqueante foi interrompida enquanto aguardava e não foi executada até a conclusão. */
+  INTERRUPTED = '14',
+  /** Tempo limite enquanto aguardava o resultado. */
+  TIMEOUT = '15',
+  /** O resultado foi cancelado devido à desconexão do cliente ou cancelamento. */
+  CANCELED = '16',
+  /** O cliente tentou chamar um método de uma API que falhou ao conectar. */
+  API_NOT_CONNECTED = '17',
+  /** Houve uma RemoteException não-DeadObjectException ao chamar um serviço conectado. */
+  REMOTE_EXCEPTION = '19',
+  /** A conexão foi suspensa enquanto a chamada estava em andamento. */
+  CONNECTION_SUSPENDED_DURING_CALL = '20',
+  /** A conexão expirou enquanto aguardava o Google Play services atualizar. */
+  RECONNECTION_TIMED_OUT_DURING_UPDATE = '21',
+  /** A conexão expirou ao tentar reconectar. */
+  RECONNECTION_TIMED_OUT = '22',
+}
+
 export enum GoogleTokenState {
   TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION = 'TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION',
   TOKEN_STATE_PENDING = 'TOKEN_STATE_PENDING',
@@ -130,6 +171,18 @@ export interface GoogleTokenStatus {
   isSelected: boolean;
 }
 
+// Google Wallet - Evento de Intent
+export interface GoogleWalletIntentEvent {
+  action: string;
+  type: 'ACTIVATE_TOKEN' | 'WALLET_INTENT' | 'INVALID_CALLER';
+  data?: string;
+  dataFormat?: 'base64';
+  dataNote?: string;
+  callingPackage?: string;
+  error?: string;
+  extras?: Record<string, any>;
+}
+
 // Google Wallet - Interface do Módulo
 export interface GoogleWalletSpec {
   checkWalletAvailability(): Promise<boolean>;
@@ -142,6 +195,10 @@ export interface GoogleWalletSpec {
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<GoogleTokenInfoSimple[]>;
   getConstants(): GoogleWalletConstants;
+  
+  // Métodos de listener de intent
+  setIntentListener(): Promise<boolean>;
+  removeIntentListener(): Promise<boolean>;
 }
 
 // Google Wallet - Interface de Compatibilidade (para código existente)
@@ -156,4 +213,8 @@ export interface GoogleWalletCompatibilitySpec {
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<GoogleTokenInfoSimple[]>;
   getConstants(): any; // Aceita qualquer tipo para compatibilidade
+  
+  // Métodos de listener de intent
+  setIntentListener(): Promise<boolean>;
+  removeIntentListener(): Promise<boolean>;
 }
