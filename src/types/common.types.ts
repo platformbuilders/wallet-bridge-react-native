@@ -6,13 +6,14 @@
 // TYPES GENÉRICOS (mantidos para compatibilidade)
 // ============================================================================
 
-export type CardStatus =
-  | 'not found'
-  | 'active'
-  | 'requireAuthorization'
-  | 'pending'
-  | 'suspended'
-  | 'deactivated';
+export enum CardStatus {
+  NOT_FOUND = 'not found',
+  ACTIVE = 'active',
+  REQUIRE_AUTHORIZATION = 'requireAuthorization',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
+  DEACTIVATED = 'deactivated',
+}
 
 export interface WalletData {
   deviceID: string;
@@ -161,14 +162,14 @@ export interface PushTokenizeParams {
 }
 
 export interface GetConstantsResponse {
-  CARD_NETWORK_ELO: 12;
-  TOKEN_PROVIDER_ELO: 14;
-  TOKEN_STATE_ACTIVE: 5;
-  TOKEN_STATE_FELICA_PENDING_PROVISIONING: 6;
-  TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION: 3;
-  TOKEN_STATE_PENDING: 2;
-  TOKEN_STATE_SUSPENDED: 4;
-  TOKEN_STATE_UNTOKENIZED: 1;
+  CARD_NETWORK_ELO: number;
+  TOKEN_PROVIDER_ELO: number;
+  TOKEN_STATE_ACTIVE: number;
+  TOKEN_STATE_FELICA_PENDING_PROVISIONING: number;
+  TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION: number;
+  TOKEN_STATE_PENDING: number;
+  TOKEN_STATE_SUSPENDED: number;
+  TOKEN_STATE_UNTOKENIZED: number;
 }
 
 export interface Token {

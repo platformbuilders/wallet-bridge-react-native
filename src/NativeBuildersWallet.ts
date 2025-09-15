@@ -114,7 +114,6 @@ export interface Spec {
     moduleNames: string[];
     currentModule: string;
   }>;
-  switchWallet(walletType: string): Promise<string>;
   // Método para obter constantes
   getConstants(): Promise<GetConstantsResponse>;
 }

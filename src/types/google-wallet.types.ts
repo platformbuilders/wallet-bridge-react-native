@@ -98,6 +98,12 @@ export enum GoogleEnvironment {
   DEV = 'DEV',
 }
 
+export enum GoogleWalletIntentType {
+  ACTIVATE_TOKEN = 'ACTIVATE_TOKEN',
+  WALLET_INTENT = 'WALLET_INTENT',
+  INVALID_CALLER = 'INVALID_CALLER',
+}
+
 // Google Wallet - UserAddress (baseado no SDK do Google Pay)
 export interface GoogleUserAddress {
   name: string;
@@ -174,7 +180,7 @@ export interface GoogleTokenStatus {
 // Google Wallet - Evento de Intent
 export interface GoogleWalletIntentEvent {
   action: string;
-  type: 'ACTIVATE_TOKEN' | 'WALLET_INTENT' | 'INVALID_CALLER';
+  type: GoogleWalletIntentType;
   data?: string;
   dataFormat?: 'base64';
   dataNote?: string;
