@@ -10,13 +10,16 @@ import {
   Clipboard,
 } from 'react-native';
 import {
-  GoogleWalletClient,
+  GoogleWalletModule as GoogleWalletClient,
   GoogleWalletEventEmitter,
 } from '@platformbuilders/wallet-bridge-react-native';
 import type {
-  AndroidCardData,
-  WalletData,
+  GooglePushTokenizeRequest,
+  GoogleWalletData,
   GoogleWalletIntentEvent,
+  GoogleTokenInfoSimple,
+  GoogleWalletConstants,
+  GoogleTokenStatus,
 } from '@platformbuilders/wallet-bridge-react-native';
 import { useState, useEffect } from 'react';
 
@@ -56,7 +59,7 @@ const ERROR_DESCRIPTIONS: Record<string, string> = {
 
 
 // Função para tratar erros do Google Wallet
-const handleGoogleWalletError = (error: any): string => {
+const handleGoogleWalletError = (error: unknown): string => {
   console.log('🔍 [JS] Analisando erro:', error);
   
   const errorMessage = error instanceof Error ? error.message : String(error);
@@ -110,7 +113,7 @@ const handleGoogleWalletError = (error: any): string => {
   return `Erro ao adicionar cartão: ${errorMessage}`;
 };
 
-export default function App() {
+export default function App(): React.JSX.Element {
   
   // Estado para o OPC (Opaque Payment Card)
   const [opcValue, setOpcValue] = useState(
@@ -121,17 +124,17 @@ export default function App() {
   const [intentResult, setIntentResult] = useState<GoogleWalletIntentEvent | null>(null);
   
   // Estado para os dados decodificados
-  const [decodedData, setDecodedData] = useState<any>(null);
+  const [decodedData, setDecodedData] = useState<Record<string, any> | string | null>(null);
   
   // Estado para indicar se está verificando dados pendentes
   const [isCheckingPendingData, setIsCheckingPendingData] = useState(false);
   
   // Instanciar o GoogleWalletClient e EventEmitter
-  const googleWalletClient = new GoogleWalletClient();
+  const googleWalletClient = GoogleWalletClient;
   const eventEmitter = new GoogleWalletEventEmitter();
 
   // Função para decodificar dados base64 e mostrar resultado
-  const decodeAndShowData = (data: string, eventType: string, action: string) => {
+  const decodeAndShowData = (data: string, eventType: string, action: string): Record<string, any> | string | null => {
     try {
       console.log('🔍 [JS] Decodificando dados base64...');
       console.log('🔍 [JS] Dados originais (base64):', data.substring(0, 100) + '...');
@@ -141,7 +144,7 @@ export default function App() {
       console.log('🔍 [JS] Dados decodificados (string):', decodedData);
       
       // Tentar fazer parse como JSON
-      let parsedData;
+      let parsedData: Record<string, any> | string;
       try {
         parsedData = JSON.parse(decodedData);
         console.log('✅ [JS] Dados parseados como JSON:', parsedData);
@@ -202,7 +205,7 @@ export default function App() {
   };
 
   // Função para processar eventos de intent da carteira (reutilizável)
-  const processWalletIntent = (walletEvent: GoogleWalletIntentEvent) => {
+  const processWalletIntent = (walletEvent: GoogleWalletIntentEvent): void => {
     console.log('🎯 Processando intent da carteira:', walletEvent);
     
     // Atualizar estado com o resultado do intent
@@ -290,10 +293,10 @@ export default function App() {
     );
   }
 
-  const handleCheckAvailability = async () => {
+  const handleCheckAvailability = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando verificação de disponibilidade...');
-      const isAvailable = await googleWalletClient.checkWalletAvailability();
+      const isAvailable: boolean = await googleWalletClient.checkWalletAvailability();
       console.log('✅ [JS] Disponibilidade verificada:', isAvailable);
       Alert.alert(
         'Disponibilidade',
@@ -310,10 +313,10 @@ export default function App() {
     }
   };
 
-  const handleGetWalletInfo = async () => {
+  const handleGetWalletInfo = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando obtenção de informações da wallet...');
-      const walletInfo: WalletData = await googleWalletClient.getSecureWalletInfo();
+      const walletInfo: GoogleWalletData = await googleWalletClient.getSecureWalletInfo();
       console.log('✅ [JS] Informações da wallet obtidas:', walletInfo);
       Alert.alert(
         'Informações da Google Wallet',
@@ -330,16 +333,16 @@ export default function App() {
     }
   };
 
-  const handleGetTokenStatus = async () => {
+  const handleGetTokenStatus = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando verificação de status do token...');
       
       // Obter constantes para usar o tokenServiceProvider
-      const constants = googleWalletClient.getConstants();
+      const constants: GoogleWalletConstants = googleWalletClient.getConstants();
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const tokenReferenceId = 'test-token-id'; // ID de exemplo
       
-      const tokenStatus = await googleWalletClient.getTokenStatus(tokenServiceProvider, tokenReferenceId);
+      const tokenStatus: GoogleTokenStatus = await googleWalletClient.getTokenStatus(tokenServiceProvider, tokenReferenceId);
       console.log('✅ [JS] Status do token obtido:', tokenStatus);
       
       Alert.alert(
@@ -357,10 +360,10 @@ export default function App() {
     }
   };
 
-  const handleGetEnvironment = async () => {
+  const handleGetEnvironment = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando obtenção do environment...');
-      const environment = await googleWalletClient.getEnvironment();
+      const environment: string = await googleWalletClient.getEnvironment();
       console.log('✅ [JS] Environment obtido:', environment);
       Alert.alert('Environment', `Environment: ${environment}`);
     } catch (err) {
@@ -374,17 +377,17 @@ export default function App() {
     }
   };
 
-  const handleIsTokenized = async () => {
+  const handleIsTokenized = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando verificação se está tokenizado...');
       
       // Obter constantes para usar os valores corretos
-      const constants = googleWalletClient.getConstants();
+      const constants: GoogleWalletConstants = googleWalletClient.getConstants();
       const cardNetwork = constants.CARD_NETWORK_ELO;
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const fpanLastFour = '6890'; // Últimos 4 dígitos de exemplo
       
-      const isTokenized = await googleWalletClient.isTokenized(fpanLastFour, cardNetwork, tokenServiceProvider);
+      const isTokenized: boolean = await googleWalletClient.isTokenized(fpanLastFour, cardNetwork, tokenServiceProvider);
       console.log('✅ [JS] Resultado isTokenized:', isTokenized);
       
       Alert.alert(
@@ -402,16 +405,16 @@ export default function App() {
     }
   };
 
-  const handleViewToken = async () => {
+  const handleViewToken = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando visualização de token...');
       
       // Obter constantes para usar os valores corretos
-      const constants = googleWalletClient.getConstants();
+      const constants: GoogleWalletConstants = googleWalletClient.getConstants();
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const issuerTokenId = 'test-token-id'; // ID de exemplo
       
-      const success = await googleWalletClient.viewToken(tokenServiceProvider, issuerTokenId);
+      const success: boolean = await googleWalletClient.viewToken(tokenServiceProvider, issuerTokenId);
       console.log('✅ [JS] Resultado viewToken:', success);
       
       if (success) {
@@ -430,25 +433,27 @@ export default function App() {
     }
   };
 
-  const handleAddCard = async (opc?: string) => {
+  const handleAddCard = async (opc?: string): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando processo de adição de cartão...');
 
       console.log('🔍 [JS] Obtendo constantes...');
-      const constants = googleWalletClient.getConstants();
+      const constants: GoogleWalletConstants = googleWalletClient.getConstants();
       console.log('✅ [JS] Constantes obtidas:', constants);
 
-      const cardData: AndroidCardData = {
-        network: constants.CARD_NETWORK_ELO.toString(),
-        tokenServiceProvider: constants.TOKEN_PROVIDER_ELO,
-        opaquePaymentCard: opc || opcValue,
-        cardHolderName: 'Caleb Pedro Souza',
-        lastDigits: '6890',
-        userAddress: {
+      const cardData: GooglePushTokenizeRequest = {
+        card: {
+          network: constants.CARD_NETWORK_ELO,
+          tokenServiceProvider: constants.TOKEN_PROVIDER_ELO,
+          opaquePaymentCard: opc || opcValue,
+          displayName: 'Caleb Pedro Souza',
+          lastDigits: '6890',
+        },
+        address: {
           name: 'Caleb Pedro Souza',
-          addressOne: 'Rua Jardineira',
-          addressTwo: '',
-          city: 'Natal',
+          address1: 'Rua Jardineira',
+          address2: '',
+          locality: 'Natal',
           administrativeArea: 'RN',
           countryCode: 'BR',
           postalCode: '59139444',
@@ -457,16 +462,16 @@ export default function App() {
       };
 
       console.log('🔍 [JS] Dados do cartão preparados:', {
-        network: cardData.network,
-        tokenServiceProvider: cardData.tokenServiceProvider,
-        cardHolderName: cardData.cardHolderName,
-        lastDigits: cardData.lastDigits,
-        userAddress: cardData.userAddress,
-        opaquePaymentCardLength: cardData.opaquePaymentCard.length,
+        network: cardData.card.network,
+        tokenServiceProvider: cardData.card.tokenServiceProvider,
+        displayName: cardData.card.displayName,
+        lastDigits: cardData.card.lastDigits,
+        address: cardData.address,
+        opaquePaymentCardLength: cardData.card.opaquePaymentCard.length,
       });
 
       console.log('🔍 [JS] Chamando addCardToWallet...');
-      const tokenId = await googleWalletClient.addCardToWallet(cardData);
+      const tokenId: string = await googleWalletClient.addCardToWallet(cardData);
       console.log('✅ [JS] Cartão adicionado com sucesso! Token ID:', tokenId);
       Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
     } catch (err) {
@@ -488,10 +493,10 @@ export default function App() {
     }
   };
 
-  const handleCreateWallet = async () => {
+  const handleCreateWallet = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando criação de carteira...');
-      const walletCreated = await googleWalletClient.createWalletIfNeeded();
+      const walletCreated: boolean = await googleWalletClient.createWalletIfNeeded();
       console.log('✅ [JS] Resultado da criação de carteira:', walletCreated);
       
       if (walletCreated) {
@@ -510,14 +515,14 @@ export default function App() {
     }
   };
 
-  const handleListTokens = async () => {
+  const handleListTokens = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando listagem de tokens...');
-      const tokens = await googleWalletClient.listTokens();
+      const tokens: GoogleTokenInfoSimple[] = await googleWalletClient.listTokens();
       console.log('✅ [JS] Tokens obtidos:', tokens);
       
       if (tokens && tokens.length > 0) {
-        const tokenInfo = tokens.map((token, index) => 
+        const tokenInfo = tokens.map((token: GoogleTokenInfoSimple, index: number) => 
           `${index + 1}. ID: ${token.issuerTokenId}\n   Últimos dígitos: ${token.lastDigits}\n   Nome: ${token.displayName}\n   Estado: ${token.tokenState}\n   Rede: ${token.network}`
         ).join('\n\n');
         
@@ -540,12 +545,12 @@ export default function App() {
   };
 
 
-  const handleClearOPC = () => {
+  const handleClearOPC = (): void => {
     setOpcValue('');
     console.log('🧹 [JS] OPC limpo');
   };
 
-  const handlePasteOPC = async () => {
+  const handlePasteOPC = async (): Promise<void> => {
     try {
       const clipboardContent = await Clipboard.getString();
       if (clipboardContent.trim()) {
