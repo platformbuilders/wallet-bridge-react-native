@@ -208,6 +208,42 @@ class GoogleWalletMock : GoogleWalletContract {
         }
     }
 
+    override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
+        try {
+            // Validar status
+            val validStatuses = listOf("approved", "declined", "failure")
+            if (!validStatuses.contains(status)) {
+                Log.w(TAG, "❌ [MOCK] Status inválido: $status. Deve ser: approved, declined ou failure")
+                promise.reject("INVALID_STATUS", "Status deve ser: approved, declined ou failure")
+                return
+            }
+
+            // Simular definição do resultado de ativação
+            Log.d(TAG, "✅ [MOCK] Resultado de ativação definido (simulado) - Status: $status")
+            if (activationCode != null && !activationCode.isEmpty() && status == "approved") {
+                Log.d(TAG, "✅ [MOCK] ActivationCode incluído (simulado): $activationCode")
+            }
+            
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro em setActivationResult: ${e.message}", e)
+            promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
+        }
+    }
+
+    override fun finishActivity(promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] finishActivity chamado")
+        try {
+            // Simular finalização da atividade
+            Log.d(TAG, "✅ [MOCK] Atividade finalizada (simulado)")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro em finishActivity: ${e.message}", e)
+            promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
+        }
+    }
+
     override fun getConstants(): MutableMap<String, Any> {
         Log.d(TAG, "🔍 [MOCK] getConstants chamado")
         

@@ -25,4 +25,6 @@ interface GoogleWalletContract {
     fun getConstants(): MutableMap<String, Any>
     fun setIntentListener(promise: Promise)
     fun removeIntentListener(promise: Promise)
+    fun setActivationResult(status: String, activationCode: String?, promise: Promise)
+    fun finishActivity(promise: Promise)
 }

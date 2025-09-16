@@ -99,6 +99,16 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
     googleWalletImplementation.removeIntentListener(promise)
   }
 
+  @ReactMethod
+  fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
+    googleWalletImplementation.setActivationResult(status, activationCode, promise)
+  }
+
+  @ReactMethod
+  fun finishActivity(promise: Promise) {
+    googleWalletImplementation.finishActivity(promise)
+  }
+
   override fun getConstants(): MutableMap<String, Any> {
     val constants = googleWalletImplementation.getConstants().toMutableMap()
     

@@ -437,6 +437,30 @@ const removeListener = eventEmitter.addIntentListener((event) => {
 removeListener();
 ```
 
+### Definir Resultado da Ativação
+
+Para retornar o resultado da ativação de token para o Google Wallet:
+
+```javascript
+import { GoogleWalletModule, GoogleActivationStatus } from '@platformbuilders/wallet-bridge-react-native';
+
+// Definir resultado de ativação sem activationCode
+await GoogleWalletModule.setActivationResult(GoogleActivationStatus.APPROVED);
+
+// Definir resultado de ativação com activationCode
+await GoogleWalletModule.setActivationResult(
+  GoogleActivationStatus.APPROVED, 
+  'ACTIVATION_CODE_12345'
+);
+
+// Outros status disponíveis
+await GoogleWalletModule.setActivationResult(GoogleActivationStatus.DECLINED);
+await GoogleWalletModule.setActivationResult(GoogleActivationStatus.FAILURE);
+
+// Finalizar atividade e voltar para o app chamador
+await GoogleWalletModule.finishActivity();
+```
+
 ### Escolhendo o Módulo Correto
 
 ```javascript
@@ -583,6 +607,7 @@ yarn ios
 - ✅ Listener de intents App2App
 - ✅ Decodificação de dados base64
 - ✅ Tratamento de erros detalhado com códigos específicos
+- ✅ Definição de resultado de ativação de token
 
 #### Samsung Pay
 - ✅ Verificação de disponibilidade do Samsung Pay
@@ -626,6 +651,8 @@ GOOGLE_WALLET_USE_MOCK=true
 | `getConstants` | Retorna constantes do módulo | Nenhum | `GoogleWalletConstants` |
 | `setIntentListener` | Ativa listener para App2App | Nenhum | `Promise<boolean>` |
 | `removeIntentListener` | Remove listener de App2App | Nenhum | `Promise<boolean>` |
+| `setActivationResult` | Define resultado da ativação de token | `status: string, activationCode?: string` | `Promise<boolean>` |
+| `finishActivity` | Finaliza a atividade e volta para o app chamador | Nenhum | `Promise<boolean>` |
 
 ### Samsung Pay - Métodos Disponíveis
 
@@ -687,6 +714,13 @@ interface GoogleTokenInfoSimple {
   displayName: string;
   tokenState: number;
   network: number;
+}
+
+// Status de ativação
+enum GoogleActivationStatus {
+  APPROVED = 'approved',
+  DECLINED = 'declined',
+  FAILURE = 'failure',
 }
 ```
 

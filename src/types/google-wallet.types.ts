@@ -194,6 +194,13 @@ export interface GoogleWalletIntentEvent {
   extras?: Record<string, any>;
 }
 
+// Google Wallet - Status de Ativação
+export enum GoogleActivationStatus {
+  APPROVED = 'approved',
+  DECLINED = 'declined',
+  FAILURE = 'failure',
+}
+
 // Google Wallet - Interface do Módulo
 export interface GoogleWalletSpec {
   checkWalletAvailability(): Promise<boolean>;
@@ -210,6 +217,12 @@ export interface GoogleWalletSpec {
   // Métodos de listener de intent
   setIntentListener(): Promise<boolean>;
   removeIntentListener(): Promise<boolean>;
+  
+  // Método de resultado de ativação
+  setActivationResult(status: string, activationCode?: string): Promise<boolean>;
+  
+  // Método para finalizar atividade
+  finishActivity(): Promise<boolean>;
 }
 
 // ============================================================================

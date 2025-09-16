@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -33,17 +34,28 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val TAG = "GoogleWalletMock"
     }
-    
+
     // Variável para controlar o estado do alerta
     private var alertState by mutableStateOf(AlertState())
-    
+
+    // Variável para controlar o estado do resultado na tela
+    private var resultState by mutableStateOf(ResultState())
+
     data class AlertState(
         val show: Boolean = false,
         val title: String = "",
         val message: String = "",
         val resultCode: Int = -1
     )
-    
+
+    data class ResultState(
+        val hasResult: Boolean = false,
+        val activationResponse: String? = null,
+        val activationCode: String? = null,
+        val resultCode: Int = -1,
+        val timestamp: String = ""
+    )
+
     // ActivityResultLauncher para substituir o deprecated onActivityResult
     private val app2AppLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -51,12 +63,30 @@ class MainActivity : ComponentActivity() {
         when (result.resultCode) {
             Activity.RESULT_OK -> {
                 Log.d(TAG, "✅ [GOOGLE] App Pefisa retornou com sucesso")
-                result.data?.let { resultData ->
-                    Log.d(TAG, "📄 [GOOGLE] Dados retornados: ${resultData.extras}")
-                }
+
+                // Processar extras de ativação
+                val activationResponse = result.data?.getStringExtra("BANKING_APP_ACTIVATION_RESPONSE")
+                val activationCode = result.data?.getStringExtra("BANKING_APP_ACTIVATION_CODE")
+
+                Log.d(TAG, "📄 [GOOGLE] Activation Response: $activationResponse")
+                Log.d(TAG, "📄 [GOOGLE] Activation Code: $activationCode")
+                Log.d(TAG, "📄 [GOOGLE] Todos os extras: ${result.data?.extras}")
+
+                // Atualizar estado do resultado na tela
+                resultState = ResultState(
+                    hasResult = true,
+                    activationResponse = activationResponse,
+                    activationCode = activationCode,
+                    resultCode = result.resultCode,
+                    timestamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                )
+
+                // Construir mensagem baseada no status de ativação
+                val message = buildActivationMessage(activationResponse, activationCode, result.resultCode)
+
                 showAlert(
                     title = "✅ Sucesso",
-                    message = "App Pefisa retornou com sucesso!\n\nCódigo: ${result.resultCode}\nDados: ${result.data?.extras}",
+                    message = message,
                     resultCode = result.resultCode
                 )
             }
@@ -78,7 +108,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     private fun showAlert(title: String, message: String, resultCode: Int) {
         alertState = AlertState(
             show = true,
@@ -86,6 +116,47 @@ class MainActivity : ComponentActivity() {
             message = message,
             resultCode = resultCode
         )
+    }
+
+    private fun buildActivationMessage(activationResponse: String?, activationCode: String?, resultCode: Int): String {
+        val message = StringBuilder()
+        message.append("App Pefisa retornou com sucesso!\n\n")
+        message.append("Código de Resultado: $resultCode\n\n")
+
+        when (activationResponse) {
+            "approved" -> {
+                message.append("✅ Status: APROVADO\n")
+                if (!activationCode.isNullOrEmpty()) {
+                    message.append("🔑 Código de Ativação: $activationCode\n")
+                } else {
+                    message.append("ℹ️ Sem código de ativação\n")
+                }
+                message.append("\n🎉 Token ativado com sucesso!")
+            }
+            "declined" -> {
+                message.append("❌ Status: RECUSADO\n")
+                message.append("\n🚫 Ativação do token foi recusada")
+            }
+            "failure" -> {
+                message.append("💥 Status: FALHA\n")
+                message.append("\n⚠️ Falha na ativação do token")
+            }
+            null -> {
+                message.append("⚠️ Status: NÃO INFORMADO\n")
+                message.append("\n❓ Nenhum status de ativação foi retornado")
+            }
+            else -> {
+                message.append("❓ Status: DESCONHECIDO ($activationResponse)\n")
+                message.append("\n⚠️ Status de ativação não reconhecido")
+            }
+        }
+
+        return message.toString()
+    }
+
+    private fun clearResults() {
+        resultState = ResultState()
+        Log.d(TAG, "🧹 [GOOGLE] Resultados limpos")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,14 +167,16 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     App2AppSimulator(
                         onSimulateClick = { simulateApp2App() },
+                        onClearClick = { clearResults() },
+                        resultState = resultState,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
-                
+
                 // AlertDialog para mostrar o resultado
                 if (alertState.show) {
                     AlertDialog(
-                        onDismissRequest = { 
+                        onDismissRequest = {
                             alertState = alertState.copy(show = false)
                         },
                         title = {
@@ -114,7 +187,7 @@ class MainActivity : ComponentActivity() {
                         },
                         confirmButton = {
                             TextButton(
-                                onClick = { 
+                                onClick = {
                                     alertState = alertState.copy(show = false)
                                 }
                             ) {
@@ -174,8 +247,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun App2AppSimulator(
-    onSimulateClick: () -> Unit,
-    modifier: Modifier = Modifier
+  onSimulateClick: () -> Unit,
+  onClearClick: () -> Unit,
+  resultState: MainActivity.ResultState,
+  modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
@@ -207,6 +282,118 @@ fun App2AppSimulator(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = 8.dp)
         )
+
+        // Seção de resultados
+        if (resultState.hasResult) {
+            ResultDisplay(
+                resultState = resultState,
+                onClearClick = onClearClick,
+                modifier = Modifier.padding(top = 32.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun ResultDisplay(
+  resultState: MainActivity.ResultState,
+  onClearClick: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "📋 Resultado da Ativação",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // Card de resultado
+        androidx.compose.material3.Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "⏰ Timestamp: ${resultState.timestamp}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    text = "📊 Código: ${resultState.resultCode}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                when (resultState.activationResponse) {
+                    "approved" -> {
+                        Text(
+                            text = "✅ Status: APROVADO",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = androidx.compose.ui.graphics.Color(0xFF4CAF50),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        if (!resultState.activationCode.isNullOrEmpty()) {
+                            Text(
+                                text = "🔑 Código: ${resultState.activationCode}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+                    }
+                    "declined" -> {
+                        Text(
+                            text = "❌ Status: RECUSADO",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = androidx.compose.ui.graphics.Color(0xFFFF9800),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    "failure" -> {
+                        Text(
+                            text = "💥 Status: FALHA",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = androidx.compose.ui.graphics.Color(0xFFF44336),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    null -> {
+                        Text(
+                            text = "⚠️ Status: NÃO INFORMADO",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = androidx.compose.ui.graphics.Color(0xFFFF9800),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    else -> {
+                        Text(
+                            text = "❓ Status: ${resultState.activationResponse}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = androidx.compose.ui.graphics.Color(0xFF9E9E9E),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Botão de limpar
+        Button(
+            onClick = onClearClick,
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = androidx.compose.ui.graphics.Color(0xFF607D8B)
+            )
+        ) {
+            Text("🧹 Limpar Resultados")
+        }
     }
 }
 
@@ -215,7 +402,9 @@ fun App2AppSimulator(
 fun App2AppSimulatorPreview() {
     GoogleWalletMockTheme {
         App2AppSimulator(
-            onSimulateClick = { }
+            onSimulateClick = { },
+            onClearClick = { },
+            resultState = MainActivity.ResultState()
         )
     }
 }

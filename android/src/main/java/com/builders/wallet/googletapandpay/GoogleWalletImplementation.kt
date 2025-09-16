@@ -1048,6 +1048,72 @@ class GoogleWalletImplementation(
         }
     }
 
+    override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
+        Log.d(TAG, "🔍 [GOOGLE] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
+        try {
+            // Obter atividade atual
+            activity = reactContext.currentActivity
+            if (activity == null) {
+                Log.w(TAG, "❌ [GOOGLE] Nenhuma atividade disponível para definir resultado")
+                promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
+                return
+            }
+
+            // Validar status
+            val validStatuses = listOf("approved", "declined", "failure")
+            if (!validStatuses.contains(status)) {
+                Log.w(TAG, "❌ [GOOGLE] Status inválido: $status. Deve ser: approved, declined ou failure")
+                promise.reject("INVALID_STATUS", "Status deve ser: approved, declined ou failure")
+                return
+            }
+
+            // Criar Intent de resultado
+            val resultIntent = Intent()
+            resultIntent.putExtra("BANKING_APP_ACTIVATION_RESPONSE", status)
+            
+            // Adicionar activationCode se fornecido e status for approved
+            if (activationCode != null && !activationCode.isEmpty() && status == "approved") {
+                Log.d(TAG, "🔍 [GOOGLE] Adicionando activationCode: $activationCode")
+                resultIntent.putExtra("BANKING_APP_ACTIVATION_CODE", activationCode)
+            }
+
+            // Definir resultado da atividade
+            activity?.setResult(Activity.RESULT_OK, resultIntent)
+            
+            Log.d(TAG, "✅ [GOOGLE] Resultado de ativação definido - Status: $status")
+            if (activationCode != null && !activationCode.isEmpty() && status == "approved") {
+                Log.d(TAG, "✅ [GOOGLE] ActivationCode incluído: $activationCode")
+            }
+            
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [GOOGLE] Erro ao definir resultado de ativação: ${e.message}", e)
+            promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
+        }
+    }
+
+    override fun finishActivity(promise: Promise) {
+        Log.d(TAG, "🔍 [GOOGLE] finishActivity chamado")
+        try {
+            // Obter atividade atual
+            activity = reactContext.currentActivity
+            if (activity == null) {
+                Log.w(TAG, "❌ [GOOGLE] Nenhuma atividade disponível para finalizar")
+                promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
+                return
+            }
+
+            // Finalizar a atividade
+            activity?.finish()
+            
+            Log.d(TAG, "✅ [GOOGLE] Atividade finalizada com sucesso")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [GOOGLE] Erro ao finalizar atividade: ${e.message}", e)
+            promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
+        }
+    }
+
     private fun checkPendingDataFromMainActivity() {
         Log.d(TAG, "🔍 [GOOGLE] Verificando dados pendentes...")
         try {

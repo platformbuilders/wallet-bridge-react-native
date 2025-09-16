@@ -12,6 +12,7 @@ import {
 import {
   GoogleWalletModule as GoogleWalletClient,
   GoogleWalletEventEmitter,
+  GoogleActivationStatus,
 } from '@platformbuilders/wallet-bridge-react-native';
 import type {
   GooglePushTokenizeRequest,
@@ -544,6 +545,51 @@ export default function App(): React.JSX.Element {
     }
   };
 
+  const handleSetActivationResult = async (status: string, activationCode?: string): Promise<void> => {
+    try {
+      console.log('🔍 [JS] Iniciando definição de resultado de ativação...');
+      console.log('🔍 [JS] Status:', status, 'ActivationCode:', activationCode);
+      
+      const result = await googleWalletClient.setActivationResult(status, activationCode);
+      console.log('✅ [JS] Resultado de ativação definido:', result);
+      
+      Alert.alert(
+        'Resultado de Ativação Definido',
+        `Status: ${status}\n${activationCode ? `ActivationCode: ${activationCode}` : 'Sem ActivationCode'}`
+      );
+    } catch (err) {
+      console.log('❌ [JS] Erro ao definir resultado de ativação:', err);
+      console.log(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      Alert.alert('Erro', `Erro ao definir resultado de ativação: ${errorMessage}`);
+    }
+  };
+
+  const handleFinishActivity = async (): Promise<void> => {
+    try {
+      console.log('🔍 [JS] Iniciando finalização da atividade...');
+      
+      const result = await googleWalletClient.finishActivity();
+      console.log('✅ [JS] Atividade finalizada:', result);
+      
+      Alert.alert(
+        'Atividade Finalizada',
+        'A atividade foi finalizada e você voltará para o app chamador.'
+      );
+    } catch (err) {
+      console.log('❌ [JS] Erro ao finalizar atividade:', err);
+      console.log(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      Alert.alert('Erro', `Erro ao finalizar atividade: ${errorMessage}`);
+    }
+  };
+
 
   const handleClearOPC = (): void => {
     setOpcValue('');
@@ -655,6 +701,58 @@ export default function App(): React.JSX.Element {
                 </TouchableOpacity>
               </>
             )}
+
+            {/* Seção para testar resultado de ativação - só aparece quando há intent result */}
+            <View style={styles.activationResultSection}>
+              <View style={styles.decodedDataDivider} />
+              <Text style={styles.activationResultTitle}>🎯 Definir Resultado de Ativação</Text>
+              <Text style={styles.activationResultDescription}>
+                Use os botões abaixo para definir o resultado da ativação do token para o Google Wallet:
+              </Text>
+              
+              <View style={styles.opcButtonsContainer}>
+                <TouchableOpacity 
+                  style={[styles.clearButton, { backgroundColor: '#4caf50' }]} 
+                  onPress={() => handleSetActivationResult(GoogleActivationStatus.APPROVED)}
+                >
+                  <Text style={styles.clearButtonText}>✅ Aprovar</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.pasteButton, { backgroundColor: '#ff9800' }]} 
+                  onPress={() => handleSetActivationResult(GoogleActivationStatus.DECLINED)}
+                >
+                  <Text style={styles.pasteButtonText}>❌ Recusar</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.opcButtonsContainer}>
+                <TouchableOpacity 
+                  style={[styles.clearButton, { backgroundColor: '#f44336' }]} 
+                  onPress={() => handleSetActivationResult(GoogleActivationStatus.FAILURE)}
+                >
+                  <Text style={styles.clearButtonText}>💥 Falha</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.pasteButton, { backgroundColor: '#2196f3' }]} 
+                  onPress={() => handleSetActivationResult(GoogleActivationStatus.APPROVED, 'ACTIVATION_CODE_12345')}
+                >
+                  <Text style={styles.pasteButtonText}>✅ Aprovar + Código</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Botões para finalizar atividade */}
+              <View style={styles.finishButtonsContainer}>
+                <TouchableOpacity 
+                  style={[styles.finishButton, { backgroundColor: '#9c27b0' }]} 
+                  onPress={handleFinishActivity}
+                >
+                  <Text style={styles.finishButtonText}>🚪 Finalizar e Voltar</Text>
+                </TouchableOpacity>
+                
+              </View>
+            </View>
           </View>
         )}
       </View>
@@ -733,7 +831,6 @@ export default function App(): React.JSX.Element {
       <TouchableOpacity style={styles.button} onPress={handleListTokens}>
         <Text style={styles.buttonText}>Listar Tokens</Text>
       </TouchableOpacity>
-
 
       
     </ScrollView>
@@ -844,6 +941,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    justifyContent: 'center',
   },
   clearButtonText: {
     color: 'white',
@@ -862,6 +960,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    justifyContent: 'center',
   },
   pasteButtonText: {
     color: 'white',
@@ -990,6 +1089,51 @@ const styles = StyleSheet.create({
   copyButtonText: {
     color: 'white',
     fontSize: 12,
+    fontWeight: '600',
+  },
+  activationResultSection: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  activationResultTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  activationResultDescription: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  finishButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    gap: 12,
+  },
+  finishButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  finishButtonText: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: '600',
   },
 });
