@@ -21,6 +21,11 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- This activity handles App To App ACTIVATE_TOKEN action -->
+        <intent-filter>
+          <action android:name="br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN"/>
+          <category android:name="android.intent.category.DEFAULT"/>
+        </intent-filter>
       </activity>
     </application>
 </manifest>

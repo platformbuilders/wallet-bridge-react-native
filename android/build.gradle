@@ -30,13 +30,20 @@ android {
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
+  buildFeatures {
+    buildConfig true
+  }
+
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-  }
-
-  buildFeatures {
-    buildConfig true
+    
+    // Configuração para Google Wallet Mock
+    // Define se deve usar implementação mock baseado em variável de ambiente
+    buildConfigField "boolean", "GOOGLE_WALLET_USE_MOCK", 
+      project.hasProperty('GOOGLE_WALLET_USE_MOCK') ? 
+        project.property('GOOGLE_WALLET_USE_MOCK') : 
+        "false"
   }
 
   buildTypes {

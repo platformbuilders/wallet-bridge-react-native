@@ -1,42 +1,1210 @@
 # @platformbuilders/wallet-bridge-react-native
 
-Este repositório contém um pacote React Native para integração com carteiras digitais. Ele atua como uma ponte (bridge) que se conecta aos SDKs nativos de cada carteira, abstraindo a complexidade dos fluxos de provisionamento (Push e App2App). Inicialmente compatível com Google Pay Wallet, com planos de expansão para Samsung Pay e Apple Wallet.
+[![npm version](https://badge.fury.io/js/%40platformbuilders%2Fwallet-bridge-react-native.svg)](https://badge.fury.io/js/%40platformbuilders%2Fwallet-bridge-react-native)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Installation
+Uma biblioteca React Native que facilita a integração com carteiras digitais (Google Pay, Samsung Pay). Atua como uma ponte (bridge) que se conecta aos SDKs nativos de cada carteira, fornecendo módulos prontos para React Native com os principais métodos para fluxos de Push Provisioning e Manual Provisioning.
 
+## 🚀 Características
 
-```sh
+- **Módulos Específicos**: Módulos dedicados para Google Pay e Samsung Pay
+- **SDK Nativo Direto**: Acesso direto aos métodos dos SDKs nativos
+- **Métodos Principais**: Foco nos métodos essenciais para Push e Manual Provisioning
+- **Bridge Simplificada**: Ponte direta entre React Native e SDKs nativos
+- **App2App Support**: Suporte completo para fluxos de ativação de token
+- **Mock Mode**: Modo de desenvolvimento para testes sem SDKs reais
+- **TypeScript**: Tipagem completa para melhor experiência de desenvolvimento
+
+## 📦 Instalação
+
+### Instalação via NPM
+
+```bash
 npm install @platformbuilders/wallet-bridge-react-native
+# ou
+yarn add @platformbuilders/wallet-bridge-react-native
 ```
 
+### Instalação via Yalc (Desenvolvimento Local)
 
-## Usage
+Para desenvolvimento e testes locais, use o Yalc:
 
+#### 1. Instalar Yalc Globalmente
 
-```js
-import { GoogleWallet, SamsungWallet } from '@platformbuilders/wallet-bridge-react-native';
+```bash
+# Instalar yarn globalmente (se não tiver)
+npm install -g yarn
 
-// Google Wallet
-const googleWallet = new GoogleWallet();
-await googleWallet.checkWalletAvailability();
-
-// Samsung Wallet
-const samsungWallet = new SamsungWallet();
-await samsungWallet.init('your-service-id');
-await samsungWallet.checkWalletAvailability();
+# Instalar yalc globalmente
+npm install -g yalc
+# ou
+yarn global add yalc
 ```
 
+#### 2. Gerar e Publicar a Biblioteca Local
 
-## Contributing
+```bash
+# Na pasta da biblioteca
+cd /caminho/para/react-native-builders-wallet
 
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
+# Instalar dependências
+yarn install
 
-## License
+# Build da biblioteca
+yarn prepare
 
-MIT
+# Publicar localmente com yalc
+yalc publish
+```
+
+#### 3. Instalar no Seu Projeto
+
+```bash
+# No seu projeto React Native
+cd /caminho/para/seu-projeto
+
+# Adicionar a biblioteca local
+yalc add @platformbuilders/wallet-bridge-react-native
+
+# Instalar dependências
+yarn install
+```
+
+#### 4. Atualizar a Biblioteca Local
+
+```bash
+# Na pasta da biblioteca, após mudanças
+yarn prepare
+yalc push
+
+# No seu projeto
+yalc update
+```
+
+## ⚙️ Configuração
+
+### Android
+
+#### 1. Configurar Google Pay SDK
+
+##### Baixar e Instalar o SDK
+
+1. **Baixe o Google Pay Tap and Pay SDK**:
+   - Acesse a [página oficial do Google Pay](https://developers.google.com/pay/issuers/apis/push-provisioning/android/releases)
+   - Baixe a versão mais recente do SDK
+   - Descompacte o arquivo baixado
+
+2. **Estrutura de Pastas**:
+   ```
+   android/
+   ├── libs/
+   │   └── com/
+   │       └── google/
+   │           └── android/
+   │               └── gms/
+   │                   └── play-services-tapandpay/
+   │                       ├── classes.jar
+   │                       ├── res/
+   │                       └── AndroidManifest.xml
+   ```
+
+3. **Configurar gradle.properties**:
+   ```properties
+   # android/gradle.properties
+   includeGooglePay=true
+   ```
+
+##### Verificação da Instalação
+
+O build.gradle detecta automaticamente se o SDK está instalado:
+```bash
+# Durante o build, você verá:
+✅ Google Play Services Tap and Pay incluído
+# ou
+⚠️ Google Play Services Tap and Pay não incluído (defina includeGooglePay=true para incluir)
+```
+
+#### 2. Configurar Samsung Pay SDK
+
+##### Baixar e Instalar o SDK
+
+1. **Baixe o Samsung Pay SDK**:
+   - Acesse o [Samsung Developer Portal](https://developer.samsung.com/samsung-pay)
+   - Faça login e baixe o Samsung Pay SDK
+   - O arquivo baixado geralmente vem como `SamsungPaySDK_<versão>.jar`
+
+2. **Renomear e Posicionar**:
+   ```bash
+   # Renomeie o arquivo para o padrão esperado
+   mv SamsungPaySDK_2.22.00.jar samsungpay_2.22.00.jar
+   
+   # Coloque na pasta libs do projeto
+   cp samsungpay_2.22.00.jar android/libs/
+   ```
+
+3. **Estrutura de Pastas**:
+   ```
+   android/
+   ├── libs/
+   │   ├── samsungpay_2.22.00.jar
+   │   └── com/
+   │       └── google/
+   │           └── android/
+   │               └── gms/
+   │                   └── play-services-tapandpay/
+   ```
+
+4. **Configurar gradle.properties**:
+   ```properties
+   # android/gradle.properties
+   enableSamsungPay=true
+   ```
+
+##### Verificação da Instalação
+
+O build.gradle detecta automaticamente o JAR do Samsung Pay:
+```bash
+# Durante o build, você verá:
+✅ Samsung Pay SDK encontrado: samsungpay_2.22.00.jar
+✅ Versão detectada: 2.22.00
+✅ Samsung Pay SDK v2.22.00 incluído de: /caminho/para/samsungpay_2.22.00.jar
+# ou
+⚠️ Nenhum arquivo samsungpay_*.jar encontrado em: /caminho/para/libs
+```
+
+#### 3. Configuração Completa do gradle.properties
+
+```properties
+# android/gradle.properties
+
+# Configurações do React Native
+android.useAndroidX=true
+newArchEnabled=false
+hermesEnabled=true
+
+# Configurações de memória
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+
+# Configurações dos SDKs de Wallet
+includeGooglePay=true
+enableSamsungPay=true
+
+# Modo Mock (opcional - para desenvolvimento)
+GOOGLE_WALLET_USE_MOCK=false
+```
+
+#### 4. Estrutura Final de Pastas
+
+```
+react-native-builders-wallet/
+├── android/
+│   ├── libs/
+│   │   ├── samsungpay_2.22.00.jar          # Samsung Pay SDK
+│   │   └── com/
+│   │       └── google/
+│   │           └── android/
+│   │               └── gms/
+│   │                   └── play-services-tapandpay/
+│   │                       ├── classes.jar
+│   │                       ├── res/
+│   │                       └── AndroidManifest.xml
+│   ├── build.gradle                         # Configuração automática dos SDKs
+│   └── gradle.properties                   # Flags de ativação
+└── example/
+    └── android/
+        ├── libs/
+        │   └── samsungpay_2.22.00.jar      # Cópia para o exemplo
+        └── gradle.properties               # Configuração do exemplo
+```
+
+#### 5. Verificar se a Configuração Está Funcionando
+
+##### Teste de Build
+
+```bash
+# Na pasta da biblioteca
+cd android
+./gradlew build
+
+# Você deve ver mensagens como:
+# ✅ Google Play Services Tap and Pay incluído
+# ✅ Samsung Pay SDK encontrado: samsungpay_2.22.00.jar
+# ✅ Versão detectada: 2.22.00
+# ✅ Samsung Pay SDK v2.22.00 incluído de: /caminho/para/samsungpay_2.22.00.jar
+```
+
+##### Teste no App de Exemplo
+
+```bash
+# Na pasta do exemplo
+cd example/android
+./gradlew build
+
+# Verificar se os SDKs foram incluídos
+./gradlew dependencies | grep -E "(google|samsung)"
+```
+
+##### Verificação de Dependências
+
+```bash
+# Verificar dependências do Google Pay
+./gradlew dependencies | grep "play-services-tapandpay"
+
+# Verificar dependências do Samsung Pay
+./gradlew dependencies | grep "samsungpay"
+```
+
+##### Teste de Funcionalidade
+
+```javascript
+// No seu app React Native
+import { NativeModules } from 'react-native';
+
+const { BuildersWallet } = NativeModules;
+
+// Verificar se os módulos estão disponíveis
+console.log('BuildersWallet disponível:', !!BuildersWallet);
+
+// Verificar wallets disponíveis
+const availableWallets = await BuildersWallet.getAvailableWallets();
+console.log('Wallets disponíveis:', availableWallets);
+```
+
+#### 3. Configurar AndroidManifest.xml
+
+Adicione o intent filter para App2App:
+
+```xml
+<activity android:name=".MainActivity">
+  <intent-filter>
+    <action android:name="android.intent.action.MAIN" />
+    <category android:name="android.intent.category.LAUNCHER" />
+  </intent-filter>
+  <!-- Intent filter para capturar ativação de token -->
+  <intent-filter>
+    <action android:name="br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN"/>
+    <category android:name="android.intent.category.DEFAULT"/>
+  </intent-filter>
+</activity>
+```
+
+### iOS
+
+A biblioteca está preparada para iOS, mas atualmente foca no Android. O suporte completo ao iOS será adicionado em versões futuras.
+
+## 🎯 Uso
+
+### Módulos Específicos por Wallet
+
+A biblioteca exporta módulos específicos para cada wallet, fornecendo acesso direto aos métodos dos SDKs nativos:
+
+#### Google Pay
+
+```javascript
+import { GoogleWalletModule, GoogleWalletEventEmitter } from '@platformbuilders/wallet-bridge-react-native';
+
+// Verificar disponibilidade do Google Pay
+const isAvailable = await GoogleWalletModule.checkWalletAvailability();
+
+// Obter informações do wallet
+const walletInfo = await GoogleWalletModule.getSecureWalletInfo();
+
+// Adicionar cartão ao Google Pay
+const cardData = {
+  card: {
+    network: GoogleWalletModule.getConstants().CARD_NETWORK_ELO,
+    tokenServiceProvider: GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO,
+    opaquePaymentCard: 'seu-opc-aqui',
+    displayName: 'Nome do Cartão',
+    lastDigits: '1234',
+  },
+  address: {
+    name: 'Nome do Usuário',
+    address1: 'Endereço',
+    locality: 'Cidade',
+    administrativeArea: 'Estado',
+    countryCode: 'BR',
+    postalCode: '12345-678',
+    phoneNumber: '11999999999',
+  },
+};
+const result = await GoogleWalletModule.addCardToWallet(cardData);
+
+// Listar tokens existentes
+const tokens = await GoogleWalletModule.listTokens();
+
+// Verificar status de um token específico
+const tokenStatus = await GoogleWalletModule.getTokenStatus(
+  GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO,
+  'token-id'
+);
+
+// Verificar se um cartão está tokenizado
+const isTokenized = await GoogleWalletModule.isTokenized(
+  '1234',
+  GoogleWalletModule.getConstants().CARD_NETWORK_ELO,
+  GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO
+);
+
+// Criar carteira se necessário
+const walletCreated = await GoogleWalletModule.createWalletIfNeeded();
+
+// Obter environment
+const environment = await GoogleWalletModule.getEnvironment();
+```
+
+#### Samsung Pay
+
+```javascript
+import { SamsungWalletModule } from '@platformbuilders/wallet-bridge-react-native';
+
+// Verificar disponibilidade do Samsung Pay
+const isAvailable = await SamsungWalletModule.checkWalletAvailability();
+
+// Obter informações do wallet
+const walletInfo = await SamsungWalletModule.getSecureWalletInfo();
+
+// Adicionar cartão ao Samsung Pay
+const cardData = {
+  cardId: 'card-123',
+  cardBrand: 'VISA',
+  cardType: 'CREDIT',
+  cardLast4Fpan: '1234',
+  cardLast4Dpan: '5678',
+  cardIssuer: 'Banco Exemplo',
+  cardStatus: 'ACTIVE',
+  isSamsungPayCard: true,
+};
+const result = await SamsungWalletModule.addCardToWallet(cardData);
+
+// Listar tokens existentes
+const tokens = await SamsungWalletModule.listTokens();
+
+// Verificar status de um token específico
+const tokenStatus = await SamsungWalletModule.getTokenStatus(
+  'token-provider',
+  'token-id'
+);
+
+// Verificar se um cartão está tokenizado
+const isTokenized = await SamsungWalletModule.isTokenized(
+  '1234',
+  'CARD_NETWORK_VISA',
+  'TOKEN_PROVIDER_VISA'
+);
+
+// Criar carteira se necessário
+const walletCreated = await SamsungWalletModule.createWalletIfNeeded();
+
+// Obter environment
+const environment = await SamsungWalletModule.getEnvironment();
+
+// Obter constantes
+const constants = await SamsungWalletModule.getConstants();
+```
+
+### App2App (Manual Provisioning)
+
+Para fluxos de ativação de token via App2App:
+
+```javascript
+import { GoogleWalletModule, GoogleWalletEventEmitter } from '@platformbuilders/wallet-bridge-react-native';
+
+// Ativar listener de intents
+await GoogleWalletModule.setIntentListener();
+
+// Escutar eventos de ativação de token
+const eventEmitter = new GoogleWalletEventEmitter();
+const removeListener = eventEmitter.addIntentListener((event) => {
+  console.log('Intent recebido:', event);
+  
+  if (event.type === 'ACTIVATE_TOKEN') {
+    // Processar ativação de token
+    const decodedData = atob(event.data);
+    const activationParams = JSON.parse(decodedData);
+    
+    // Extrair dados de ativação
+    const { panReferenceId, tokenReferenceId } = activationParams;
+    console.log('PAN Reference ID:', panReferenceId);
+    console.log('Token Reference ID:', tokenReferenceId);
+    
+    // Processar ativação do token
+    processTokenActivation(activationParams);
+  }
+});
+
+// Cleanup
+removeListener();
+```
+
+### Definir Resultado da Ativação
+
+Para retornar o resultado da ativação de token para o Google Wallet:
+
+```javascript
+import { GoogleWalletModule, GoogleActivationStatus } from '@platformbuilders/wallet-bridge-react-native';
+
+// Definir resultado de ativação sem activationCode
+await GoogleWalletModule.setActivationResult(GoogleActivationStatus.APPROVED);
+
+// Definir resultado de ativação com activationCode
+await GoogleWalletModule.setActivationResult(
+  GoogleActivationStatus.APPROVED, 
+  'ACTIVATION_CODE_12345'
+);
+
+// Outros status disponíveis
+await GoogleWalletModule.setActivationResult(GoogleActivationStatus.DECLINED);
+await GoogleWalletModule.setActivationResult(GoogleActivationStatus.FAILURE);
+
+// Finalizar atividade e voltar para o app chamador
+await GoogleWalletModule.finishActivity();
+```
+
+### Escolhendo o Módulo Correto
+
+```javascript
+import { GoogleWalletModule, SamsungWalletModule } from '@platformbuilders/wallet-bridge-react-native';
+
+// Verificar qual wallet está disponível
+const checkAvailableWallets = async () => {
+  const wallets = [];
+  
+  if (GoogleWalletModule) {
+    const isGoogleAvailable = await GoogleWalletModule.checkWalletAvailability();
+    if (isGoogleAvailable) {
+      wallets.push('Google Pay');
+    }
+  }
+  
+  if (SamsungWalletModule) {
+    const isSamsungAvailable = await SamsungWalletModule.checkWalletAvailability();
+    if (isSamsungAvailable) {
+      wallets.push('Samsung Pay');
+    }
+  }
+  
+  return wallets;
+};
+
+// Usar o wallet disponível
+const availableWallets = await checkAvailableWallets();
+console.log('Wallets disponíveis:', availableWallets);
+
+if (availableWallets.includes('Google Pay')) {
+  // Usar Google Pay
+  const result = await GoogleWalletModule.addCardToWallet(cardData);
+} else if (availableWallets.includes('Samsung Pay')) {
+  // Usar Samsung Pay
+  const result = await SamsungWalletModule.addCardToWallet(cardData);
+}
+```
+
+## 🏗️ Estrutura do Projeto
+
+```
+react-native-builders-wallet/
+├── 📁 src/                          # Código fonte TypeScript
+│   ├── 📁 types/                    # Definições de tipos
+│   │   ├── common.types.ts          # Types comuns
+│   │   ├── google-wallet.types.ts   # Types do Google Pay
+│   │   ├── samsung-wallet.types.ts  # Types do Samsung Pay
+│   │   └── index.ts                 # Re-exports
+│   ├── NativeBuildersWallet.ts      # Interface principal
+│   └── index.tsx                    # Ponto de entrada
+├── 📁 android/                      # Código nativo Android
+│   └── 📁 src/main/java/com/builders/wallet/
+│       ├── 📁 googletapandpay/      # Módulo Google Pay
+│       │   ├── GoogleWalletModule.kt
+│       │   ├── GoogleWalletImplementation.kt
+│       │   ├── GoogleWalletMock.kt
+│       │   └── GoogleWalletContract.kt
+│       ├── 📁 samsungpay/           # Módulo Samsung Pay
+│       │   ├── SamsungWalletModule.kt
+│       │   └── SamsungWalletPackage.kt
+│       └── BuildersWalletPackage.kt # Package principal
+├── 📁 ios/                          # Código nativo iOS
+├── 📁 example/                      # App de exemplo
+│   ├── 📁 src/
+│   │   └── App.tsx                  # Exemplo completo de uso
+│   ├── 📁 android/                  # Projeto Android de exemplo
+│   └── 📁 ios/                      # Projeto iOS de exemplo
+├── 📁 GoogleWalletAppMock/          # App mock para testes
+│   └── 📁 app/
+│       └── 📁 src/main/
+│           └── MainActivity.kt      # Simulador App2App
+├── 📁 lib/                          # Build output
+├── 📄 package.json                  # Configuração do projeto
+├── 📄 BuildersWallet.podspec        # Configuração iOS
+└── 📄 README.md                     # Este arquivo
+```
+
+## 🧪 App de Mock - GoogleWalletAppMock
+
+Um aplicativo Android que simula o Google Wallet para facilitar os testes do fluxo App2App durante o desenvolvimento da biblioteca BuildersWallet.
+
+### 🎯 Propósito
+
+Este app mock é essencial para testar o fluxo de **Manual Provisioning** do Google Pay sem depender do Google Play Services real. Ele simula o comportamento do Google Wallet ao enviar intents para ativar tokens em aplicativos de terceiros.
+
+### 🚀 Funcionalidades
+
+- **Simulação App2App**: Simula o envio de intents de ativação de token
+- **Dados Realistas**: Envia dados em base64 com estrutura similar ao Google Wallet real
+- **Interface Simples**: UI minimalista para facilitar os testes
+- **Alertas Visuais**: Mostra resultado da operação com AlertDialog
+- **Logs Detalhados**: Logs completos para debug e monitoramento
+- **Package Mock**: Usa `com.google.android.gms_mock` para simular o Google Play Services
+- **API Moderna**: Usa ActivityResultLauncher (sem deprecated warnings)
+
+### 📱 Como Funciona
+
+#### 1. Simulação de Intent
+O app envia um intent com:
+- **Action**: `br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN`
+- **Package**: `br.com.pefisa.pefisa.hml`
+- **Dados**: Base64 com informações de ativação de token
+
+#### 2. Dados Simulados
+Os dados enviados contêm:
+```json
+{
+  "panReferenceId": "PAN_1703048000000_1234",
+  "tokenReferenceId": "TOKEN_1703048000000_12345"
+}
+```
+
+**Nota**: Os IDs são gerados dinamicamente com timestamp atual e números aleatórios para simular dados únicos a cada execução. A estrutura foi simplificada para focar nos campos essenciais.
+
+#### 3. Fluxo de Teste
+1. Abra o app mock
+2. Clique em "Simular App 2 App"
+3. O app tentará abrir seu aplicativo principal
+4. Seu app receberá o intent com os dados simulados
+5. O app mock aguarda o resultado da ativação
+6. **Alerta visual** é exibido com o resultado da operação
+
+### 🛠️ Instalação e Uso
+
+#### Pré-requisitos
+- Android Studio
+- Android SDK 23+ (Android 6.0+)
+- Dispositivo Android ou emulador
+
+#### 1. Build do App
+
+```bash
+cd GoogleWalletAppMock
+
+# Build debug
+./gradlew assembleDebug
+
+# Build release
+./gradlew assembleRelease
+```
+
+#### 2. Instalação
+
+```bash
+# Instalar no dispositivo/emulador
+adb install app/build/outputs/apk/debug/app-debug.apk
+
+# Ou instalar via Android Studio
+# Abra o projeto no Android Studio e clique em "Run"
+```
+
+#### 3. Executar Testes
+
+1. **Instale o app mock** no dispositivo
+2. **Instale seu app principal** (com a biblioteca BuildersWallet)
+3. **Abra o app mock**
+4. **Clique em "Simular App 2 App"**
+5. **Verifique os logs** para acompanhar o fluxo
+
+### 📋 Configuração do App Principal
+
+Para que seu app principal receba os intents do mock, configure o `AndroidManifest.xml`:
+
+```xml
+<activity android:name=".MainActivity">
+  <intent-filter>
+    <action android:name="android.intent.action.MAIN" />
+    <category android:name="android.intent.category.LAUNCHER" />
+  </intent-filter>
+  
+  <!-- Intent filter para capturar ativação de token -->
+  <intent-filter>
+    <action android:name="br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN"/>
+    <category android:name="android.intent.category.DEFAULT"/>
+  </intent-filter>
+</activity>
+```
+
+### 🎨 Alertas Visuais
+
+O app mock exibe alertas visuais para mostrar o resultado das operações:
+
+#### Tipos de Alerta
+
+##### ✅ **Sucesso (RESULT_OK)**
+- **Título**: "✅ Sucesso"
+- **Mensagem**: "App Pefisa retornou com sucesso!\n\nCódigo: 0\nDados: [extras]"
+- **Cor**: Verde (Material Design)
+
+##### ⚠️ **Cancelado (RESULT_CANCELED)**
+- **Título**: "⚠️ Cancelado"
+- **Mensagem**: "App Pefisa foi cancelado pelo usuário.\n\nCódigo: 1"
+- **Cor**: Laranja (Material Design)
+
+##### ❓ **Resultado Inesperado**
+- **Título**: "⚠️ Resultado Inesperado"
+- **Mensagem**: "App Pefisa retornou com código inesperado.\n\nCódigo: [código]"
+- **Cor**: Laranja (Material Design)
+
+### 📊 Logs e Debug
+
+#### Logs do App Mock
+```bash
+# Filtrar logs do app mock
+adb logcat | grep "GoogleWalletMock"
+
+# Logs específicos
+adb logcat | grep "🚀\|✅\|❌\|⚠️"
+```
+
+#### Logs do App Principal
+```bash
+# Filtrar logs do seu app
+adb logcat | grep "br.com.pefisa.pefisa.hml"
+
+# Logs da biblioteca BuildersWallet
+adb logcat | grep "BuildersWallet\|GoogleWallet"
+```
+
+### 🧪 Cenários de Teste
+
+#### 1. Cenário de Sucesso
+- App mock envia intent
+- App principal recebe e processa
+- Retorna `RESULT_OK`
+- **Alerta exibido**: "✅ Sucesso" com detalhes do resultado
+
+#### 2. Cenário de Erro
+- App mock envia intent com dados inválidos
+- App principal retorna erro
+- **Alerta exibido**: "⚠️ Resultado Inesperado" com código de erro
+
+#### 3. Cenário de Timeout
+- App mock envia intent
+- App principal não responde
+- App mock aguarda timeout
+- **Alerta exibido**: "⚠️ Resultado Inesperado" com código de timeout
+
+#### 4. Cenário de Cancelamento
+- App mock envia intent
+- Usuário cancela no app principal
+- App mock recebe `RESULT_CANCELED`
+- **Alerta exibido**: "⚠️ Cancelado" com informações do cancelamento
+
+### 🔍 Troubleshooting
+
+#### App Mock não consegue abrir o app principal
+- Verifique se o package name está correto
+- Confirme se o intent filter está configurado
+- Verifique se o app principal está instalado
+
+#### Dados não chegam no app principal
+- Verifique se o `EXTRA_TEXT` está sendo enviado
+- Confirme se o listener de intent está ativo
+- Verifique os logs de ambos os apps
+
+#### App principal não responde
+- Verifique se o `ActivityResultLauncher` está implementado
+- Confirme se o `setResult` está sendo chamado
+- Verifique se a activity está sendo finalizada
+- **Novo**: O app mock agora usa API moderna sem deprecated warnings
+
+### 📝 Exemplo de Uso Completo
+
+```kotlin
+// No seu app principal
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // Configurar listener de intent
+        setupIntentListener()
+    }
+    
+    private fun setupIntentListener() {
+        // Ativar listener da biblioteca BuildersWallet
+        GoogleWallet.setIntentListener()
+        
+        // Configurar EventEmitter
+        val eventEmitter = GoogleWalletEventEmitter()
+        eventEmitter.addIntentListener { event ->
+            when (event.type) {
+                "ACTIVATE_TOKEN" -> {
+                    // Decodificar dados base64
+                    val decodedData = atob(event.data)
+                    val activationParams = JSON.parse(decodedData)
+                    
+                    // Extrair panReferenceId e tokenReferenceId
+                    val panReferenceId = activationParams.panReferenceId
+                    val tokenReferenceId = activationParams.tokenReferenceId
+                    
+                    Log.d("MainActivity", "📋 PAN Reference ID: $panReferenceId")
+                    Log.d("MainActivity", "📋 Token Reference ID: $tokenReferenceId")
+                    
+                    // Processar ativação
+                    processTokenActivation(activationParams)
+                }
+            }
+        }
+    }
+    
+    private fun processTokenActivation(params: Any) {
+        // Sua lógica de ativação aqui
+        // ...
+        
+        // Retornar resultado para o app mock
+        setResult(Activity.RESULT_OK)
+        finish()
+    }
+}
+```
+
+**Nota**: Este app mock é destinado apenas para desenvolvimento e testes. Não deve ser usado em produção.
+
+## 📱 App de Exemplo
+
+O app de exemplo em `example/` demonstra todas as funcionalidades da biblioteca:
+
+### Executar o Exemplo
+
+```bash
+# Instalar dependências
+cd example
+yarn install
+
+# Android
+yarn android
+
+# iOS
+yarn ios
+```
+
+### Funcionalidades Demonstradas
+
+#### Google Pay
+- ✅ Verificação de disponibilidade do Google Pay
+- ✅ Criação de carteira Google Wallet
+- ✅ Obtenção de informações do wallet
+- ✅ Adição de cartão com OPC personalizado
+- ✅ Listagem de tokens existentes
+- ✅ Verificação de status de token específico
+- ✅ Verificação se cartão está tokenizado
+- ✅ Visualização de token no Google Pay
+- ✅ Obtenção de environment (PROD/SANDBOX/DEV)
+- ✅ Listener de intents App2App
+- ✅ Decodificação de dados base64
+- ✅ Tratamento de erros detalhado com códigos específicos
+- ✅ Definição de resultado de ativação de token
+
+#### Samsung Pay
+- ✅ Verificação de disponibilidade do Samsung Pay
+- ✅ Obtenção de informações do wallet
+- ✅ Adição de cartão ao Samsung Pay
+- ✅ Listagem de tokens existentes
+- ✅ Verificação de status de token
+- ✅ Obtenção de constantes do módulo
+
+## 🔧 Modo Mock para Desenvolvimento
+
+Para desenvolvimento sem SDKs reais, ative o modo mock:
+
+```properties
+# android/gradle.properties
+GOOGLE_WALLET_USE_MOCK=true
+```
+
+### Comportamento do Mock
+
+- `checkWalletAvailability()`: Sempre retorna `true`
+- `getSecureWalletInfo()`: Retorna dados simulados
+- `addCardToWallet()`: Simula adição com delay de 2 segundos
+- `listTokens()`: Retorna 2 tokens simulados (Visa e Mastercard)
+
+## 📚 API Reference
+
+### Google Pay - Métodos Disponíveis
+
+| Método | Descrição | Parâmetros | Retorna |
+|--------|-----------|------------|---------|
+| `checkWalletAvailability` | Verifica se o Google Pay está disponível | Nenhum | `Promise<boolean>` |
+| `getSecureWalletInfo` | Retorna informações do Google Pay | Nenhum | `Promise<GoogleWalletData>` |
+| `addCardToWallet` | Adiciona cartão ao Google Pay | `cardData: GooglePushTokenizeRequest` | `Promise<string>` |
+| `listTokens` | Lista tokens existentes no Google Pay | Nenhum | `Promise<GoogleTokenInfoSimple[]>` |
+| `getTokenStatus` | Status de um token específico | `tokenServiceProvider: number, tokenReferenceId: string` | `Promise<GoogleTokenStatus>` |
+| `isTokenized` | Verifica se cartão está tokenizado | `fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number` | `Promise<boolean>` |
+| `viewToken` | Abre Google Pay para visualizar token | `tokenServiceProvider: number, issuerTokenId: string` | `Promise<boolean>` |
+| `createWalletIfNeeded` | Cria carteira se necessário | Nenhum | `Promise<boolean>` |
+| `getEnvironment` | Retorna environment atual | Nenhum | `Promise<string>` |
+| `getConstants` | Retorna constantes do módulo | Nenhum | `GoogleWalletConstants` |
+| `setIntentListener` | Ativa listener para App2App | Nenhum | `Promise<boolean>` |
+| `removeIntentListener` | Remove listener de App2App | Nenhum | `Promise<boolean>` |
+| `setActivationResult` | Define resultado da ativação de token | `status: string, activationCode?: string` | `Promise<boolean>` |
+| `finishActivity` | Finaliza a atividade e volta para o app chamador | Nenhum | `Promise<boolean>` |
+
+### Samsung Pay - Métodos Disponíveis
+
+| Método | Descrição | Parâmetros | Retorna |
+|--------|-----------|------------|---------|
+| `checkWalletAvailability` | Verifica se o Samsung Pay está disponível | Nenhum | `Promise<boolean>` |
+| `getSecureWalletInfo` | Retorna informações do Samsung Pay | Nenhum | `Promise<SamsungWalletData>` |
+| `addCardToWallet` | Adiciona cartão ao Samsung Pay | `cardData: SamsungCardData` | `Promise<string>` |
+| `listTokens` | Lista tokens existentes no Samsung Pay | Nenhum | `Promise<SamsungTokenInfoSimple[]>` |
+| `getTokenStatus` | Status de um token específico | `tokenServiceProvider: number, tokenReferenceId: string` | `Promise<SamsungTokenStatus>` |
+| `isTokenized` | Verifica se cartão está tokenizado | `fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number` | `Promise<boolean>` |
+| `viewToken` | Abre Samsung Pay para visualizar token | `tokenServiceProvider: number, issuerTokenId: string` | `Promise<boolean>` |
+| `createWalletIfNeeded` | Cria carteira se necessário | Nenhum | `Promise<boolean>` |
+| `getEnvironment` | Retorna environment atual | Nenhum | `Promise<string>` |
+| `getConstants` | Retorna constantes do módulo | Nenhum | `Promise<SamsungWalletConstants>` |
+
+### Tipos de Dados
+
+#### Google Pay
+
+```typescript
+// Dados do cartão para Google Pay
+interface GooglePushTokenizeRequest {
+  card: {
+    network: number; // GoogleCardNetwork
+    tokenServiceProvider: number; // GoogleTokenProvider
+    opaquePaymentCard: string;
+    displayName: string;
+    lastDigits: string;
+  };
+  address: {
+    name: string;
+    address1: string;
+    address2?: string;
+    locality: string; // city
+    administrativeArea: string; // state
+    countryCode: string;
+    postalCode: string;
+    phoneNumber: string;
+  };
+}
+
+// Informações do wallet
+interface GoogleWalletData {
+  deviceID: string;
+  walletAccountID: string;
+}
+
+// Status do token
+interface GoogleTokenStatus {
+  tokenState: number;
+  isSelected: boolean;
+}
+
+// Informações do token
+interface GoogleTokenInfoSimple {
+  issuerTokenId: string;
+  lastDigits: string;
+  displayName: string;
+  tokenState: number;
+  network: number;
+}
+
+// Status de ativação
+enum GoogleActivationStatus {
+  APPROVED = 'approved',
+  DECLINED = 'declined',
+  FAILURE = 'failure',
+}
+```
+
+#### Samsung Pay
+
+```typescript
+// Dados do cartão para Samsung Pay
+interface SamsungCardData {
+  cardId: string;
+  cardBrand: 'VISA' | 'MASTERCARD' | 'AMEX' | 'DISCOVER' | 'JCB' | 'ELO';
+  cardType: 'CREDIT' | 'DEBIT' | 'PREPAID';
+  cardLast4Fpan: string;
+  cardLast4Dpan: string;
+  cardIssuer: string;
+  cardStatus: 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'DEACTIVATED' | 'NOT_FOUND';
+  isSamsungPayCard: boolean;
+}
+
+// Informações do wallet
+interface SamsungWalletData {
+  deviceID: string;
+  walletAccountID: string;
+  userInfo: {
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone: string;
+  };
+}
+
+// Status do token
+interface SamsungTokenStatus {
+  tokenState: number;
+  isSelected: boolean;
+}
+
+// Informações do token
+interface SamsungTokenInfoSimple {
+  cardId: string;
+  cardLast4Fpan: string;
+  cardIssuer: string;
+  cardStatus: string;
+  cardBrand: string;
+}
+```
+
+#### Tipos Comuns
+
+```typescript
+// Status do cartão
+enum CardStatus {
+  NOT_FOUND = 'not found',
+  ACTIVE = 'active',
+  REQUIRE_AUTHORIZATION = 'requireAuthorization',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
+  DEACTIVATED = 'deactivated',
+}
+
+// Dados básicos do wallet
+interface WalletData {
+  deviceID: string;
+  walletAccountID: string;
+}
+```
+
+## 🛠️ Desenvolvimento
+
+### Pré-requisitos
+
+- Node.js >= 18
+- Yarn 3.6.1
+- React Native 0.81.0
+- Android Studio (para Android)
+- Xcode (para iOS)
+
+### Scripts Disponíveis
+
+```bash
+# Instalar dependências
+yarn install
+
+# Build da biblioteca
+yarn prepare
+
+# Executar testes
+yarn test
+
+# Verificar tipos
+yarn typecheck
+
+# Limpar builds
+yarn clean
+
+# Executar exemplo
+yarn example android
+yarn example ios
+```
+
+### Estrutura de Módulos
+
+A biblioteca usa módulos específicos para cada wallet:
+
+1. **GoogleWalletModule**: Módulo dedicado para Google Pay
+   - Interface: `GoogleWalletSpec`
+   - EventEmitter: `GoogleWalletEventEmitter`
+   - Tipos: `GoogleWalletData`, `GooglePushTokenizeRequest`, etc.
+
+2. **SamsungWalletModule**: Módulo dedicado para Samsung Pay
+   - Interface: `SamsungWalletSpec`
+   - Tipos: `SamsungWalletData`, `SamsungCardData`, etc.
+
+3. **Bridge Nativa**: Ponte direta entre React Native e SDKs nativos
+   - Sem abstrações desnecessárias
+   - Acesso direto aos métodos dos SDKs
+
+4. **TypeScript**: Tipagem completa para cada módulo
+   - Enums para constantes
+   - Interfaces específicas para cada wallet
+   - Tipos comuns reutilizáveis
+
+5. **Mock Support**: Modo de desenvolvimento sem SDKs reais
+   - Simulação de respostas
+   - Logs detalhados para debug
+
+## 🐛 Troubleshooting
+
+### Problemas Comuns
+
+#### 1. **SDK não encontrado**
+
+**Google Pay SDK**:
+```bash
+# Verificar se a pasta existe
+ls -la android/libs/com/google/android/gms/play-services-tapandpay/
+
+# Deve conter:
+# - classes.jar
+# - res/ (pasta com recursos)
+# - AndroidManifest.xml
+```
+
+**Samsung Pay SDK**:
+```bash
+# Verificar se o JAR existe
+ls -la android/libs/samsungpay_*.jar
+
+# Deve mostrar algo como:
+# samsungpay_2.22.00.jar
+```
+
+**Soluções**:
+- Verifique se os SDKs estão na pasta correta
+- Confirme as configurações no `gradle.properties`
+- Execute `./gradlew clean` e tente novamente
+
+#### 2. **Build falha**
+
+**Erro de dependência não encontrada**:
+```bash
+# Limpar cache do Gradle
+./gradlew clean
+rm -rf ~/.gradle/caches/
+
+# Rebuild completo
+./gradlew build
+```
+
+**Erro de versão do SDK**:
+- Verifique se a versão do Android SDK é compatível
+- Confirme se o `compileSdkVersion` está correto
+
+#### 3. **Configuração incorreta do gradle.properties**
+
+**Verificar configurações**:
+```properties
+# android/gradle.properties
+includeGooglePay=true
+enableSamsungPay=true
+GOOGLE_WALLET_USE_MOCK=false
+```
+
+**Logs de build**:
+```bash
+# Durante o build, procure por:
+✅ Google Play Services Tap and Pay incluído
+✅ Samsung Pay SDK encontrado: samsungpay_2.22.00.jar
+```
+
+#### 4. **App2App não funciona**
+
+**Verificar intent filter**:
+```xml
+<!-- AndroidManifest.xml -->
+<intent-filter>
+  <action android:name="br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN"/>
+  <category android:name="android.intent.category.DEFAULT"/>
+</intent-filter>
+```
+
+**Verificar package name**:
+- Confirme se o package name está correto
+- Teste com o app mock do Google Wallet
+
+#### 5. **Mock não funciona**
+
+**Verificar configuração**:
+```properties
+# android/gradle.properties
+GOOGLE_WALLET_USE_MOCK=true
+```
+
+**Rebuild necessário**:
+```bash
+# Limpar e rebuild
+./gradlew clean
+./gradlew build
+```
+
+#### 6. **Problemas de Permissões**
+
+**Verificar permissões no AndroidManifest.xml**:
+```xml
+<uses-permission android:name="android.permission.NFC" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+#### 7. **Debug de Build**
+
+**Logs detalhados**:
+```bash
+# Build com logs detalhados
+./gradlew build --info
+
+# Verificar dependências
+./gradlew dependencies
+
+# Verificar configuração
+./gradlew properties
+```
+
+#### 8. **Problemas Específicos do Samsung Pay**
+
+**JAR não encontrado**:
+```bash
+# Verificar se o arquivo está no local correto
+find . -name "samsungpay_*.jar"
+
+# Deve retornar:
+# ./android/libs/samsungpay_2.22.00.jar
+```
+
+**Versão incorreta**:
+- Certifique-se de que o arquivo segue o padrão `samsungpay_<versão>.jar`
+- A versão será detectada automaticamente pelo build.gradle
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+## 📞 Suporte
+
+- **Issues**: [GitHub Issues](https://github.com/platformbuilders/wallet-bridge/issues)
+- **Documentação**: [Wiki do Projeto](https://github.com/platformbuilders/wallet-bridge/wiki)
+- **Email**: nei.vitor@platformbuilders.io
+
+## 🔗 Links Úteis
+
+- [Google Pay Android Push Provisioning](https://developers.google.com/pay/issuers/apis/push-provisioning/android)
+- [Samsung Pay SDK](https://developer.samsung.com/samsung-pay)
+- [React Native Documentation](https://reactnative.dev/)
+- [Yalc Documentation](https://github.com/wclr/yalc)
 
 ---
 
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+Feito com ❤️ pela equipe da Platform Builders
