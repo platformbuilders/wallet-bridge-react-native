@@ -3,17 +3,17 @@
 [![npm version](https://badge.fury.io/js/%40platformbuilders%2Fwallet-bridge-react-native.svg)](https://badge.fury.io/js/%40platformbuilders%2Fwallet-bridge-react-native)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Uma biblioteca React Native para integração unificada com carteiras digitais (Google Pay, Samsung Pay). Atua como uma ponte (bridge) que se conecta aos SDKs nativos de cada carteira, abstraindo a complexidade dos fluxos de provisionamento (Push e App2App).
+Uma biblioteca React Native que facilita a integração com carteiras digitais (Google Pay, Samsung Pay). Atua como uma ponte (bridge) que se conecta aos SDKs nativos de cada carteira, fornecendo módulos prontos para React Native com os principais métodos para fluxos de Push Provisioning e Manual Provisioning.
 
 ## 🚀 Características
 
-- **Interface Unificada**: Uma única API para Google Pay e Samsung Pay
-- **Detecção Automática**: Escolhe automaticamente o wallet disponível
-- **Fallback Seguro**: Funciona mesmo sem SDKs instalados
-- **Extensível**: Fácil adicionar novos provedores
-- **Foco no Essencial**: Apenas métodos necessários para push provisioning
+- **Módulos Específicos**: Módulos dedicados para Google Pay e Samsung Pay
+- **SDK Nativo Direto**: Acesso direto aos métodos dos SDKs nativos
+- **Métodos Principais**: Foco nos métodos essenciais para Push e Manual Provisioning
+- **Bridge Simplificada**: Ponte direta entre React Native e SDKs nativos
 - **App2App Support**: Suporte completo para fluxos de ativação de token
 - **Mock Mode**: Modo de desenvolvimento para testes sem SDKs reais
+- **TypeScript**: Tipagem completa para melhor experiência de desenvolvimento
 
 ## 📦 Instalação
 
@@ -294,58 +294,127 @@ A biblioteca está preparada para iOS, mas atualmente foca no Android. O suporte
 
 ## 🎯 Uso
 
-### API Unificada (Recomendado)
+### Módulos Específicos por Wallet
+
+A biblioteca exporta módulos específicos para cada wallet, fornecendo acesso direto aos métodos dos SDKs nativos:
+
+#### Google Pay
 
 ```javascript
-import { NativeModules } from 'react-native';
+import { GoogleWalletModule, GoogleWalletEventEmitter } from '@platformbuilders/wallet-bridge-react-native';
 
-const { BuildersWallet } = NativeModules;
-
-// Verificar wallets disponíveis
-const availableWallets = await BuildersWallet.getAvailableWallets();
-console.log('Wallets disponíveis:', availableWallets);
-
-// Verificar disponibilidade
-const isAvailable = await BuildersWallet.checkWalletAvailability();
+// Verificar disponibilidade do Google Pay
+const isAvailable = await GoogleWalletModule.checkWalletAvailability();
 
 // Obter informações do wallet
-const walletInfo = await BuildersWallet.getSecureWalletInfo();
+const walletInfo = await GoogleWalletModule.getSecureWalletInfo();
 
-// Adicionar cartão
-const result = await BuildersWallet.addCardToWallet(cardData);
+// Adicionar cartão ao Google Pay
+const cardData = {
+  card: {
+    network: GoogleWalletModule.getConstants().CARD_NETWORK_ELO,
+    tokenServiceProvider: GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO,
+    opaquePaymentCard: 'seu-opc-aqui',
+    displayName: 'Nome do Cartão',
+    lastDigits: '1234',
+  },
+  address: {
+    name: 'Nome do Usuário',
+    address1: 'Endereço',
+    locality: 'Cidade',
+    administrativeArea: 'Estado',
+    countryCode: 'BR',
+    postalCode: '12345-678',
+    phoneNumber: '11999999999',
+  },
+};
+const result = await GoogleWalletModule.addCardToWallet(cardData);
+
+// Listar tokens existentes
+const tokens = await GoogleWalletModule.listTokens();
+
+// Verificar status de um token específico
+const tokenStatus = await GoogleWalletModule.getTokenStatus(
+  GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO,
+  'token-id'
+);
+
+// Verificar se um cartão está tokenizado
+const isTokenized = await GoogleWalletModule.isTokenized(
+  '1234',
+  GoogleWalletModule.getConstants().CARD_NETWORK_ELO,
+  GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO
+);
+
+// Criar carteira se necessário
+const walletCreated = await GoogleWalletModule.createWalletIfNeeded();
+
+// Obter environment
+const environment = await GoogleWalletModule.getEnvironment();
 ```
 
-### Módulos Específicos
+#### Samsung Pay
 
 ```javascript
-import { NativeModules } from 'react-native';
+import { SamsungWalletModule } from '@platformbuilders/wallet-bridge-react-native';
 
-const { GoogleWallet, SamsungWallet } = NativeModules;
+// Verificar disponibilidade do Samsung Pay
+const isAvailable = await SamsungWalletModule.checkWalletAvailability();
 
-// Google Pay específico
-if (GoogleWallet) {
-  const tokens = await GoogleWallet.listTokens();
-  const isDefault = await GoogleWallet.isGooglePayDefaultNFCPayment();
-}
+// Obter informações do wallet
+const walletInfo = await SamsungWalletModule.getSecureWalletInfo();
 
-// Samsung Pay específico
-if (SamsungWallet) {
-  await SamsungWallet.init('seu-service-id');
-  const status = await SamsungWallet.getSamsungPayStatus();
-}
+// Adicionar cartão ao Samsung Pay
+const cardData = {
+  cardId: 'card-123',
+  cardBrand: 'VISA',
+  cardType: 'CREDIT',
+  cardLast4Fpan: '1234',
+  cardLast4Dpan: '5678',
+  cardIssuer: 'Banco Exemplo',
+  cardStatus: 'ACTIVE',
+  isSamsungPayCard: true,
+};
+const result = await SamsungWalletModule.addCardToWallet(cardData);
+
+// Listar tokens existentes
+const tokens = await SamsungWalletModule.listTokens();
+
+// Verificar status de um token específico
+const tokenStatus = await SamsungWalletModule.getTokenStatus(
+  'token-provider',
+  'token-id'
+);
+
+// Verificar se um cartão está tokenizado
+const isTokenized = await SamsungWalletModule.isTokenized(
+  '1234',
+  'CARD_NETWORK_VISA',
+  'TOKEN_PROVIDER_VISA'
+);
+
+// Criar carteira se necessário
+const walletCreated = await SamsungWalletModule.createWalletIfNeeded();
+
+// Obter environment
+const environment = await SamsungWalletModule.getEnvironment();
+
+// Obter constantes
+const constants = await SamsungWalletModule.getConstants();
 ```
 
-### App2App (Ativação de Token)
+### App2App (Manual Provisioning)
+
+Para fluxos de ativação de token via App2App:
 
 ```javascript
-import { GoogleWalletEventEmitter } from '@platformbuilders/wallet-bridge-react-native';
+import { GoogleWalletModule, GoogleWalletEventEmitter } from '@platformbuilders/wallet-bridge-react-native';
 
+// Ativar listener de intents
+await GoogleWalletModule.setIntentListener();
+
+// Escutar eventos de ativação de token
 const eventEmitter = new GoogleWalletEventEmitter();
-
-// Ativar listener
-await GoogleWallet.setIntentListener();
-
-// Escutar eventos
 const removeListener = eventEmitter.addIntentListener((event) => {
   console.log('Intent recebido:', event);
   
@@ -353,12 +422,58 @@ const removeListener = eventEmitter.addIntentListener((event) => {
     // Processar ativação de token
     const decodedData = atob(event.data);
     const activationParams = JSON.parse(decodedData);
-    console.log('Parâmetros de ativação:', activationParams);
+    
+    // Extrair dados de ativação
+    const { panReferenceId, tokenReferenceId } = activationParams;
+    console.log('PAN Reference ID:', panReferenceId);
+    console.log('Token Reference ID:', tokenReferenceId);
+    
+    // Processar ativação do token
+    processTokenActivation(activationParams);
   }
 });
 
 // Cleanup
 removeListener();
+```
+
+### Escolhendo o Módulo Correto
+
+```javascript
+import { GoogleWalletModule, SamsungWalletModule } from '@platformbuilders/wallet-bridge-react-native';
+
+// Verificar qual wallet está disponível
+const checkAvailableWallets = async () => {
+  const wallets = [];
+  
+  if (GoogleWalletModule) {
+    const isGoogleAvailable = await GoogleWalletModule.checkWalletAvailability();
+    if (isGoogleAvailable) {
+      wallets.push('Google Pay');
+    }
+  }
+  
+  if (SamsungWalletModule) {
+    const isSamsungAvailable = await SamsungWalletModule.checkWalletAvailability();
+    if (isSamsungAvailable) {
+      wallets.push('Samsung Pay');
+    }
+  }
+  
+  return wallets;
+};
+
+// Usar o wallet disponível
+const availableWallets = await checkAvailableWallets();
+console.log('Wallets disponíveis:', availableWallets);
+
+if (availableWallets.includes('Google Pay')) {
+  // Usar Google Pay
+  const result = await GoogleWalletModule.addCardToWallet(cardData);
+} else if (availableWallets.includes('Samsung Pay')) {
+  // Usar Samsung Pay
+  const result = await SamsungWalletModule.addCardToWallet(cardData);
+}
 ```
 
 ## 🏗️ Estrutura do Projeto
@@ -455,15 +570,27 @@ yarn ios
 
 ### Funcionalidades Demonstradas
 
-- ✅ Verificação de disponibilidade de wallets
-- ✅ Criação de carteira
+#### Google Pay
+- ✅ Verificação de disponibilidade do Google Pay
+- ✅ Criação de carteira Google Wallet
 - ✅ Obtenção de informações do wallet
 - ✅ Adição de cartão com OPC personalizado
-- ✅ Listagem de tokens
-- ✅ Verificação de status de token
+- ✅ Listagem de tokens existentes
+- ✅ Verificação de status de token específico
+- ✅ Verificação se cartão está tokenizado
+- ✅ Visualização de token no Google Pay
+- ✅ Obtenção de environment (PROD/SANDBOX/DEV)
 - ✅ Listener de intents App2App
 - ✅ Decodificação de dados base64
-- ✅ Tratamento de erros detalhado
+- ✅ Tratamento de erros detalhado com códigos específicos
+
+#### Samsung Pay
+- ✅ Verificação de disponibilidade do Samsung Pay
+- ✅ Obtenção de informações do wallet
+- ✅ Adição de cartão ao Samsung Pay
+- ✅ Listagem de tokens existentes
+- ✅ Verificação de status de token
+- ✅ Obtenção de constantes do módulo
 
 ## 🔧 Modo Mock para Desenvolvimento
 
@@ -483,46 +610,147 @@ GOOGLE_WALLET_USE_MOCK=true
 
 ## 📚 API Reference
 
-### Métodos Principais
+### Google Pay - Métodos Disponíveis
 
 | Método | Descrição | Parâmetros | Retorna |
 |--------|-----------|------------|---------|
-| `checkWalletAvailability` | Verifica se o wallet está disponível | Nenhum | `boolean` |
-| `getSecureWalletInfo` | Retorna informações do wallet | Nenhum | `WalletData` |
-| `getCardStatusBySuffix` | Status do cartão por últimos dígitos | `lastDigits: string` | `CardStatus` |
-| `addCardToWallet` | Adiciona cartão ao wallet | `cardData: ReadableMap` | `TokenizationStatus` |
+| `checkWalletAvailability` | Verifica se o Google Pay está disponível | Nenhum | `Promise<boolean>` |
+| `getSecureWalletInfo` | Retorna informações do Google Pay | Nenhum | `Promise<GoogleWalletData>` |
+| `addCardToWallet` | Adiciona cartão ao Google Pay | `cardData: GooglePushTokenizeRequest` | `Promise<string>` |
+| `listTokens` | Lista tokens existentes no Google Pay | Nenhum | `Promise<GoogleTokenInfoSimple[]>` |
+| `getTokenStatus` | Status de um token específico | `tokenServiceProvider: number, tokenReferenceId: string` | `Promise<GoogleTokenStatus>` |
+| `isTokenized` | Verifica se cartão está tokenizado | `fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number` | `Promise<boolean>` |
+| `viewToken` | Abre Google Pay para visualizar token | `tokenServiceProvider: number, issuerTokenId: string` | `Promise<boolean>` |
+| `createWalletIfNeeded` | Cria carteira se necessário | Nenhum | `Promise<boolean>` |
+| `getEnvironment` | Retorna environment atual | Nenhum | `Promise<string>` |
+| `getConstants` | Retorna constantes do módulo | Nenhum | `GoogleWalletConstants` |
+| `setIntentListener` | Ativa listener para App2App | Nenhum | `Promise<boolean>` |
+| `removeIntentListener` | Remove listener de App2App | Nenhum | `Promise<boolean>` |
+
+### Samsung Pay - Métodos Disponíveis
+
+| Método | Descrição | Parâmetros | Retorna |
+|--------|-----------|------------|---------|
+| `checkWalletAvailability` | Verifica se o Samsung Pay está disponível | Nenhum | `Promise<boolean>` |
+| `getSecureWalletInfo` | Retorna informações do Samsung Pay | Nenhum | `Promise<SamsungWalletData>` |
+| `addCardToWallet` | Adiciona cartão ao Samsung Pay | `cardData: SamsungCardData` | `Promise<string>` |
+| `listTokens` | Lista tokens existentes no Samsung Pay | Nenhum | `Promise<SamsungTokenInfoSimple[]>` |
+| `getTokenStatus` | Status de um token específico | `tokenServiceProvider: number, tokenReferenceId: string` | `Promise<SamsungTokenStatus>` |
+| `isTokenized` | Verifica se cartão está tokenizado | `fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number` | `Promise<boolean>` |
+| `viewToken` | Abre Samsung Pay para visualizar token | `tokenServiceProvider: number, issuerTokenId: string` | `Promise<boolean>` |
+| `createWalletIfNeeded` | Cria carteira se necessário | Nenhum | `Promise<boolean>` |
+| `getEnvironment` | Retorna environment atual | Nenhum | `Promise<string>` |
+| `getConstants` | Retorna constantes do módulo | Nenhum | `Promise<SamsungWalletConstants>` |
 
 ### Tipos de Dados
 
+#### Google Pay
+
 ```typescript
-interface AndroidCardData {
-  network: string;
-  opaquePaymentCard: string;
-  cardHolderName: string;
+// Dados do cartão para Google Pay
+interface GooglePushTokenizeRequest {
+  card: {
+    network: number; // GoogleCardNetwork
+    tokenServiceProvider: number; // GoogleTokenProvider
+    opaquePaymentCard: string;
+    displayName: string;
+    lastDigits: string;
+  };
+  address: {
+    name: string;
+    address1: string;
+    address2?: string;
+    locality: string; // city
+    administrativeArea: string; // state
+    countryCode: string;
+    postalCode: string;
+    phoneNumber: string;
+  };
+}
+
+// Informações do wallet
+interface GoogleWalletData {
+  deviceID: string;
+  walletAccountID: string;
+}
+
+// Status do token
+interface GoogleTokenStatus {
+  tokenState: number;
+  isSelected: boolean;
+}
+
+// Informações do token
+interface GoogleTokenInfoSimple {
+  issuerTokenId: string;
   lastDigits: string;
-  userAddress: UserAddress;
-  issuerId?: string;
-  tokenizationProvider?: string;
+  displayName: string;
+  tokenState: number;
+  network: number;
+}
+```
+
+#### Samsung Pay
+
+```typescript
+// Dados do cartão para Samsung Pay
+interface SamsungCardData {
+  cardId: string;
+  cardBrand: 'VISA' | 'MASTERCARD' | 'AMEX' | 'DISCOVER' | 'JCB' | 'ELO';
+  cardType: 'CREDIT' | 'DEBIT' | 'PREPAID';
+  cardLast4Fpan: string;
+  cardLast4Dpan: string;
+  cardIssuer: string;
+  cardStatus: 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'DEACTIVATED' | 'NOT_FOUND';
+  isSamsungPayCard: boolean;
 }
 
-interface UserAddress {
-  name: string;
-  addressOne: string;
-  addressTwo?: string;
-  city: string;
-  administrativeArea: string;
-  countryCode: string;
-  postalCode: string;
-  phoneNumber?: string;
+// Informações do wallet
+interface SamsungWalletData {
+  deviceID: string;
+  walletAccountID: string;
+  userInfo: {
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone: string;
+  };
 }
 
-type CardStatus = 
-  | 'not found'
-  | 'active'
-  | 'requireAuthorization'
-  | 'pending'
-  | 'suspended'
-  | 'deactivated';
+// Status do token
+interface SamsungTokenStatus {
+  tokenState: number;
+  isSelected: boolean;
+}
+
+// Informações do token
+interface SamsungTokenInfoSimple {
+  cardId: string;
+  cardLast4Fpan: string;
+  cardIssuer: string;
+  cardStatus: string;
+  cardBrand: string;
+}
+```
+
+#### Tipos Comuns
+
+```typescript
+// Status do cartão
+enum CardStatus {
+  NOT_FOUND = 'not found',
+  ACTIVE = 'active',
+  REQUIRE_AUTHORIZATION = 'requireAuthorization',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
+  DEACTIVATED = 'deactivated',
+}
+
+// Dados básicos do wallet
+interface WalletData {
+  deviceID: string;
+  walletAccountID: string;
+}
 ```
 
 ## 🛠️ Desenvolvimento
@@ -560,13 +788,29 @@ yarn example ios
 
 ### Estrutura de Módulos
 
-A biblioteca usa um padrão modular com:
+A biblioteca usa módulos específicos para cada wallet:
 
-1. **Interface Comum**: `WalletModuleInterface` define métodos padrão
-2. **Módulos Específicos**: Implementações para Google Pay e Samsung Pay
-3. **Adapters**: Bridge pattern para unificar interfaces
-4. **Factory**: Detecção automática de SDKs disponíveis
-5. **Fallback**: Módulo stub quando nenhum SDK está disponível
+1. **GoogleWalletModule**: Módulo dedicado para Google Pay
+   - Interface: `GoogleWalletSpec`
+   - EventEmitter: `GoogleWalletEventEmitter`
+   - Tipos: `GoogleWalletData`, `GooglePushTokenizeRequest`, etc.
+
+2. **SamsungWalletModule**: Módulo dedicado para Samsung Pay
+   - Interface: `SamsungWalletSpec`
+   - Tipos: `SamsungWalletData`, `SamsungCardData`, etc.
+
+3. **Bridge Nativa**: Ponte direta entre React Native e SDKs nativos
+   - Sem abstrações desnecessárias
+   - Acesso direto aos métodos dos SDKs
+
+4. **TypeScript**: Tipagem completa para cada módulo
+   - Enums para constantes
+   - Interfaces específicas para cada wallet
+   - Tipos comuns reutilizáveis
+
+5. **Mock Support**: Modo de desenvolvimento sem SDKs reais
+   - Simulação de respostas
+   - Logs detalhados para debug
 
 ## 🐛 Troubleshooting
 
