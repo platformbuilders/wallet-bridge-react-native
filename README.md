@@ -87,25 +87,188 @@ yalc update
 
 #### 1. Configurar Google Pay SDK
 
-Siga as instruções em [GOOGLE_PAY_SETUP.md](./GOOGLE_PAY_SETUP.md):
+##### Baixar e Instalar o SDK
 
-1. Baixe o Google Pay Tap and Pay SDK da [página oficial](https://developers.google.com/pay/issuers/apis/push-provisioning/android/releases)
-2. Descompacte e coloque o conteúdo em `android/libs/com/google/android/gms/play-services-tapandpay/`
-3. Configure `android/gradle.properties`:
-   ```properties
-   includeGooglePlayServices=true
+1. **Baixe o Google Pay Tap and Pay SDK**:
+   - Acesse a [página oficial do Google Pay](https://developers.google.com/pay/issuers/apis/push-provisioning/android/releases)
+   - Baixe a versão mais recente do SDK
+   - Descompacte o arquivo baixado
+
+2. **Estrutura de Pastas**:
    ```
+   android/
+   ├── libs/
+   │   └── com/
+   │       └── google/
+   │           └── android/
+   │               └── gms/
+   │                   └── play-services-tapandpay/
+   │                       ├── classes.jar
+   │                       ├── res/
+   │                       └── AndroidManifest.xml
+   ```
+
+3. **Configurar gradle.properties**:
+   ```properties
+   # android/gradle.properties
+   includeGooglePay=true
+   ```
+
+##### Verificação da Instalação
+
+O build.gradle detecta automaticamente se o SDK está instalado:
+```bash
+# Durante o build, você verá:
+✅ Google Play Services Tap and Pay incluído
+# ou
+⚠️ Google Play Services Tap and Pay não incluído (defina includeGooglePay=true para incluir)
+```
 
 #### 2. Configurar Samsung Pay SDK
 
-Siga as instruções em [SAMSUNG_PAY_SETUP.md](./SAMSUNG_PAY_SETUP.md):
+##### Baixar e Instalar o SDK
 
-1. Baixe o Samsung Pay SDK JAR
-2. Renomeie para `samsungpay_<versão>.jar` e coloque em `libs/`
-3. Configure `android/gradle.properties`:
+1. **Baixe o Samsung Pay SDK**:
+   - Acesse o [Samsung Developer Portal](https://developer.samsung.com/samsung-pay)
+   - Faça login e baixe o Samsung Pay SDK
+   - O arquivo baixado geralmente vem como `SamsungPaySDK_<versão>.jar`
+
+2. **Renomear e Posicionar**:
+   ```bash
+   # Renomeie o arquivo para o padrão esperado
+   mv SamsungPaySDK_2.22.00.jar samsungpay_2.22.00.jar
+   
+   # Coloque na pasta libs do projeto
+   cp samsungpay_2.22.00.jar android/libs/
+   ```
+
+3. **Estrutura de Pastas**:
+   ```
+   android/
+   ├── libs/
+   │   ├── samsungpay_2.22.00.jar
+   │   └── com/
+   │       └── google/
+   │           └── android/
+   │               └── gms/
+   │                   └── play-services-tapandpay/
+   ```
+
+4. **Configurar gradle.properties**:
    ```properties
+   # android/gradle.properties
    enableSamsungPay=true
    ```
+
+##### Verificação da Instalação
+
+O build.gradle detecta automaticamente o JAR do Samsung Pay:
+```bash
+# Durante o build, você verá:
+✅ Samsung Pay SDK encontrado: samsungpay_2.22.00.jar
+✅ Versão detectada: 2.22.00
+✅ Samsung Pay SDK v2.22.00 incluído de: /caminho/para/samsungpay_2.22.00.jar
+# ou
+⚠️ Nenhum arquivo samsungpay_*.jar encontrado em: /caminho/para/libs
+```
+
+#### 3. Configuração Completa do gradle.properties
+
+```properties
+# android/gradle.properties
+
+# Configurações do React Native
+android.useAndroidX=true
+newArchEnabled=false
+hermesEnabled=true
+
+# Configurações de memória
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+
+# Configurações dos SDKs de Wallet
+includeGooglePay=true
+enableSamsungPay=true
+
+# Modo Mock (opcional - para desenvolvimento)
+GOOGLE_WALLET_USE_MOCK=false
+```
+
+#### 4. Estrutura Final de Pastas
+
+```
+react-native-builders-wallet/
+├── android/
+│   ├── libs/
+│   │   ├── samsungpay_2.22.00.jar          # Samsung Pay SDK
+│   │   └── com/
+│   │       └── google/
+│   │           └── android/
+│   │               └── gms/
+│   │                   └── play-services-tapandpay/
+│   │                       ├── classes.jar
+│   │                       ├── res/
+│   │                       └── AndroidManifest.xml
+│   ├── build.gradle                         # Configuração automática dos SDKs
+│   └── gradle.properties                   # Flags de ativação
+└── example/
+    └── android/
+        ├── libs/
+        │   └── samsungpay_2.22.00.jar      # Cópia para o exemplo
+        └── gradle.properties               # Configuração do exemplo
+```
+
+#### 5. Verificar se a Configuração Está Funcionando
+
+##### Teste de Build
+
+```bash
+# Na pasta da biblioteca
+cd android
+./gradlew build
+
+# Você deve ver mensagens como:
+# ✅ Google Play Services Tap and Pay incluído
+# ✅ Samsung Pay SDK encontrado: samsungpay_2.22.00.jar
+# ✅ Versão detectada: 2.22.00
+# ✅ Samsung Pay SDK v2.22.00 incluído de: /caminho/para/samsungpay_2.22.00.jar
+```
+
+##### Teste no App de Exemplo
+
+```bash
+# Na pasta do exemplo
+cd example/android
+./gradlew build
+
+# Verificar se os SDKs foram incluídos
+./gradlew dependencies | grep -E "(google|samsung)"
+```
+
+##### Verificação de Dependências
+
+```bash
+# Verificar dependências do Google Pay
+./gradlew dependencies | grep "play-services-tapandpay"
+
+# Verificar dependências do Samsung Pay
+./gradlew dependencies | grep "samsungpay"
+```
+
+##### Teste de Funcionalidade
+
+```javascript
+// No seu app React Native
+import { NativeModules } from 'react-native';
+
+const { BuildersWallet } = NativeModules;
+
+// Verificar se os módulos estão disponíveis
+console.log('BuildersWallet disponível:', !!BuildersWallet);
+
+// Verificar wallets disponíveis
+const availableWallets = await BuildersWallet.getAvailableWallets();
+console.log('Wallets disponíveis:', availableWallets);
+```
 
 #### 3. Configurar AndroidManifest.xml
 
@@ -409,21 +572,133 @@ A biblioteca usa um padrão modular com:
 
 ### Problemas Comuns
 
-1. **SDK não encontrado**:
-   - Verifique se os SDKs estão na pasta correta
-   - Confirme as configurações no `gradle.properties`
+#### 1. **SDK não encontrado**
 
-2. **Build falha**:
-   - Execute `yarn clean` e tente novamente
-   - Verifique se todas as dependências estão instaladas
+**Google Pay SDK**:
+```bash
+# Verificar se a pasta existe
+ls -la android/libs/com/google/android/gms/play-services-tapandpay/
 
-3. **App2App não funciona**:
-   - Confirme o intent filter no AndroidManifest.xml
-   - Verifique se o package name está correto
+# Deve conter:
+# - classes.jar
+# - res/ (pasta com recursos)
+# - AndroidManifest.xml
+```
 
-4. **Mock não funciona**:
-   - Verifique se `GOOGLE_WALLET_USE_MOCK=true` está configurado
-   - Faça rebuild completo do projeto
+**Samsung Pay SDK**:
+```bash
+# Verificar se o JAR existe
+ls -la android/libs/samsungpay_*.jar
+
+# Deve mostrar algo como:
+# samsungpay_2.22.00.jar
+```
+
+**Soluções**:
+- Verifique se os SDKs estão na pasta correta
+- Confirme as configurações no `gradle.properties`
+- Execute `./gradlew clean` e tente novamente
+
+#### 2. **Build falha**
+
+**Erro de dependência não encontrada**:
+```bash
+# Limpar cache do Gradle
+./gradlew clean
+rm -rf ~/.gradle/caches/
+
+# Rebuild completo
+./gradlew build
+```
+
+**Erro de versão do SDK**:
+- Verifique se a versão do Android SDK é compatível
+- Confirme se o `compileSdkVersion` está correto
+
+#### 3. **Configuração incorreta do gradle.properties**
+
+**Verificar configurações**:
+```properties
+# android/gradle.properties
+includeGooglePay=true
+enableSamsungPay=true
+GOOGLE_WALLET_USE_MOCK=false
+```
+
+**Logs de build**:
+```bash
+# Durante o build, procure por:
+✅ Google Play Services Tap and Pay incluído
+✅ Samsung Pay SDK encontrado: samsungpay_2.22.00.jar
+```
+
+#### 4. **App2App não funciona**
+
+**Verificar intent filter**:
+```xml
+<!-- AndroidManifest.xml -->
+<intent-filter>
+  <action android:name="br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN"/>
+  <category android:name="android.intent.category.DEFAULT"/>
+</intent-filter>
+```
+
+**Verificar package name**:
+- Confirme se o package name está correto
+- Teste com o app mock do Google Wallet
+
+#### 5. **Mock não funciona**
+
+**Verificar configuração**:
+```properties
+# android/gradle.properties
+GOOGLE_WALLET_USE_MOCK=true
+```
+
+**Rebuild necessário**:
+```bash
+# Limpar e rebuild
+./gradlew clean
+./gradlew build
+```
+
+#### 6. **Problemas de Permissões**
+
+**Verificar permissões no AndroidManifest.xml**:
+```xml
+<uses-permission android:name="android.permission.NFC" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+#### 7. **Debug de Build**
+
+**Logs detalhados**:
+```bash
+# Build com logs detalhados
+./gradlew build --info
+
+# Verificar dependências
+./gradlew dependencies
+
+# Verificar configuração
+./gradlew properties
+```
+
+#### 8. **Problemas Específicos do Samsung Pay**
+
+**JAR não encontrado**:
+```bash
+# Verificar se o arquivo está no local correto
+find . -name "samsungpay_*.jar"
+
+# Deve retornar:
+# ./android/libs/samsungpay_2.22.00.jar
+```
+
+**Versão incorreta**:
+- Certifique-se de que o arquivo segue o padrão `samsungpay_<versão>.jar`
+- A versão será detectada automaticamente pelo build.gradle
 
 ## 🤝 Contribuindo
 
