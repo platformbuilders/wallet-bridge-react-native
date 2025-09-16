@@ -16,10 +16,15 @@ export enum GoogleWalletStatus {
 }
 
 export enum GoogleWalletStatusCode {
+  /** Não há carteira ativa. */
   TAP_AND_PAY_NO_ACTIVE_WALLET = '15002',
+  /** O ID do token do emissor indicado não corresponde a um token na carteira ativa. Este status pode ser retornado por chamadas que especificam um ID de token do emissor. */
   TAP_AND_PAY_TOKEN_NOT_FOUND = '15003',
+  /** O token especificado foi encontrado, mas não estava em um estado válido para a operação ter sucesso. Por exemplo, isso pode acontecer ao tentar selecionar como padrão um token que não está no estado TOKEN_STATE_ACTIVE. */
   TAP_AND_PAY_INVALID_TOKEN_STATE = '15004',
+  /** A tokenização falhou porque o dispositivo não passou em uma verificação de compatibilidade. */
   TAP_AND_PAY_ATTESTATION_ERROR = '15005',
+  /** A API TapAndPay não pode ser chamada pelo aplicativo atual. Se você receber este erro, certifique-se de que está chamando a API usando um nome de pacote e impressão digital que adicionamos à nossa lista de permissões. */
   TAP_AND_PAY_UNAVAILABLE = '15009',
 }
 
