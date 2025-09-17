@@ -262,10 +262,10 @@ find "$EXAMPLE_DIR" -type f \( -name "*.xml" -o -name "*.gradle" -o -name "*.pro
     fi
 done
 
-# 10. Atualizar variáveis do GoogleWalletAppMock
-MOCK_GRADLE_PROPERTIES="GoogleWalletAppMock/gradle.properties"
+# 10. Atualizar variáveis do google-wallet-app-mock
+MOCK_GRADLE_PROPERTIES="google-wallet-app-mock/gradle.properties"
 if [ -f "$MOCK_GRADLE_PROPERTIES" ]; then
-    log "Atualizando variáveis do GoogleWalletAppMock"
+    log "Atualizando variáveis do google-wallet-app-mock"
     TARGET_ACTION="${PACKAGE_NAME}.action.ACTIVATE_TOKEN"
     
     # Atualizar targetAppPackage
@@ -274,7 +274,7 @@ if [ -f "$MOCK_GRADLE_PROPERTIES" ]; then
     sed -i.bak "s/targetAppAction=.*/targetAppAction=$TARGET_ACTION/" "$MOCK_GRADLE_PROPERTIES"
     rm -f "$MOCK_GRADLE_PROPERTIES.bak"
     
-    success "GoogleWalletAppMock atualizado para target: $PACKAGE_NAME"
+    success "google-wallet-app-mock atualizado para target: $PACKAGE_NAME"
 else
     warning "Arquivo gradle.properties do mock não encontrado: $MOCK_GRADLE_PROPERTIES"
 fi
@@ -304,7 +304,7 @@ echo "1. cd example/android"
 echo "2. ./gradlew clean"
 echo "3. cd .."
 echo "4. yarn android"
-echo "5. cd ../GoogleWalletAppMock"
+echo "5. cd ../google-wallet-app-mock"
 echo "6. ./gradlew assembleDebug"
 echo "7. adb install app/build/outputs/apk/debug/app-debug.apk"
 echo "8. Teste o app com o novo package name"

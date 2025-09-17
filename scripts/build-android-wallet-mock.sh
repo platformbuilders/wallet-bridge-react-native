@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# Script para buildar e instalar o GoogleWalletAppMock
+# Script para buildar e instalar o google-wallet-app-mock
 # Executa: gradlew assembleDebug -> adb install
 
 set -e  # Para o script se algum comando falhar
 
-echo "🚀 Iniciando build e instalação do GoogleWalletAppMock..."
+echo "🚀 Iniciando build e instalação do google-wallet-app-mock..."
 
-# Navega para o diretório GoogleWalletAppMock
-cd GoogleWalletAppMock
+# Navega para o diretório google-wallet-app-mock
+cd google-wallet-app-mock
 
 # Limpa o build anterior
 echo "🧹 Limpando build anterior..."
 ./gradlew clean
 
 # Builda o APK
-echo "🔨 Buildando o APK do GoogleWalletAppMock..."
+echo "🔨 Buildando o APK do google-wallet-app-mock..."
 ./gradlew assembleDebug
 
 # Verifica se o APK foi gerado
@@ -44,18 +44,18 @@ echo "📱 Instalando o APK no dispositivo..."
 adb install -r "$APK_PATH"
 
 if [ $? -eq 0 ]; then
-    echo "✅ GoogleWalletAppMock instalado com sucesso!"
+    echo "✅ google-wallet-app-mock instalado com sucesso!"
     echo "📱 APK instalado: $APK_PATH"
     
     # Abre o app automaticamente
-    echo "🚀 Abrindo o GoogleWalletAppMock..."
+    echo "🚀 Abrindo o google-wallet-app-mock..."
     adb shell am start -n com.google.android.gms_mock/.MainActivity
     
     if [ $? -eq 0 ]; then
         echo "✅ App aberto com sucesso!"
     else
         echo "⚠️  App instalado, mas não foi possível abrir automaticamente"
-        echo "Abra manualmente o GoogleWalletAppMock no dispositivo"
+        echo "Abra manualmente o google-wallet-app-mock no dispositivo"
     fi
 else
     echo "❌ Erro ao instalar o APK"
@@ -65,4 +65,4 @@ fi
 # Volta para o diretório raiz
 cd ..
 
-echo "🎉 Build e instalação do GoogleWalletAppMock concluídos com sucesso!"
+echo "🎉 Build e instalação do google-wallet-app-mock concluídos com sucesso!"

@@ -529,7 +529,7 @@ react-native-builders-wallet/
 │   │   └── App.tsx                  # Exemplo completo de uso
 │   ├── 📁 android/                  # Projeto Android de exemplo
 │   └── 📁 ios/                      # Projeto iOS de exemplo
-├── 📁 GoogleWalletAppMock/          # App mock para testes
+├── 📁 google-wallet-app-mock/          # App mock para testes
 │   └── 📁 app/
 │       └── 📁 src/main/
 │           └── MainActivity.kt      # Simulador App2App
@@ -539,7 +539,7 @@ react-native-builders-wallet/
 └── 📄 README.md                     # Este arquivo
 ```
 
-## 🧪 App de Mock - GoogleWalletAppMock
+## 🧪 App de Mock - google-wallet-app-mock
 
 Um aplicativo Android que simula o Google Wallet para facilitar os testes do fluxo App2App durante o desenvolvimento da biblioteca BuildersWallet.
 
@@ -594,7 +594,7 @@ Os dados enviados contêm:
 #### 1. Build do App
 
 ```bash
-cd GoogleWalletAppMock
+cd google-wallet-app-mock
 
 # Build debug
 ./gradlew assembleDebug
