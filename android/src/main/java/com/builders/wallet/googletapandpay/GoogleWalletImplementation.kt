@@ -715,6 +715,12 @@ class GoogleWalletImplementation(
                 return
             }
             
+            if (tapAndPayClient == null) {
+                Log.w(TAG, "Cliente TapAndPay não foi inicializado")
+                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+                return
+            }
+            
             Log.d(TAG, "🔍 [GOOGLE] Dados do cartão recebidos: $cardData")
             
             // Obter atividade atual
@@ -727,64 +733,88 @@ class GoogleWalletImplementation(
             mPickerPromise = promise
             
             try {
+                // Validar dados do cartão
+                val validationError = validateCardData(cardData)
+                if (validationError != null) {
+                    Log.w(TAG, "❌ [GOOGLE] $validationError")
+                    promise.reject("INVALID_CARD_DATA", validationError)
+                    return
+                }
+                
+                Log.d(TAG, "🔍 [GOOGLE] Dados validados com sucesso")
+                
+                // Extrair dados validados
+                val address = cardData.getMap("address")!!
+                val card = cardData.getMap("card")!!
+                
+                val opaquePaymentCard = card.getString("opaquePaymentCard")!!
+                val network = card.getInt("network")
+                val tokenServiceProvider = card.getInt("tokenServiceProvider")
+                val displayName = card.getString("displayName")!!
+                val lastDigits = card.getString("lastDigits")!!
+                
                 // Criar UserAddress usando reflexão
                 val userAddressClass = Class.forName("com.google.android.gms.tapandpay.issuer.UserAddress")
                 val userAddressBuilderClass = Class.forName("com.google.android.gms.tapandpay.issuer.UserAddress\$Builder")
                 val userAddressBuilder = userAddressBuilderClass.newInstance()
                 
-                val userAddress = cardData.getMap("userAddress")
-                if (userAddress != null) {
-                    userAddressBuilderClass.getMethod("setAddress1", String::class.java)
-                        .invoke(userAddressBuilder, userAddress.getString("addressOne") ?: "")
-                    userAddressBuilderClass.getMethod("setAddress2", String::class.java)
-                        .invoke(userAddressBuilder, userAddress.getString("addressTwo") ?: "")
-                    userAddressBuilderClass.getMethod("setCountryCode", String::class.java)
-                        .invoke(userAddressBuilder, userAddress.getString("countryCode") ?: "")
-                    userAddressBuilderClass.getMethod("setLocality", String::class.java)
-                        .invoke(userAddressBuilder, userAddress.getString("city") ?: "")
-                    userAddressBuilderClass.getMethod("setAdministrativeArea", String::class.java)
-                        .invoke(userAddressBuilder, userAddress.getString("administrativeArea") ?: "")
-                    userAddressBuilderClass.getMethod("setName", String::class.java)
-                        .invoke(userAddressBuilder, userAddress.getString("name") ?: "")
-                    userAddressBuilderClass.getMethod("setPhoneNumber", String::class.java)
-                        .invoke(userAddressBuilder, userAddress.getString("phoneNumber") ?: "")
-                    userAddressBuilderClass.getMethod("setPostalCode", String::class.java)
-                        .invoke(userAddressBuilder, userAddress.getString("postalCode") ?: "")
-                }
+                // Mapear campos do address corretamente
+                userAddressBuilderClass.getMethod("setAddress1", String::class.java)
+                    .invoke(userAddressBuilder, address.getString("address1") ?: "")
+                userAddressBuilderClass.getMethod("setAddress2", String::class.java)
+                    .invoke(userAddressBuilder, address.getString("address2") ?: "")
+                userAddressBuilderClass.getMethod("setCountryCode", String::class.java)
+                    .invoke(userAddressBuilder, address.getString("countryCode") ?: "")
+                userAddressBuilderClass.getMethod("setLocality", String::class.java)
+                    .invoke(userAddressBuilder, address.getString("locality") ?: "")
+                userAddressBuilderClass.getMethod("setAdministrativeArea", String::class.java)
+                    .invoke(userAddressBuilder, address.getString("administrativeArea") ?: "")
+                userAddressBuilderClass.getMethod("setName", String::class.java)
+                    .invoke(userAddressBuilder, address.getString("name") ?: "")
+                userAddressBuilderClass.getMethod("setPhoneNumber", String::class.java)
+                    .invoke(userAddressBuilder, address.getString("phoneNumber") ?: "")
+                userAddressBuilderClass.getMethod("setPostalCode", String::class.java)
+                    .invoke(userAddressBuilder, address.getString("postalCode") ?: "")
                 
                 val userAddressObj = userAddressBuilderClass.getMethod("build").invoke(userAddressBuilder)
+                
+                Log.d(TAG, "🔍 [GOOGLE] UserAddress criado com sucesso")
                 
                 // Criar PushTokenizeRequest usando reflexão
                 val pushTokenizeRequestClass = Class.forName("com.google.android.gms.tapandpay.issuer.PushTokenizeRequest")
                 val pushTokenizeRequestBuilderClass = Class.forName("com.google.android.gms.tapandpay.issuer.PushTokenizeRequest\$Builder")
                 val pushTokenizeRequestBuilder = pushTokenizeRequestBuilderClass.newInstance()
                 
+                // Configurar PushTokenizeRequest
                 pushTokenizeRequestBuilderClass.getMethod("setOpaquePaymentCard", ByteArray::class.java)
-                    .invoke(pushTokenizeRequestBuilder, (cardData.getString("opaquePaymentCard") ?: "").toByteArray())
+                    .invoke(pushTokenizeRequestBuilder, opaquePaymentCard.toByteArray())
                 pushTokenizeRequestBuilderClass.getMethod("setNetwork", Int::class.java)
-                    .invoke(pushTokenizeRequestBuilder, cardData.getInt("tokenServiceProvider"))
+                    .invoke(pushTokenizeRequestBuilder, network)
                 pushTokenizeRequestBuilderClass.getMethod("setTokenServiceProvider", Int::class.java)
-                    .invoke(pushTokenizeRequestBuilder, cardData.getInt("tokenServiceProvider"))
+                    .invoke(pushTokenizeRequestBuilder, tokenServiceProvider)
                 pushTokenizeRequestBuilderClass.getMethod("setDisplayName", String::class.java)
-                    .invoke(pushTokenizeRequestBuilder, cardData.getString("cardHolderName") ?: "")
+                    .invoke(pushTokenizeRequestBuilder, displayName)
                 pushTokenizeRequestBuilderClass.getMethod("setLastDigits", String::class.java)
-                    .invoke(pushTokenizeRequestBuilder, cardData.getString("lastDigits") ?: "")
+                    .invoke(pushTokenizeRequestBuilder, lastDigits)
                 pushTokenizeRequestBuilderClass.getMethod("setUserAddress", userAddressClass)
                     .invoke(pushTokenizeRequestBuilder, userAddressObj)
                 
                 val pushTokenizeRequest = pushTokenizeRequestBuilderClass.getMethod("build").invoke(pushTokenizeRequestBuilder)
+                
+                Log.d(TAG, "🔍 [GOOGLE] PushTokenizeRequest criado com sucesso")
                 
                 // Chamar pushTokenize usando reflexão
                 val pushTokenizeMethod = tapAndPayClient?.javaClass?.getMethod("pushTokenize", 
                     Activity::class.java, pushTokenizeRequestClass, Int::class.java)
                 pushTokenizeMethod?.invoke(tapAndPayClient, activity, pushTokenizeRequest, PUSH_TOKENIZE_REQUEST)
                 
+                Log.d(TAG, "✅ [GOOGLE] pushTokenize chamado com sucesso")
+                
             } catch (e: Exception) {
-                Log.w(TAG, "Erro ao processar pushTokenize: ${e.message}")
+                Log.e(TAG, "❌ [GOOGLE] Erro ao processar pushTokenize: ${e.message}", e)
                 promise.reject("PUSH_TOKENIZE_ERROR", "Erro ao processar tokenização: ${e.message}")
             }
             
-            Log.d(TAG, "✅ [GOOGLE] addCardToWallet executado com sucesso")
         } catch (e: Exception) {
             Log.e(TAG, "❌ [GOOGLE] Erro em addCardToWallet: ${e.message}", e)
             promise.reject("ADD_CARD_TO_WALLET_ERROR", e.message, e)
@@ -1200,6 +1230,53 @@ class GoogleWalletImplementation(
         } catch (e: Exception) {
             Log.e(TAG, "❌ [GOOGLE] Erro ao enviar evento para React Native: ${e.message}", e)
         }
+    }
+
+    /**
+     * Valida os dados do cartão para Push Provisioning
+     */
+    private fun validateCardData(cardData: ReadableMap): String? {
+        val address = cardData.getMap("address")
+        val card = cardData.getMap("card")
+        
+        if (address == null) {
+            return "Campo 'address' é obrigatório"
+        }
+        
+        if (card == null) {
+            return "Campo 'card' é obrigatório"
+        }
+        
+        // Validar campos obrigatórios do cartão
+        val opaquePaymentCard = card.getString("opaquePaymentCard")
+        val displayName = card.getString("displayName")
+        val lastDigits = card.getString("lastDigits")
+        
+        if (opaquePaymentCard.isNullOrEmpty()) {
+            return "Campo 'opaquePaymentCard' é obrigatório"
+        }
+        
+        if (displayName.isNullOrEmpty()) {
+            return "Campo 'displayName' é obrigatório"
+        }
+        
+        if (lastDigits.isNullOrEmpty()) {
+            return "Campo 'lastDigits' é obrigatório"
+        }
+        
+        // Validar formato do opaquePaymentCard (deve ser base64)
+        try {
+            android.util.Base64.decode(opaquePaymentCard, android.util.Base64.DEFAULT)
+        } catch (e: Exception) {
+            return "Campo 'opaquePaymentCard' deve estar em formato base64 válido"
+        }
+        
+        // Validar lastDigits (deve ter 4 dígitos)
+        if (!lastDigits.matches(Regex("\\d{4}"))) {
+            return "Campo 'lastDigits' deve conter exatamente 4 dígitos"
+        }
+        
+        return null // Validação passou
     }
 
     companion object {

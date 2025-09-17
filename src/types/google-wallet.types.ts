@@ -30,7 +30,7 @@ export enum GoogleWalletStatusCode {
 
 export enum CommonStatusCode {
   /** A operação foi bem-sucedida. */
-  SUCCESS = '0',  //ALERTA: Quando é cancelado, ele retorna 0 também
+  SUCCESS = '0', //ALERTA: Quando é cancelado, ele retorna 0 também
   /** A operação foi bem-sucedida, mas usou o cache do dispositivo. */
   SUCCESS_CACHE = '-1',
   /** A versão instalada do Google Play services está desatualizada. */
@@ -136,6 +136,33 @@ export interface GooglePushTokenizeRequest {
   card: GooglePaymentCard;
 }
 
+// Google Wallet - UserAddress para addCardToWallet (compatível com SDK)
+export interface GoogleUserAddressForCard {
+  address1: string;
+  address2?: string;
+  countryCode: string;
+  locality: string; // city
+  administrativeArea: string; // state/province
+  name: string;
+  phoneNumber: string;
+  postalCode: string;
+}
+
+// Google Wallet - PaymentCard para addCardToWallet (compatível com SDK)
+export interface GooglePaymentCardForCard {
+  opaquePaymentCard: string;
+  network: number; // GoogleCardNetwork value
+  tokenServiceProvider: number; // GoogleTokenProvider value
+  displayName: string;
+  lastDigits: string;
+}
+
+// Google Wallet - PushTokenizeRequest para addCardToWallet
+export interface GooglePushTokenizeRequestForCard {
+  address: GoogleUserAddressForCard;
+  card: GooglePaymentCardForCard;
+}
+
 // Google Wallet - TokenInfo (baseado no SDK do Google Pay)
 export interface GoogleTokenInfo {
   issuerTokenId: string;
@@ -205,22 +232,35 @@ export enum GoogleActivationStatus {
 export interface GoogleWalletSpec {
   checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<GoogleWalletData>;
-  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<GoogleTokenStatus>;
+  getTokenStatus(
+    tokenServiceProvider: number,
+    tokenReferenceId: string
+  ): Promise<GoogleTokenStatus>;
   getEnvironment(): Promise<string>;
-  isTokenized(fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number): Promise<boolean>;
-  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean>;
-  addCardToWallet(cardData: GooglePushTokenizeRequest): Promise<string>;
+  isTokenized(
+    fpanLastFour: string,
+    cardNetwork: number,
+    tokenServiceProvider: number
+  ): Promise<boolean>;
+  viewToken(
+    tokenServiceProvider: number,
+    issuerTokenId: string
+  ): Promise<boolean>;
+  addCardToWallet(cardData: GooglePushTokenizeRequestForCard): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<GoogleTokenInfoSimple[]>;
   getConstants(): GoogleWalletConstants;
-  
+
   // Métodos de listener de intent
   setIntentListener(): Promise<boolean>;
   removeIntentListener(): Promise<boolean>;
-  
+
   // Método de resultado de ativação
-  setActivationResult(status: string, activationCode?: string): Promise<boolean>;
-  
+  setActivationResult(
+    status: string,
+    activationCode?: string
+  ): Promise<boolean>;
+
   // Método para finalizar atividade
   finishActivity(): Promise<boolean>;
 }
@@ -233,7 +273,8 @@ import { NativeEventEmitter } from 'react-native';
 
 export class GoogleWalletEventEmitter {
   private eventEmitter: NativeEventEmitter;
-  private listeners: Map<string, (event: GoogleWalletIntentEvent) => void> = new Map();
+  private listeners: Map<string, (event: GoogleWalletIntentEvent) => void> =
+    new Map();
 
   constructor() {
     // Usar o módulo nativo diretamente para o EventEmitter
@@ -246,18 +287,26 @@ export class GoogleWalletEventEmitter {
    * @param callback Função que será chamada quando um evento for recebido
    * @returns Função para remover o listener
    */
-  addIntentListener(callback: (event: GoogleWalletIntentEvent) => void): () => void {
+  addIntentListener(
+    callback: (event: GoogleWalletIntentEvent) => void
+  ): () => void {
     const listenerId = `listener_${Date.now()}_${Math.random()}`;
-    
+
     // Armazenar o callback
     this.listeners.set(listenerId, callback);
-    
+
     // Criar o listener do NativeEventEmitter
-    const subscription = this.eventEmitter.addListener('GoogleWalletIntentReceived', (event: any) => {
-      const walletEvent = event as GoogleWalletIntentEvent;
-      console.log('🎯 [GoogleWalletEventEmitter] Intent recebido:', walletEvent);
-      callback(walletEvent);
-    });
+    const subscription = this.eventEmitter.addListener(
+      'GoogleWalletIntentReceived',
+      (event: any) => {
+        const walletEvent = event as GoogleWalletIntentEvent;
+        console.log(
+          '🎯 [GoogleWalletEventEmitter] Intent recebido:',
+          walletEvent
+        );
+        callback(walletEvent);
+      }
+    );
 
     // Retornar função de cleanup
     return () => {
@@ -281,4 +330,3 @@ export class GoogleWalletEventEmitter {
     return this.listeners.size;
   }
 }
-
