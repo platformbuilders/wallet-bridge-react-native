@@ -20,8 +20,8 @@ Este app mock é essencial para testar o fluxo de **Manual Provisioning** do Goo
 
 ### 1. Simulação de Intent
 O app envia um intent com:
-- **Action**: `br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN`
-- **Package**: `br.com.pefisa.pefisa.hml`
+- **Action**: `com.sua-empresa.seu-app.action.ACTIVATE_TOKEN`
+- **Package**: `com.sua-empresa.seu-app`
 - **Dados**: Base64 com informações de ativação de token
 
 ### 2. Dados Simulados
@@ -93,7 +93,7 @@ Para que seu app principal receba os intents do mock, configure o `AndroidManife
   
   <!-- Intent filter para capturar ativação de token -->
   <intent-filter>
-    <action android:name="br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN"/>
+    <action android:name="com.sua-empresa.seu-app.action.ACTIVATE_TOKEN"/>
     <category android:name="android.intent.category.DEFAULT"/>
   </intent-filter>
 </activity>
@@ -162,7 +162,7 @@ adb logcat | grep "🚀\|✅\|❌\|⚠️"
 ### Logs do App Principal
 ```bash
 # Filtrar logs do seu app
-adb logcat | grep "br.com.pefisa.pefisa.hml"
+adb logcat | grep "com.sua-empresa.seu-app"
 
 # Logs da biblioteca BuildersWallet
 adb logcat | grep "BuildersWallet\|GoogleWallet"
