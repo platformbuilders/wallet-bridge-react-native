@@ -22,7 +22,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,7 +61,7 @@ class MainActivity : ComponentActivity() {
     ) { result ->
         when (result.resultCode) {
             Activity.RESULT_OK -> {
-                Log.d(TAG, "✅ [GOOGLE] App Pefisa retornou com sucesso")
+                Log.d(TAG, "✅ [GOOGLE] App example retornou com sucesso")
 
                 // Processar extras de ativação
                 val activationResponse = result.data?.getStringExtra("BANKING_APP_ACTIVATION_RESPONSE")
@@ -91,18 +90,18 @@ class MainActivity : ComponentActivity() {
                 )
             }
             Activity.RESULT_CANCELED -> {
-                Log.w(TAG, "⚠️ [GOOGLE] App Pefisa foi cancelado pelo usuário")
+                Log.w(TAG, "⚠️ [GOOGLE] App example foi cancelado pelo usuário")
                 showAlert(
                     title = "⚠️ Cancelado",
-                    message = "App Pefisa foi cancelado pelo usuário.\n\nCódigo: ${result.resultCode}",
+                    message = "App example foi cancelado pelo usuário.\n\nCódigo: ${result.resultCode}",
                     resultCode = result.resultCode
                 )
             }
             else -> {
-                Log.w(TAG, "⚠️ [GOOGLE] App Pefisa retornou com código: ${result.resultCode}")
+                Log.w(TAG, "⚠️ [GOOGLE] App example retornou com código: ${result.resultCode}")
                 showAlert(
                     title = "⚠️ Resultado Inesperado",
-                    message = "App Pefisa retornou com código inesperado.\n\nCódigo: ${result.resultCode}",
+                    message = "App example retornou com código inesperado.\n\nCódigo: ${result.resultCode}",
                     resultCode = result.resultCode
                 )
             }
@@ -120,7 +119,7 @@ class MainActivity : ComponentActivity() {
 
     private fun buildActivationMessage(activationResponse: String?, activationCode: String?, resultCode: Int): String {
         val message = StringBuilder()
-        message.append("App Pefisa retornou com sucesso!\n\n")
+        message.append("App example retornou com sucesso!\n\n")
         message.append("Código de Resultado: $resultCode\n\n")
 
         when (activationResponse) {
@@ -212,21 +211,31 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "📋 [GOOGLE] JSON gerado: $simulatedJson")
             Log.d(TAG, "📋 [GOOGLE] Base64 gerado: $simulatedData")
 
-            val intent = Intent("br.com.pefisa.pefisa.hml.action.ACTIVATE_TOKEN").apply {
-                setPackage("br.com.pefisa.pefisa.hml")
+            val intent = Intent(BuildConfig.TARGET_APP_ACTION).apply {
+                setPackage(BuildConfig.TARGET_APP_PACKAGE)
                 putExtra(Intent.EXTRA_TEXT, simulatedData)
             }
 
             // Tentar iniciar o app diretamente usando ActivityResultLauncher
             try {
                 app2AppLauncher.launch(intent)
-                Log.d(TAG, "🚀 [GOOGLE] App Pefisa iniciado com sucesso")
+                Log.d(TAG, "🚀 [GOOGLE] App example iniciado com sucesso")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ [GOOGLE] Erro ao iniciar app: ${e.message}")
+                showAlert(
+                    title = "❌ Erro ao Abrir App",
+                    message = "Não foi possível abrir o app example.\n\nErro: ${e.message}\n\nPackage: ${BuildConfig.TARGET_APP_PACKAGE}\nAction: ${BuildConfig.TARGET_APP_ACTION}",
+                    resultCode = -1
+                )
             }
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ [GOOGLE] Erro ao simular App 2 App: ${e.message}")
+            showAlert(
+                title = "❌ Erro Geral",
+                message = "Erro inesperado ao simular App 2 App.\n\nErro: ${e.message}\n\nVerifique se o package está correto e se o app está instalado.",
+                resultCode = -1
+            )
         }
     }
 
@@ -272,7 +281,7 @@ fun App2AppSimulator(
         }
 
         Text(
-            text = "Package: br.com.pefisa.pefisa.hml",
+            text = "Package: ${BuildConfig.TARGET_APP_PACKAGE}",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = 16.dp)
         )

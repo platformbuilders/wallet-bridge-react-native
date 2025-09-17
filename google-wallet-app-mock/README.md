@@ -53,7 +53,7 @@ Os dados enviados contêm:
 ### 1. Build do App
 
 ```bash
-cd GoogleWalletAppMock
+cd google-wallet-app-mock
 
 # Build debug
 ./gradlew assembleDebug
@@ -199,7 +199,7 @@ O app mock agora exibe alertas visuais para mostrar o resultado das operações:
 ## 🏗️ Estrutura do Projeto
 
 ```
-GoogleWalletAppMock/
+google-wallet-app-mock/
 ├── 📁 app/
 │   ├── 📁 src/main/
 │   │   ├── 📁 java/com/google/android/gms_mock/

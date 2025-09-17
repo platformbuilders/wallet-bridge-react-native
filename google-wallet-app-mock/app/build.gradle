@@ -16,6 +16,10 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Variável de ambiente para o package name do app de destino
+        buildConfigField "String", "TARGET_APP_PACKAGE", "\"${project.findProperty('targetAppPackage')}\""
+        buildConfigField "String", "TARGET_APP_ACTION", "\"${project.findProperty('targetAppAction')}\""
     }
 
     buildTypes {
@@ -33,6 +37,7 @@ android {
     }
     buildFeatures {
         compose true
+        buildConfig true
     }
 }
 
