@@ -1,4 +1,4 @@
-package br.com.pefisa.pefisa.hml
+package com.example.wallet
 
 import android.os.Bundle
 import com.facebook.react.ReactActivity
