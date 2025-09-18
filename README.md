@@ -12,6 +12,9 @@ Uma biblioteca React Native que facilita a integração com carteiras digitais (
 - **Métodos Principais**: Foco nos métodos essenciais para Push e Manual Provisioning
 - **Bridge Simplificada**: Ponte direta entre React Native e SDKs nativos
 - **App2App Support**: Suporte completo para fluxos de ativação de token
+- **Decodificação Automática**: Dados base64 decodificados automaticamente pelo nativo
+- **Validação Robusta**: Validação completa de dados de entrada
+- **Tratamento de Erros**: Códigos de erro específicos e mensagens claras
 - **Mock Mode**: Modo de desenvolvimento para testes sem SDKs reais
 - **TypeScript**: Tipagem completa para melhor experiência de desenvolvimento
 
@@ -311,22 +314,23 @@ const walletInfo = await GoogleWalletModule.getSecureWalletInfo();
 
 // Adicionar cartão ao Google Pay
 const cardData = {
+  address: {
+    address1: 'Rua das Flores, 123',
+    address2: 'Apto 45',
+    countryCode: 'BR',
+    locality: 'São Paulo',
+    administrativeArea: 'SP',
+    name: 'João Silva',
+    phoneNumber: '+5511999999999',
+    postalCode: '01234-567'
+  },
   card: {
+    opaquePaymentCard: 'eyJ0eXBlIjoiL0dvb2dsZV9QYXlfQ2FyZCIsInRva2VuIjoiZXhhbXBsZV90b2tlbl9kYXRhIn0=',
     network: GoogleWalletModule.getConstants().CARD_NETWORK_ELO,
     tokenServiceProvider: GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO,
-    opaquePaymentCard: 'seu-opc-aqui',
-    displayName: 'Nome do Cartão',
-    lastDigits: '1234',
-  },
-  address: {
-    name: 'Nome do Usuário',
-    address1: 'Endereço',
-    locality: 'Cidade',
-    administrativeArea: 'Estado',
-    countryCode: 'BR',
-    postalCode: '12345-678',
-    phoneNumber: '11999999999',
-  },
+    displayName: 'João Silva - Visa',
+    lastDigits: '1234'
+  }
 };
 const result = await GoogleWalletModule.addCardToWallet(cardData);
 
@@ -403,6 +407,27 @@ const environment = await SamsungWalletModule.getEnvironment();
 const constants = await SamsungWalletModule.getConstants();
 ```
 
+### Melhorias no Fluxo de Adicionar Cartão
+
+A biblioteca foi otimizada para seguir as melhores práticas do Push Provisioning do Google Pay:
+
+#### ✅ **Estrutura de Dados Corrigida**
+- **Antes**: Estrutura plana com campos misturados
+- **Depois**: Estrutura hierárquica com `address` e `card` separados
+- **Benefício**: Compatibilidade total com o SDK oficial do Google Pay
+
+#### ✅ **Validação Robusta**
+- Validação de campos obrigatórios (`opaquePaymentCard`, `displayName`, `lastDigits`)
+- Verificação de formato base64 para `opaquePaymentCard`
+- Validação de `lastDigits` (deve ter exatamente 4 dígitos)
+- Códigos de erro específicos para cada tipo de problema
+
+#### ✅ **Decodificação Automática de Intents**
+- Dados base64 decodificados automaticamente pelo nativo
+- Fallback para decodificação manual quando necessário
+- Informações completas sobre o formato dos dados
+- Dados originais preservados para referência
+
 ### App2App (Manual Provisioning)
 
 Para fluxos de ativação de token via App2App:
@@ -419,17 +444,23 @@ const removeListener = eventEmitter.addIntentListener((event) => {
   console.log('Intent recebido:', event);
   
   if (event.type === 'ACTIVATE_TOKEN') {
-    // Processar ativação de token
-    const decodedData = atob(event.data);
-    const activationParams = JSON.parse(decodedData);
+    // Verificar formato dos dados
+    if (event.dataFormat === 'base64_decoded') {
+      // Dados já decodificados automaticamente pelo nativo
+      console.log('✅ Dados já decodificados automaticamente');
+      const activationParams = JSON.parse(event.data);
+      processTokenActivation(activationParams);
+    } else if (event.dataFormat === 'raw') {
+      // Dados em formato raw, decodificar manualmente
+      const decodedData = atob(event.data);
+      const activationParams = JSON.parse(decodedData);
+      processTokenActivation(activationParams);
+    }
     
     // Extrair dados de ativação
     const { panReferenceId, tokenReferenceId } = activationParams;
     console.log('PAN Reference ID:', panReferenceId);
     console.log('Token Reference ID:', tokenReferenceId);
-    
-    // Processar ativação do token
-    processTokenActivation(activationParams);
   }
 });
 
@@ -876,24 +907,24 @@ GOOGLE_WALLET_USE_MOCK=true
 #### Google Pay
 
 ```typescript
-// Dados do cartão para Google Pay
+// Dados do cartão para Google Pay (estrutura correta)
 interface GooglePushTokenizeRequest {
-  card: {
-    network: number; // GoogleCardNetwork
-    tokenServiceProvider: number; // GoogleTokenProvider
-    opaquePaymentCard: string;
-    displayName: string;
-    lastDigits: string;
-  };
   address: {
-    name: string;
     address1: string;
     address2?: string;
-    locality: string; // city
-    administrativeArea: string; // state
     countryCode: string;
-    postalCode: string;
+    locality: string; // city
+    administrativeArea: string; // state/province
+    name: string;
     phoneNumber: string;
+    postalCode: string;
+  };
+  card: {
+    opaquePaymentCard: string; // Base64 encoded
+    network: number; // GoogleCardNetwork
+    tokenServiceProvider: number; // GoogleTokenProvider
+    displayName: string;
+    lastDigits: string; // Exatamente 4 dígitos
   };
 }
 
@@ -923,6 +954,24 @@ enum GoogleActivationStatus {
   APPROVED = 'approved',
   DECLINED = 'declined',
   FAILURE = 'failure',
+}
+
+// Formato dos dados de intent
+enum GoogleWalletDataFormat {
+  BASE64_DECODED = 'base64_decoded',
+  RAW = 'raw',
+}
+
+// Evento de intent do Google Wallet
+interface GoogleWalletIntentEvent {
+  action: string;
+  type: GoogleWalletIntentType;
+  data?: string; // Dados decodificados (string normal)
+  dataFormat?: GoogleWalletDataFormat;
+  callingPackage?: string;
+  originalData?: string; // Dados originais em base64
+  error?: string;
+  extras?: Record<string, any>;
 }
 ```
 

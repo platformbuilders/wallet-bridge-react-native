@@ -1204,13 +1204,33 @@ class GoogleWalletImplementation(
                 "WALLET_INTENT"
             }
             
+            // Decodificar dados de base64 para string normal
+            var decodedData = data
+            var dataFormat = "raw"
+            
+            try {
+                // Tentar decodificar como base64
+                val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
+                decodedData = String(decodedBytes, Charsets.UTF_8)
+                dataFormat = "base64_decoded"
+                Log.d(TAG, "🔍 [GOOGLE] Dados decodificados com sucesso: ${decodedData.length} caracteres")
+            } catch (e: Exception) {
+                // Se falhar ao decodificar, usar dados originais
+                Log.w(TAG, "⚠️ [GOOGLE] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
+                dataFormat = "raw"
+            }
+            
             val eventData = Arguments.createMap()
             eventData.putString("action", action)
             eventData.putString("type", intentType)
-            eventData.putString("data", data)
-            eventData.putString("dataFormat", "base64")
-            eventData.putString("dataNote", "Dados obtidos automaticamente no onCreate")
+            eventData.putString("data", decodedData)
+            eventData.putString("dataFormat", dataFormat)
             eventData.putString("callingPackage", callingPackage)
+            
+            // Adicionar dados originais em base64 para referência
+            eventData.putString("originalData", data)
+            
+            Log.d(TAG, "🔍 [GOOGLE] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
             
             // Enviar evento para React Native
             sendEventToReactNative("GoogleWalletIntentReceived", eventData)

@@ -1,4 +1,34 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Google Wallet - App de Exemplo
+
+Este é um aplicativo de exemplo que demonstra todas as funcionalidades da biblioteca `@platformbuilders/wallet-bridge-react-native`, incluindo as melhorias implementadas no fluxo de adicionar cartão e processamento de intents.
+
+## 🚀 Funcionalidades Demonstradas
+
+### Google Pay
+- ✅ Verificação de disponibilidade do Google Pay
+- ✅ Criação de carteira Google Wallet
+- ✅ Obtenção de informações do wallet
+- ✅ **Adição de cartão com estrutura otimizada** (Push Provisioning)
+- ✅ Listagem de tokens existentes
+- ✅ Verificação de status de token específico
+- ✅ Verificação se cartão está tokenizado
+- ✅ Visualização de token no Google Pay
+- ✅ Obtenção de environment (PROD/SANDBOX/DEV)
+- ✅ **Listener de intents App2App com decodificação automática**
+- ✅ **Tratamento de dados base64 decodificados automaticamente**
+- ✅ Tratamento de erros detalhado com códigos específicos
+- ✅ Definição de resultado de ativação de token
+
+### Melhorias Implementadas
+- 🔄 **Estrutura de dados corrigida** para seguir padrão oficial do Google Pay
+- 🔄 **Validação robusta** de campos obrigatórios
+- 🔄 **Decodificação automática** de dados base64 em intents
+- 🔄 **Interface melhorada** com indicadores visuais claros
+- 🔄 **Tratamento de erros específicos** com mensagens descritivas
+
+---
+
+Este é um projeto [**React Native**](https://reactnative.dev) bootstrapped usando [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
 
@@ -62,11 +92,84 @@ If everything is set up correctly, you should see your new app running in the An
 
 This is one way to run your app — you can also build it directly from Android Studio or Xcode.
 
-## Step 3: Modify your app
+## Step 3: Explore the Features
 
-Now that you have successfully run the app, let's make changes!
+### 🎯 Interface Principal
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+O app de exemplo possui uma interface completa que demonstra:
+
+#### **Seção de Status do Intent**
+- Indicador visual do status do listener de intents
+- Exibição de dados decodificados automaticamente
+- Informações detalhadas sobre o formato dos dados
+- Botões para definir resultado de ativação de token
+
+#### **Seção de Adicionar Cartão**
+- Campo para inserir OPC (Opaque Payment Card) personalizado
+- Botões para limpar e colar OPC da área de transferência
+- Integração com o badge oficial do Google Wallet
+- Validação em tempo real dos dados
+
+#### **Botões de Funcionalidades**
+- Verificação de disponibilidade do Google Pay
+- Criação de carteira Google Wallet
+- Obtenção de informações do wallet
+- Listagem de tokens existentes
+- Verificação de status de tokens
+- Visualização de tokens no Google Pay
+
+### 🔄 Melhorias Implementadas
+
+#### **Decodificação Automática de Intents**
+```typescript
+// Dados são decodificados automaticamente pelo nativo
+if (event.dataFormat === GoogleWalletDataFormat.BASE64_DECODED) {
+  // Dados já prontos para uso
+  const activationParams = JSON.parse(event.data);
+} else if (event.dataFormat === GoogleWalletDataFormat.RAW) {
+  // Decodificação manual necessária
+  const decodedData = atob(event.data);
+  const activationParams = JSON.parse(decodedData);
+}
+```
+
+#### **Estrutura de Dados Otimizada**
+```typescript
+// Nova estrutura seguindo padrão oficial do Google Pay
+const cardData = {
+  address: {
+    address1: 'Rua das Flores, 123',
+    countryCode: 'BR',
+    locality: 'São Paulo',
+    // ... outros campos
+  },
+  card: {
+    opaquePaymentCard: 'base64-encoded-data',
+    network: constants.CARD_NETWORK_ELO,
+    tokenServiceProvider: constants.TOKEN_PROVIDER_ELO,
+    displayName: 'João Silva - Visa',
+    lastDigits: '1234'
+  }
+};
+```
+
+#### **Validação Robusta**
+- Validação de campos obrigatórios
+- Verificação de formato base64
+- Validação de `lastDigits` (4 dígitos)
+- Códigos de erro específicos
+
+### 📱 Como Testar
+
+1. **Teste de Disponibilidade**: Clique em "Verificar Disponibilidade"
+2. **Criação de Carteira**: Clique em "Criar Google Wallet"
+3. **Adição de Cartão**: Insira um OPC válido e clique no badge do Google Wallet
+4. **Teste de Intent**: Use o app mock para simular intents App2App
+5. **Verificação de Tokens**: Liste e visualize tokens existentes
+
+### 🔧 Modificar o App
+
+Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
 
 When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
 

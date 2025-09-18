@@ -209,14 +209,20 @@ export interface GoogleTokenStatus {
   isSelected: boolean;
 }
 
+// Google Wallet - DataFormat
+export enum GoogleWalletDataFormat {
+  BASE64_DECODED = 'base64_decoded',
+  RAW = 'raw',
+}
+
 // Google Wallet - Evento de Intent
 export interface GoogleWalletIntentEvent {
   action: string;
   type: GoogleWalletIntentType;
-  data?: string;
-  dataFormat?: 'base64';
-  dataNote?: string;
+  data?: string; // Dados decodificados (string normal)
+  dataFormat?: GoogleWalletDataFormat;
   callingPackage?: string;
+  originalData?: string; // Dados originais em base64
   error?: string;
   extras?: Record<string, any>;
 }

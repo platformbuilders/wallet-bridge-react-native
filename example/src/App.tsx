@@ -13,6 +13,7 @@ import {
   GoogleWalletModule as GoogleWalletClient,
   GoogleWalletEventEmitter,
   GoogleActivationStatus,
+  GoogleWalletDataFormat,
 } from '@platformbuilders/wallet-bridge-react-native';
 import type {
   GooglePushTokenizeRequest,
@@ -134,6 +135,73 @@ export default function App(): React.JSX.Element {
   const googleWalletClient = GoogleWalletClient;
   const eventEmitter = new GoogleWalletEventEmitter();
 
+  // Função para mostrar dados já decodificados
+  const showDecodedData = (data: string, eventType: string, action: string): Record<string, any> | string | null => {
+    try {
+      console.log('🔍 [JS] Mostrando dados já decodificados...');
+      console.log('🔍 [JS] Dados decodificados (string):', data);
+      
+      // Tentar fazer parse como JSON
+      let parsedData: Record<string, any> | string;
+      try {
+        parsedData = JSON.parse(data);
+        console.log('✅ [JS] Dados parseados como JSON:', parsedData);
+      } catch (jsonError) {
+        console.log('⚠️ [JS] Dados não são JSON válido, mostrando como string');
+        parsedData = data;
+      }
+      
+      // Armazenar dados decodificados no estado
+      setDecodedData(parsedData);
+      
+      // Criar mensagem formatada
+      let message = `🎯 ${eventType} Recebido!\n\n`;
+      message += `📱 Ação: ${action}\n\n`;
+      message += `📋 Dados Decodificados (Automático):\n`;
+      
+      if (typeof parsedData === 'object' && parsedData !== null) {
+        message += JSON.stringify(parsedData, null, 2);
+      } else {
+        message += parsedData;
+      }
+      
+      // Mostrar alert com dados decodificados
+      Alert.alert(
+        `✅ ${eventType}`,
+        message,
+        [
+          { text: 'OK' },
+          { 
+            text: '📋 Copiar Dados', 
+            onPress: () => {
+              const dataToCopy = typeof parsedData === 'object' ? 
+                JSON.stringify(parsedData, null, 2) : 
+                String(parsedData);
+              Clipboard.setString(dataToCopy);
+              Alert.alert('Sucesso', 'Dados copiados para a área de transferência!');
+            }
+          }
+        ]
+      );
+      
+      return parsedData;
+    } catch (error) {
+      console.error('❌ [JS] Erro ao processar dados decodificados:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      
+      // Limpar dados decodificados em caso de erro
+      setDecodedData(null);
+      
+      Alert.alert(
+        `❌ ${eventType} (Erro de Processamento)`,
+        `Intent recebido mas houve erro ao processar os dados!\n\nAção: ${action}\nErro: ${errorMessage}\n\nDados originais:\n${data.substring(0, 200)}...`,
+        [{ text: 'OK' }]
+      );
+      
+      return null;
+    }
+  };
+
   // Função para decodificar dados base64 e mostrar resultado
   const decodeAndShowData = (data: string, eventType: string, action: string): Record<string, any> | string | null => {
     try {
@@ -215,24 +283,34 @@ export default function App(): React.JSX.Element {
     // Processar diferentes tipos de intent e mostrar alert
     switch (walletEvent.type) {
       case 'ACTIVATE_TOKEN':
-        if (walletEvent.data && walletEvent.dataFormat === 'base64') {
+        if (walletEvent.data && walletEvent.dataFormat === GoogleWalletDataFormat.BASE64_DECODED) {
+          // Dados já decodificados automaticamente pelo nativo
+          console.log('✅ Dados já decodificados automaticamente');
+          showDecodedData(walletEvent.data, 'Token Ativado', walletEvent.action);
+        } else if (walletEvent.data && walletEvent.dataFormat === GoogleWalletDataFormat.RAW) {
+          // Dados em formato raw, tentar decodificar manualmente
           decodeAndShowData(walletEvent.data, 'Token Ativado', walletEvent.action);
         } else {
           Alert.alert(
             'Token Ativado',
-            `Intent de ativação de token recebido!\nAção: ${walletEvent.action}\nNota: ${walletEvent.dataNote || 'Nenhum dado base64 encontrado'}`,
+            `Intent de ativação de token recebido!\nAção: ${walletEvent.action}\nFormato: ${walletEvent.dataFormat || 'N/A'}`,
             [{ text: 'OK' }]
           );
         }
         break;
         
       case 'WALLET_INTENT':
-        if (walletEvent.data && walletEvent.dataFormat === 'base64') {
+        if (walletEvent.data && walletEvent.dataFormat === GoogleWalletDataFormat.BASE64_DECODED) {
+          // Dados já decodificados automaticamente pelo nativo
+          console.log('✅ Dados já decodificados automaticamente');
+          showDecodedData(walletEvent.data, 'Intent da Carteira', walletEvent.action);
+        } else if (walletEvent.data && walletEvent.dataFormat === GoogleWalletDataFormat.RAW) {
+          // Dados em formato raw, tentar decodificar manualmente
           decodeAndShowData(walletEvent.data, 'Intent da Carteira', walletEvent.action);
         } else {
           Alert.alert(
             'Intent da Carteira',
-            `Intent relacionado à carteira recebido!\nAção: ${walletEvent.action}\nNota: ${walletEvent.dataNote || 'Nenhum dado base64 encontrado'}`,
+            `Intent relacionado à carteira recebido!\nAção: ${walletEvent.action}\nFormato: ${walletEvent.dataFormat || 'N/A'}`,
             [{ text: 'OK' }]
           );
         }
@@ -662,7 +740,17 @@ export default function App(): React.JSX.Element {
             )}
             {intentResult.data && (
               <Text style={styles.intentResultText}>
-                <Text style={styles.intentResultLabel}>Dados (Base64):</Text> {intentResult.data.substring(0, 50)}...
+                <Text style={styles.intentResultLabel}>Dados:</Text> {intentResult.data.substring(0, 50)}...
+              </Text>
+            )}
+            {intentResult.dataFormat && (
+              <Text style={styles.intentResultText}>
+                <Text style={styles.intentResultLabel}>Formato:</Text> {intentResult.dataFormat}
+              </Text>
+            )}
+            {intentResult.originalData && (
+              <Text style={styles.intentResultText}>
+                <Text style={styles.intentResultLabel}>Dados Originais (Base64):</Text> {intentResult.originalData.substring(0, 50)}...
               </Text>
             )}
             {intentResult.error && (
@@ -678,7 +766,11 @@ export default function App(): React.JSX.Element {
             {decodedData && (
               <>
                 <View style={styles.decodedDataDivider} />
-                <Text style={styles.decodedDataTitle}>📋 Dados Decodificados</Text>
+                <Text style={styles.decodedDataTitle}>
+                  📋 Dados Decodificados 
+                  {intentResult.dataFormat === GoogleWalletDataFormat.BASE64_DECODED && ' (Automático)'}
+                  {intentResult.dataFormat === GoogleWalletDataFormat.RAW && ' (Manual)'}
+                </Text>
                 <View style={styles.decodedDataContent}>
                   <Text style={styles.decodedDataText}>
                     {typeof decodedData === 'object' && decodedData !== null
