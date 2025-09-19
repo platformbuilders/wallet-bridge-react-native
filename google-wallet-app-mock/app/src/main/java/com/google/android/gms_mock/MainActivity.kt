@@ -247,7 +247,7 @@ class MainActivity : ComponentActivity() {
         return """
         {
             "panReferenceId": "$panReferenceId",
-            "tokenReferenceId": "$tokenReferenceId",
+            "tokenReferenceId": "$tokenReferenceId"
         }
         """.trimIndent()
     }
