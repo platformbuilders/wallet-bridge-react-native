@@ -263,7 +263,7 @@ export interface GoogleWalletSpec {
 
   // Método de resultado de ativação
   setActivationResult(
-    status: string,
+    status: GoogleActivationStatus,
     activationCode?: string
   ): Promise<boolean>;
 
@@ -275,17 +275,33 @@ export interface GoogleWalletSpec {
 // GOOGLE WALLET EVENT EMITTER
 // ============================================================================
 
-import { NativeEventEmitter } from 'react-native';
+import { NativeEventEmitter, NativeModules } from 'react-native';
 
 export class GoogleWalletEventEmitter {
-  private eventEmitter: NativeEventEmitter;
+  private eventEmitter: NativeEventEmitter | null = null;
   private listeners: Map<string, (event: GoogleWalletIntentEvent) => void> =
     new Map();
 
   constructor() {
-    // Usar o módulo nativo diretamente para o EventEmitter
-    const { GoogleWallet } = require('react-native').NativeModules;
-    this.eventEmitter = new NativeEventEmitter(GoogleWallet);
+    try {
+      // Verificar se o módulo está disponível
+      const GoogleWalletModule = NativeModules.GoogleWallet;
+      if (GoogleWalletModule) {
+        this.eventEmitter = new NativeEventEmitter(GoogleWalletModule);
+        console.log(
+          '✅ [GoogleWalletEventEmitter] EventEmitter inicializado com sucesso'
+        );
+      } else {
+        console.warn(
+          '⚠️ [GoogleWalletEventEmitter] Módulo GoogleWallet não está disponível'
+        );
+      }
+    } catch (error) {
+      console.error(
+        '❌ [GoogleWalletEventEmitter] Erro ao inicializar EventEmitter:',
+        error
+      );
+    }
   }
 
   /**
@@ -297,6 +313,14 @@ export class GoogleWalletEventEmitter {
     callback: (event: GoogleWalletIntentEvent) => void
   ): () => void {
     const listenerId = `listener_${Date.now()}_${Math.random()}`;
+
+    // Verificar se o EventEmitter está disponível
+    if (!this.eventEmitter) {
+      console.error(
+        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível'
+      );
+      return () => {}; // Retornar função vazia para evitar erros
+    }
 
     // Armazenar o callback
     this.listeners.set(listenerId, callback);
@@ -314,10 +338,17 @@ export class GoogleWalletEventEmitter {
       }
     );
 
+    console.log(
+      `✅ [GoogleWalletEventEmitter] Listener adicionado: ${listenerId}`
+    );
+
     // Retornar função de cleanup
     return () => {
       this.listeners.delete(listenerId);
       subscription.remove();
+      console.log(
+        `🧹 [GoogleWalletEventEmitter] Listener removido: ${listenerId}`
+      );
     };
   }
 
@@ -326,7 +357,12 @@ export class GoogleWalletEventEmitter {
    */
   removeAllListeners(): void {
     this.listeners.clear();
-    this.eventEmitter.removeAllListeners('GoogleWalletIntentReceived');
+    if (this.eventEmitter) {
+      this.eventEmitter.removeAllListeners('GoogleWalletIntentReceived');
+      console.log(
+        '🧹 [GoogleWalletEventEmitter] Todos os listeners foram removidos'
+      );
+    }
   }
 
   /**
@@ -334,5 +370,12 @@ export class GoogleWalletEventEmitter {
    */
   getListenerCount(): number {
     return this.listeners.size;
+  }
+
+  /**
+   * Verifica se o EventEmitter está disponível
+   */
+  isAvailable(): boolean {
+    return this.eventEmitter !== null;
   }
 }

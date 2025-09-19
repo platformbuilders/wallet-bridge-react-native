@@ -27,11 +27,10 @@ import { useState, useEffect } from 'react';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-
 // Mapeamento de códigos de erro para descrições em português
 const ERROR_DESCRIPTIONS: Record<string, string> = {
   // Common Status Codes
-  '0': 'Operação cancelada pelo usuário',//Na doc do Google Wallet é - Operação realizada com sucesso
+  '0': 'Operação cancelada pelo usuário', //Na doc do Google Wallet é - Operação realizada com sucesso
   '-1': 'Operação realizada com sucesso (usando cache do dispositivo)',
   '2': 'A versão instalada do Google Play Services está desatualizada. Atualize o aplicativo.',
   '3': 'O Google Play Services foi desabilitado neste dispositivo',
@@ -50,7 +49,7 @@ const ERROR_DESCRIPTIONS: Record<string, string> = {
   '20': 'Conexão suspensa durante a chamada. Tente novamente',
   '21': 'Conexão expirou durante atualização. Tente novamente',
   '22': 'Conexão expirou ao tentar reconectar. Tente novamente',
-  
+
   // Google Wallet Specific Status Codes
   '15002': 'Não há carteira ativa. Crie uma carteira primeiro',
   '15003': 'Token não encontrado na carteira ativa',
@@ -59,21 +58,20 @@ const ERROR_DESCRIPTIONS: Record<string, string> = {
   '15009': 'API TapAndPay não disponível para este aplicativo',
 };
 
-
 // Função para tratar erros do Google Wallet
 const handleGoogleWalletError = (error: unknown): string => {
   console.log('🔍 [JS] Analisando erro:', error);
-  
+
   const errorMessage = error instanceof Error ? error.message : String(error);
   console.log('🔍 [JS] Mensagem de erro:', errorMessage);
-  
+
   // Procurar por padrão result_code:{error_code} na string de erro
   const resultCodeMatch = errorMessage.match(/result_code:(\d+)/);
-  
+
   if (resultCodeMatch && resultCodeMatch[1]) {
     const errorCode = resultCodeMatch[1];
     console.log('🎯 [JS] Código de erro encontrado:', errorCode);
-    
+
     const description = ERROR_DESCRIPTIONS[errorCode];
     if (description) {
       console.log('✅ [JS] Descrição encontrada:', description);
@@ -83,64 +81,70 @@ const handleGoogleWalletError = (error: unknown): string => {
       return `Erro ${errorCode}: Código de erro não reconhecido`;
     }
   }
-  
+
   // Se não encontrar o padrão result_code, procurar por outros padrões comuns
   const statusCodeMatch = errorMessage.match(/status[_\s]*code[:\s]*(\d+)/i);
   if (statusCodeMatch && statusCodeMatch[1]) {
     const errorCode = statusCodeMatch[1];
     console.log('🎯 [JS] Status code encontrado:', errorCode);
-    
+
     const description = ERROR_DESCRIPTIONS[errorCode];
     if (description) {
       console.log('✅ [JS] Descrição encontrada:', description);
       return `Erro ${errorCode}: ${description}`;
     }
   }
-  
+
   // Procurar por códigos numéricos no final da mensagem
   const numericCodeMatch = errorMessage.match(/(\d{4,5})$/);
   if (numericCodeMatch && numericCodeMatch[1]) {
     const errorCode = numericCodeMatch[1];
     console.log('🎯 [JS] Código numérico encontrado:', errorCode);
-    
+
     const description = ERROR_DESCRIPTIONS[errorCode];
     if (description) {
       console.log('✅ [JS] Descrição encontrada:', description);
       return `Erro ${errorCode}: ${description}`;
     }
   }
-  
+
   // Se não encontrar nenhum código específico, retornar a mensagem original
   console.log('⚠️ [JS] Nenhum código de erro específico encontrado');
   return `Erro ao adicionar cartão: ${errorMessage}`;
 };
 
 export default function App(): React.JSX.Element {
-  
   // Estado para o OPC (Opaque Payment Card)
   const [opcValue, setOpcValue] = useState(
     'M0VGNkZENjRFMEM1MTdEOTgwOEU4N0RGMzRCNkE0M0U4QURBNUEyNjIzQjgyQzEzODZEQkZGN0JEQzM3NzI4NjQ0ODMzRDhBODlFREEwODhDREI2NkMwODM2NkQxRERCN0EzQ0U0RkZFMjJERUZFMEYwM0VCQjlBRkVGNDEzNUQxMjhFODg4NkIzMjBFREZENzk5OUMyODQ4ODRCMzNBMURCNDA0MjQwRDYxMEJDNzRFMjQzMTcwRkNBQzEzRjgzQ0Y4ODI0RTc1QkE4RENGRTY3MjRDQ0U4MEIxM0RCOUMwRjA2MkYzQkIzMjJBNjlE'
   );
-  
+
   // Estado para o resultado do intent
-  const [intentResult, setIntentResult] = useState<GoogleWalletIntentEvent | null>(null);
-  
+  const [intentResult, setIntentResult] =
+    useState<GoogleWalletIntentEvent | null>(null);
+
   // Estado para os dados decodificados
-  const [decodedData, setDecodedData] = useState<Record<string, any> | string | null>(null);
-  
+  const [decodedData, setDecodedData] = useState<
+    Record<string, any> | string | null
+  >(null);
+
   // Estado para indicar se está verificando dados pendentes
   const [isCheckingPendingData, setIsCheckingPendingData] = useState(false);
-  
+
   // Instanciar o GoogleWalletClient e EventEmitter
   const googleWalletClient = GoogleWalletClient;
   const eventEmitter = new GoogleWalletEventEmitter();
 
   // Função para mostrar dados já decodificados
-  const showDecodedData = (data: string, eventType: string, action: string): Record<string, any> | string | null => {
+  const showDecodedData = (
+    data: string,
+    eventType: string,
+    action: string
+  ): Record<string, any> | string | null => {
     try {
       console.log('🔍 [JS] Mostrando dados já decodificados...');
       console.log('🔍 [JS] Dados decodificados (string):', data);
-      
+
       // Tentar fazer parse como JSON
       let parsedData: Record<string, any> | string;
       try {
@@ -150,68 +154,76 @@ export default function App(): React.JSX.Element {
         console.log('⚠️ [JS] Dados não são JSON válido, mostrando como string');
         parsedData = data;
       }
-      
+
       // Armazenar dados decodificados no estado
       setDecodedData(parsedData);
-      
+
       // Criar mensagem formatada
       let message = `🎯 ${eventType} Recebido!\n\n`;
       message += `📱 Ação: ${action}\n\n`;
       message += `📋 Dados Decodificados (Automático):\n`;
-      
+
       if (typeof parsedData === 'object' && parsedData !== null) {
         message += JSON.stringify(parsedData, null, 2);
       } else {
         message += parsedData;
       }
-      
+
       // Mostrar alert com dados decodificados
-      Alert.alert(
-        `✅ ${eventType}`,
-        message,
-        [
-          { text: 'OK' },
-          { 
-            text: '📋 Copiar Dados', 
-            onPress: () => {
-              const dataToCopy = typeof parsedData === 'object' ? 
-                JSON.stringify(parsedData, null, 2) : 
-                String(parsedData);
-              Clipboard.setString(dataToCopy);
-              Alert.alert('Sucesso', 'Dados copiados para a área de transferência!');
-            }
-          }
-        ]
-      );
-      
+      Alert.alert(`✅ ${eventType}`, message, [
+        { text: 'OK' },
+        {
+          text: '📋 Copiar Dados',
+          onPress: () => {
+            const dataToCopy =
+              typeof parsedData === 'object'
+                ? JSON.stringify(parsedData, null, 2)
+                : String(parsedData);
+            Clipboard.setString(dataToCopy);
+            Alert.alert(
+              'Sucesso',
+              'Dados copiados para a área de transferência!'
+            );
+          },
+        },
+      ]);
+
       return parsedData;
     } catch (error) {
       console.error('❌ [JS] Erro ao processar dados decodificados:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
       // Limpar dados decodificados em caso de erro
       setDecodedData(null);
-      
+
       Alert.alert(
         `❌ ${eventType} (Erro de Processamento)`,
         `Intent recebido mas houve erro ao processar os dados!\n\nAção: ${action}\nErro: ${errorMessage}\n\nDados originais:\n${data.substring(0, 200)}...`,
         [{ text: 'OK' }]
       );
-      
+
       return null;
     }
   };
 
   // Função para decodificar dados base64 e mostrar resultado
-  const decodeAndShowData = (data: string, eventType: string, action: string): Record<string, any> | string | null => {
+  const decodeAndShowData = (
+    data: string,
+    eventType: string,
+    action: string
+  ): Record<string, any> | string | null => {
     try {
       console.log('🔍 [JS] Decodificando dados base64...');
-      console.log('🔍 [JS] Dados originais (base64):', data.substring(0, 100) + '...');
-      
+      console.log(
+        '🔍 [JS] Dados originais (base64):',
+        data.substring(0, 100) + '...'
+      );
+
       // Decodificar dados base64
       const decodedData = atob(data);
       console.log('🔍 [JS] Dados decodificados (string):', decodedData);
-      
+
       // Tentar fazer parse como JSON
       let parsedData: Record<string, any> | string;
       try {
@@ -221,54 +233,55 @@ export default function App(): React.JSX.Element {
         console.log('⚠️ [JS] Dados não são JSON válido, mostrando como string');
         parsedData = decodedData;
       }
-      
+
       // Armazenar dados decodificados no estado
       setDecodedData(parsedData);
-      
+
       // Criar mensagem formatada
       let message = `🎯 ${eventType} Recebido!\n\n`;
       message += `📱 Ação: ${action}\n\n`;
       message += `📋 Dados Decodificados:\n`;
-      
+
       if (typeof parsedData === 'object' && parsedData !== null) {
         message += JSON.stringify(parsedData, null, 2);
       } else {
         message += parsedData;
       }
-      
+
       // Mostrar alert com dados decodificados
-      Alert.alert(
-        `✅ ${eventType}`,
-        message,
-        [
-          { text: 'OK' },
-          { 
-            text: '📋 Copiar Dados', 
-            onPress: () => {
-              const dataToCopy = typeof parsedData === 'object' ? 
-                JSON.stringify(parsedData, null, 2) : 
-                String(parsedData);
-              Clipboard.setString(dataToCopy);
-              Alert.alert('Sucesso', 'Dados copiados para a área de transferência!');
-            }
-          }
-        ]
-      );
-      
+      Alert.alert(`✅ ${eventType}`, message, [
+        { text: 'OK' },
+        {
+          text: '📋 Copiar Dados',
+          onPress: () => {
+            const dataToCopy =
+              typeof parsedData === 'object'
+                ? JSON.stringify(parsedData, null, 2)
+                : String(parsedData);
+            Clipboard.setString(dataToCopy);
+            Alert.alert(
+              'Sucesso',
+              'Dados copiados para a área de transferência!'
+            );
+          },
+        },
+      ]);
+
       return parsedData;
     } catch (error) {
       console.error('❌ [JS] Erro ao decodificar dados base64:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
       // Limpar dados decodificados em caso de erro
       setDecodedData(null);
-      
+
       Alert.alert(
         `❌ ${eventType} (Erro de Decodificação)`,
         `Intent recebido mas houve erro ao decodificar os dados!\n\nAção: ${action}\nErro: ${errorMessage}\n\nDados originais (base64):\n${data.substring(0, 200)}...`,
         [{ text: 'OK' }]
       );
-      
+
       return null;
     }
   };
@@ -276,20 +289,34 @@ export default function App(): React.JSX.Element {
   // Função para processar eventos de intent da carteira (reutilizável)
   const processWalletIntent = (walletEvent: GoogleWalletIntentEvent): void => {
     console.log('🎯 Processando intent da carteira:', walletEvent);
-    
+
     // Atualizar estado com o resultado do intent
     setIntentResult(walletEvent);
-    
+
     // Processar diferentes tipos de intent e mostrar alert
     switch (walletEvent.type) {
       case 'ACTIVATE_TOKEN':
-        if (walletEvent.data && walletEvent.dataFormat === GoogleWalletDataFormat.BASE64_DECODED) {
+        if (
+          walletEvent.data &&
+          walletEvent.dataFormat === GoogleWalletDataFormat.BASE64_DECODED
+        ) {
           // Dados já decodificados automaticamente pelo nativo
           console.log('✅ Dados já decodificados automaticamente');
-          showDecodedData(walletEvent.data, 'Token Ativado', walletEvent.action);
-        } else if (walletEvent.data && walletEvent.dataFormat === GoogleWalletDataFormat.RAW) {
+          showDecodedData(
+            walletEvent.data,
+            'Token Ativado',
+            walletEvent.action
+          );
+        } else if (
+          walletEvent.data &&
+          walletEvent.dataFormat === GoogleWalletDataFormat.RAW
+        ) {
           // Dados em formato raw, tentar decodificar manualmente
-          decodeAndShowData(walletEvent.data, 'Token Ativado', walletEvent.action);
+          decodeAndShowData(
+            walletEvent.data,
+            'Token Ativado',
+            walletEvent.action
+          );
         } else {
           Alert.alert(
             'Token Ativado',
@@ -298,15 +325,29 @@ export default function App(): React.JSX.Element {
           );
         }
         break;
-        
+
       case 'WALLET_INTENT':
-        if (walletEvent.data && walletEvent.dataFormat === GoogleWalletDataFormat.BASE64_DECODED) {
+        if (
+          walletEvent.data &&
+          walletEvent.dataFormat === GoogleWalletDataFormat.BASE64_DECODED
+        ) {
           // Dados já decodificados automaticamente pelo nativo
           console.log('✅ Dados já decodificados automaticamente');
-          showDecodedData(walletEvent.data, 'Intent da Carteira', walletEvent.action);
-        } else if (walletEvent.data && walletEvent.dataFormat === GoogleWalletDataFormat.RAW) {
+          showDecodedData(
+            walletEvent.data,
+            'Intent da Carteira',
+            walletEvent.action
+          );
+        } else if (
+          walletEvent.data &&
+          walletEvent.dataFormat === GoogleWalletDataFormat.RAW
+        ) {
           // Dados em formato raw, tentar decodificar manualmente
-          decodeAndShowData(walletEvent.data, 'Intent da Carteira', walletEvent.action);
+          decodeAndShowData(
+            walletEvent.data,
+            'Intent da Carteira',
+            walletEvent.action
+          );
         } else {
           Alert.alert(
             'Intent da Carteira',
@@ -315,7 +356,7 @@ export default function App(): React.JSX.Element {
           );
         }
         break;
-        
+
       case 'INVALID_CALLER':
         Alert.alert(
           '⚠️ Chamador Inválido',
@@ -324,14 +365,16 @@ export default function App(): React.JSX.Element {
         );
         console.warn('🚨 Tentativa de acesso não autorizada:', walletEvent);
         break;
-        
+
       default:
         console.log('Intent não reconhecido:', walletEvent);
     }
   };
-  
+
   // Configurar listener de intent automaticamente
   useEffect(() => {
+    let isMounted = true;
+
     // Ativar listener automaticamente
     const activateListener = async () => {
       try {
@@ -341,32 +384,45 @@ export default function App(): React.JSX.Element {
       } catch (error) {
         console.error('❌ [JS] Erro ao ativar listener:', error);
       } finally {
-        setIsCheckingPendingData(false);
+        if (isMounted) {
+          setIsCheckingPendingData(false);
+        }
       }
     };
-    
+
     activateListener();
-    
+
     // Registrar listener para eventos de intent da carteira usando a biblioteca
-    const removeListener = eventEmitter.addIntentListener((walletEvent: GoogleWalletIntentEvent) => {
-      console.log('🎯 Intent recebido da carteira:', walletEvent);
-      
-      // Usar a função reutilizável para processar o evento
-      processWalletIntent(walletEvent);
-    });
+    const removeListener = eventEmitter.addIntentListener(
+      (walletEvent: GoogleWalletIntentEvent) => {
+        console.log('🎯 Intent recebido da carteira:', walletEvent);
+
+        // Usar a função reutilizável para processar o evento
+        processWalletIntent(walletEvent);
+      }
+    );
 
     // Cleanup do listener quando o componente for desmontado
     return () => {
+      isMounted = false;
+
+      // Remover listener do EventEmitter
       removeListener();
+
+      // Desativar listener nativo
+      googleWalletClient.removeIntentListener().catch((error) => {
+        console.error('❌ [JS] Erro ao remover listener nativo:', error);
+      });
     };
   }, []);
-  
+
   // Verificar se o módulo está disponível
   if (!googleWalletClient) {
     return (
       <ScrollView style={styles.container}>
         <Text style={styles.errorText}>
-          GoogleWalletClient não está disponível. Verifique se o módulo nativo foi instalado corretamente.
+          GoogleWalletClient não está disponível. Verifique se o módulo nativo
+          foi instalado corretamente.
         </Text>
       </ScrollView>
     );
@@ -375,7 +431,8 @@ export default function App(): React.JSX.Element {
   const handleCheckAvailability = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando verificação de disponibilidade...');
-      const isAvailable: boolean = await googleWalletClient.checkWalletAvailability();
+      const isAvailable: boolean =
+        await googleWalletClient.checkWalletAvailability();
       console.log('✅ [JS] Disponibilidade verificada:', isAvailable);
       Alert.alert(
         'Disponibilidade',
@@ -395,7 +452,8 @@ export default function App(): React.JSX.Element {
   const handleGetWalletInfo = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando obtenção de informações da wallet...');
-      const walletInfo: GoogleWalletData = await googleWalletClient.getSecureWalletInfo();
+      const walletInfo: GoogleWalletData =
+        await googleWalletClient.getSecureWalletInfo();
       console.log('✅ [JS] Informações da wallet obtidas:', walletInfo);
       Alert.alert(
         'Informações da Google Wallet',
@@ -415,17 +473,22 @@ export default function App(): React.JSX.Element {
   const handleGetTokenStatus = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando verificação de status do token...');
-      
+
       // Obter constantes para usar o tokenServiceProvider
-      const constants: GoogleWalletConstants = googleWalletClient.getConstants();
+      const constants: GoogleWalletConstants =
+        googleWalletClient.getConstants();
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const tokenReferenceId = 'test-token-id'; // ID de exemplo
-      
-      const tokenStatus: GoogleTokenStatus = await googleWalletClient.getTokenStatus(tokenServiceProvider, tokenReferenceId);
+
+      const tokenStatus: GoogleTokenStatus =
+        await googleWalletClient.getTokenStatus(
+          tokenServiceProvider,
+          tokenReferenceId
+        );
       console.log('✅ [JS] Status do token obtido:', tokenStatus);
-      
+
       Alert.alert(
-        'Status do Token', 
+        'Status do Token',
         `Estado: ${tokenStatus.tokenState}\nSelecionado: ${tokenStatus.isSelected ? 'Sim' : 'Não'}`
       );
     } catch (err) {
@@ -459,18 +522,23 @@ export default function App(): React.JSX.Element {
   const handleIsTokenized = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando verificação se está tokenizado...');
-      
+
       // Obter constantes para usar os valores corretos
-      const constants: GoogleWalletConstants = googleWalletClient.getConstants();
+      const constants: GoogleWalletConstants =
+        googleWalletClient.getConstants();
       const cardNetwork = constants.CARD_NETWORK_ELO;
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const fpanLastFour = '6890'; // Últimos 4 dígitos de exemplo
-      
-      const isTokenized: boolean = await googleWalletClient.isTokenized(fpanLastFour, cardNetwork, tokenServiceProvider);
+
+      const isTokenized: boolean = await googleWalletClient.isTokenized(
+        fpanLastFour,
+        cardNetwork,
+        tokenServiceProvider
+      );
       console.log('✅ [JS] Resultado isTokenized:', isTokenized);
-      
+
       Alert.alert(
-        'Verificação de Tokenização', 
+        'Verificação de Tokenização',
         `Cartão terminado em ${fpanLastFour} está tokenizado: ${isTokenized ? 'Sim' : 'Não'}`
       );
     } catch (err) {
@@ -487,17 +555,24 @@ export default function App(): React.JSX.Element {
   const handleViewToken = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando visualização de token...');
-      
+
       // Obter constantes para usar os valores corretos
-      const constants: GoogleWalletConstants = googleWalletClient.getConstants();
+      const constants: GoogleWalletConstants =
+        googleWalletClient.getConstants();
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const issuerTokenId = 'test-token-id'; // ID de exemplo
-      
-      const success: boolean = await googleWalletClient.viewToken(tokenServiceProvider, issuerTokenId);
+
+      const success: boolean = await googleWalletClient.viewToken(
+        tokenServiceProvider,
+        issuerTokenId
+      );
       console.log('✅ [JS] Resultado viewToken:', success);
-      
+
       if (success) {
-        Alert.alert('Sucesso', 'Google Pay foi aberto para visualizar o token!');
+        Alert.alert(
+          'Sucesso',
+          'Google Pay foi aberto para visualizar o token!'
+        );
       } else {
         Alert.alert('Aviso', 'Não foi possível abrir o Google Pay');
       }
@@ -517,7 +592,8 @@ export default function App(): React.JSX.Element {
       console.log('🔍 [JS] Iniciando processo de adição de cartão...');
 
       console.log('🔍 [JS] Obtendo constantes...');
-      const constants: GoogleWalletConstants = googleWalletClient.getConstants();
+      const constants: GoogleWalletConstants =
+        googleWalletClient.getConstants();
       console.log('✅ [JS] Constantes obtidas:', constants);
 
       const cardData: GooglePushTokenizeRequest = {
@@ -550,7 +626,8 @@ export default function App(): React.JSX.Element {
       });
 
       console.log('🔍 [JS] Chamando addCardToWallet...');
-      const tokenId: string = await googleWalletClient.addCardToWallet(cardData);
+      const tokenId: string =
+        await googleWalletClient.addCardToWallet(cardData);
       console.log('✅ [JS] Cartão adicionado com sucesso! Token ID:', tokenId);
       Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
     } catch (err) {
@@ -565,7 +642,7 @@ export default function App(): React.JSX.Element {
         code: (err as any)?.code || 'N/A',
         nativeError: (err as any)?.nativeError || 'N/A',
       });
-      
+
       // Usar a função de tratamento de erro personalizada
       const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro ao Adicionar Cartão', errorMessage);
@@ -575,9 +652,10 @@ export default function App(): React.JSX.Element {
   const handleCreateWallet = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando criação de carteira...');
-      const walletCreated: boolean = await googleWalletClient.createWalletIfNeeded();
+      const walletCreated: boolean =
+        await googleWalletClient.createWalletIfNeeded();
       console.log('✅ [JS] Resultado da criação de carteira:', walletCreated);
-      
+
       if (walletCreated) {
         Alert.alert('Sucesso', 'Google Wallet criada com sucesso!');
       } else {
@@ -597,20 +675,27 @@ export default function App(): React.JSX.Element {
   const handleListTokens = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando listagem de tokens...');
-      const tokens: GoogleTokenInfoSimple[] = await googleWalletClient.listTokens();
+      const tokens: GoogleTokenInfoSimple[] =
+        await googleWalletClient.listTokens();
       console.log('✅ [JS] Tokens obtidos:', tokens);
-      
+
       if (tokens && tokens.length > 0) {
-        const tokenInfo = tokens.map((token: GoogleTokenInfoSimple, index: number) => 
-          `${index + 1}. ID: ${token.issuerTokenId}\n   Últimos dígitos: ${token.lastDigits}\n   Nome: ${token.displayName}\n   Estado: ${token.tokenState}\n   Rede: ${token.network}`
-        ).join('\n\n');
-        
+        const tokenInfo = tokens
+          .map(
+            (token: GoogleTokenInfoSimple, index: number) =>
+              `${index + 1}. ID: ${token.issuerTokenId}\n   Últimos dígitos: ${token.lastDigits}\n   Nome: ${token.displayName}\n   Estado: ${token.tokenState}\n   Rede: ${token.network}`
+          )
+          .join('\n\n');
+
         Alert.alert(
-          'Tokens na Carteira', 
+          'Tokens na Carteira',
           `Encontrados ${tokens.length} token(s):\n\n${tokenInfo}`
         );
       } else {
-        Alert.alert('Tokens na Carteira', 'Nenhum token encontrado na carteira.');
+        Alert.alert(
+          'Tokens na Carteira',
+          'Nenhum token encontrado na carteira.'
+        );
       }
     } catch (err) {
       console.log('❌ [JS] Erro ao listar tokens:', err);
@@ -623,14 +708,20 @@ export default function App(): React.JSX.Element {
     }
   };
 
-  const handleSetActivationResult = async (status: string, activationCode?: string): Promise<void> => {
+  const handleSetActivationResult = async (
+    status: GoogleActivationStatus,
+    activationCode?: string
+  ): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando definição de resultado de ativação...');
       console.log('🔍 [JS] Status:', status, 'ActivationCode:', activationCode);
-      
-      const result = await googleWalletClient.setActivationResult(status, activationCode);
+
+      const result = await googleWalletClient.setActivationResult(
+        status,
+        activationCode
+      );
       console.log('✅ [JS] Resultado de ativação definido:', result);
-      
+
       Alert.alert(
         'Resultado de Ativação Definido',
         `Status: ${status}\n${activationCode ? `ActivationCode: ${activationCode}` : 'Sem ActivationCode'}`
@@ -642,17 +733,20 @@ export default function App(): React.JSX.Element {
         err instanceof Error ? err.stack : 'N/A'
       );
       const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Erro', `Erro ao definir resultado de ativação: ${errorMessage}`);
+      Alert.alert(
+        'Erro',
+        `Erro ao definir resultado de ativação: ${errorMessage}`
+      );
     }
   };
 
   const handleFinishActivity = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando finalização da atividade...');
-      
+
       const result = await googleWalletClient.finishActivity();
       console.log('✅ [JS] Atividade finalizada:', result);
-      
+
       Alert.alert(
         'Atividade Finalizada',
         'A atividade foi finalizada e você voltará para o app chamador.'
@@ -667,7 +761,6 @@ export default function App(): React.JSX.Element {
       Alert.alert('Erro', `Erro ao finalizar atividade: ${errorMessage}`);
     }
   };
-
 
   const handleClearOPC = (): void => {
     setOpcValue('');
@@ -692,240 +785,296 @@ export default function App(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-    <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 40}}>
-      <Text style={styles.title}>Google Wallet - Exemplo</Text>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        <Text style={styles.title}>Google Wallet - Exemplo</Text>
 
-      {/* Componente unificado de status e resultado do intent */}
-      <View style={styles.intentStatusSection}>
-        <Text style={styles.intentStatusTitle}>Google Wallet - App 2 App</Text>
-        <View style={[
-          styles.intentStatusIndicator, 
-          intentResult ? styles.intentStatusActive : 
-          isCheckingPendingData ? styles.intentStatusChecking : 
-          styles.intentStatusInactive
-        ]}>
-          <Text style={[
-            styles.intentStatusText,
-            intentResult ? styles.intentStatusTextActive : 
-            isCheckingPendingData ? styles.intentStatusTextChecking :
-            styles.intentStatusTextInactive
-          ]}>
-            {intentResult ? '🎯 Intent Recebido' : 
-             isCheckingPendingData ? '🔍 Verificando Dados...' : 
-             '⏳ Aguardando Intent'}
+        {/* Componente unificado de status e resultado do intent */}
+        <View style={styles.intentStatusSection}>
+          <Text style={styles.intentStatusTitle}>
+            Google Wallet - App 2 App
           </Text>
-        </View>
-        <Text style={styles.intentStatusDescription}>
-          {intentResult 
-            ? `Último intent recebido em ${new Date().toLocaleTimeString()}`
-            : isCheckingPendingData
-            ? 'Verificando se há dados pendentes da MainActivity...'
-            : 'O app está escutando por intents da carteira do Google'
-          }
-        </Text>
+          <View
+            style={[
+              styles.intentStatusIndicator,
+              intentResult
+                ? styles.intentStatusActive
+                : isCheckingPendingData
+                  ? styles.intentStatusChecking
+                  : styles.intentStatusInactive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.intentStatusText,
+                intentResult
+                  ? styles.intentStatusTextActive
+                  : isCheckingPendingData
+                    ? styles.intentStatusTextChecking
+                    : styles.intentStatusTextInactive,
+              ]}
+            >
+              {intentResult
+                ? '🎯 Intent Recebido'
+                : isCheckingPendingData
+                  ? '🔍 Verificando Dados...'
+                  : '⏳ Aguardando Intent'}
+            </Text>
+          </View>
+          <Text style={styles.intentStatusDescription}>
+            {intentResult
+              ? `Último intent recebido em ${new Date().toLocaleTimeString()}`
+              : isCheckingPendingData
+                ? 'Verificando se há dados pendentes da MainActivity...'
+                : 'O app está escutando por intents da carteira do Google'}
+          </Text>
 
-        {/* Seção de detalhes do intent quando disponível */}
-        {intentResult && (
-          <View style={styles.intentResultContent}>
-            <Text style={styles.intentResultText}>
-              <Text style={styles.intentResultLabel}>Tipo:</Text> {intentResult.type}
-            </Text>
-            <Text style={styles.intentResultText}>
-              <Text style={styles.intentResultLabel}>Ação:</Text> {intentResult.action}
-            </Text>
-            {intentResult.callingPackage && (
+          {/* Seção de detalhes do intent quando disponível */}
+          {intentResult && (
+            <View style={styles.intentResultContent}>
               <Text style={styles.intentResultText}>
-                <Text style={styles.intentResultLabel}>Package:</Text> {intentResult.callingPackage}
+                <Text style={styles.intentResultLabel}>Tipo:</Text>{' '}
+                {intentResult.type}
               </Text>
-            )}
-            {intentResult.data && (
               <Text style={styles.intentResultText}>
-                <Text style={styles.intentResultLabel}>Dados:</Text> {intentResult.data.substring(0, 50)}...
+                <Text style={styles.intentResultLabel}>Ação:</Text>{' '}
+                {intentResult.action}
               </Text>
-            )}
-            {intentResult.dataFormat && (
-              <Text style={styles.intentResultText}>
-                <Text style={styles.intentResultLabel}>Formato:</Text> {intentResult.dataFormat}
-              </Text>
-            )}
-            {intentResult.originalData && (
-              <Text style={styles.intentResultText}>
-                <Text style={styles.intentResultLabel}>Dados Originais (Base64):</Text> {intentResult.originalData.substring(0, 50)}...
-              </Text>
-            )}
-            {intentResult.error && (
-              <Text style={[styles.intentResultText, styles.intentResultError]}>
-                <Text style={styles.intentResultLabel}>Erro:</Text> {intentResult.error}
-              </Text>
-            )}
-            <Text style={styles.intentResultText}>
-              <Text style={styles.intentResultLabel}>Timestamp:</Text> {new Date().toLocaleString()}
-            </Text>
-
-            {/* Dados decodificados integrados */}
-            {decodedData && (
-              <>
-                <View style={styles.decodedDataDivider} />
-                <Text style={styles.decodedDataTitle}>
-                  📋 Dados Decodificados 
-                  {intentResult.dataFormat === GoogleWalletDataFormat.BASE64_DECODED && ' (Automático)'}
-                  {intentResult.dataFormat === GoogleWalletDataFormat.RAW && ' (Manual)'}
+              {intentResult.callingPackage && (
+                <Text style={styles.intentResultText}>
+                  <Text style={styles.intentResultLabel}>Package:</Text>{' '}
+                  {intentResult.callingPackage}
                 </Text>
-                <View style={styles.decodedDataContent}>
-                  <Text style={styles.decodedDataText}>
-                    {typeof decodedData === 'object' && decodedData !== null
-                      ? JSON.stringify(decodedData, null, 2)
-                      : String(decodedData)
-                    }
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={styles.copyButton}
-                  onPress={() => {
-                    const dataToCopy = typeof decodedData === 'object' ? 
-                      JSON.stringify(decodedData, null, 2) : 
-                      String(decodedData);
-                    Clipboard.setString(dataToCopy);
-                    Alert.alert('Sucesso', 'Dados decodificados copiados para a área de transferência!');
-                  }}
+              )}
+              {intentResult.data && (
+                <Text style={styles.intentResultText}>
+                  <Text style={styles.intentResultLabel}>Dados:</Text>{' '}
+                  {intentResult.data.substring(0, 50)}...
+                </Text>
+              )}
+              {intentResult.dataFormat && (
+                <Text style={styles.intentResultText}>
+                  <Text style={styles.intentResultLabel}>Formato:</Text>{' '}
+                  {intentResult.dataFormat}
+                </Text>
+              )}
+              {intentResult.originalData && (
+                <Text style={styles.intentResultText}>
+                  <Text style={styles.intentResultLabel}>
+                    Dados Originais (Base64):
+                  </Text>{' '}
+                  {intentResult.originalData.substring(0, 50)}...
+                </Text>
+              )}
+              {intentResult.error && (
+                <Text
+                  style={[styles.intentResultText, styles.intentResultError]}
                 >
-                  <Text style={styles.copyButtonText}>📋 Copiar Dados Decodificados</Text>
-                </TouchableOpacity>
-              </>
-            )}
-
-            {/* Seção para testar resultado de ativação - só aparece quando há intent result */}
-            <View style={styles.activationResultSection}>
-              <View style={styles.decodedDataDivider} />
-              <Text style={styles.activationResultTitle}>🎯 Definir Resultado de Ativação</Text>
-              <Text style={styles.activationResultDescription}>
-                Use os botões abaixo para definir o resultado da ativação do token para o Google Wallet:
+                  <Text style={styles.intentResultLabel}>Erro:</Text>{' '}
+                  {intentResult.error}
+                </Text>
+              )}
+              <Text style={styles.intentResultText}>
+                <Text style={styles.intentResultLabel}>Timestamp:</Text>{' '}
+                {new Date().toLocaleString()}
               </Text>
-              
-              <View style={styles.opcButtonsContainer}>
-                <TouchableOpacity 
-                  style={[styles.clearButton, { backgroundColor: '#4caf50' }]} 
-                  onPress={() => handleSetActivationResult(GoogleActivationStatus.APPROVED)}
-                >
-                  <Text style={styles.clearButtonText}>✅ Aprovar</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.pasteButton, { backgroundColor: '#ff9800' }]} 
-                  onPress={() => handleSetActivationResult(GoogleActivationStatus.DECLINED)}
-                >
-                  <Text style={styles.pasteButtonText}>❌ Recusar</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.opcButtonsContainer}>
-                <TouchableOpacity 
-                  style={[styles.clearButton, { backgroundColor: '#f44336' }]} 
-                  onPress={() => handleSetActivationResult(GoogleActivationStatus.FAILURE)}
-                >
-                  <Text style={styles.clearButtonText}>💥 Falha</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.pasteButton, { backgroundColor: '#2196f3' }]} 
-                  onPress={() => handleSetActivationResult(GoogleActivationStatus.APPROVED, 'ACTIVATION_CODE_12345')}
-                >
-                  <Text style={styles.pasteButtonText}>✅ Aprovar + Código</Text>
-                </TouchableOpacity>
-              </View>
-              
-              {/* Botões para finalizar atividade */}
-              <View style={styles.finishButtonsContainer}>
-                <TouchableOpacity 
-                  style={[styles.finishButton, { backgroundColor: '#9c27b0' }]} 
-                  onPress={handleFinishActivity}
-                >
-                  <Text style={styles.finishButtonText}>🚪 Finalizar e Voltar</Text>
-                </TouchableOpacity>
-                
+
+              {/* Dados decodificados integrados */}
+              {decodedData && (
+                <>
+                  <View style={styles.decodedDataDivider} />
+                  <Text style={styles.decodedDataTitle}>
+                    📋 Dados Decodificados
+                    {intentResult.dataFormat ===
+                      GoogleWalletDataFormat.BASE64_DECODED && ' (Automático)'}
+                    {intentResult.dataFormat === GoogleWalletDataFormat.RAW &&
+                      ' (Manual)'}
+                  </Text>
+                  <View style={styles.decodedDataContent}>
+                    <Text style={styles.decodedDataText}>
+                      {typeof decodedData === 'object' && decodedData !== null
+                        ? JSON.stringify(decodedData, null, 2)
+                        : String(decodedData)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={() => {
+                      const dataToCopy =
+                        typeof decodedData === 'object'
+                          ? JSON.stringify(decodedData, null, 2)
+                          : String(decodedData);
+                      Clipboard.setString(dataToCopy);
+                      Alert.alert(
+                        'Sucesso',
+                        'Dados decodificados copiados para a área de transferência!'
+                      );
+                    }}
+                  >
+                    <Text style={styles.copyButtonText}>
+                      📋 Copiar Dados Decodificados
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* Seção para testar resultado de ativação - só aparece quando há intent result */}
+              <View style={styles.activationResultSection}>
+                <View style={styles.decodedDataDivider} />
+                <Text style={styles.activationResultTitle}>
+                  🎯 Definir Resultado de Ativação
+                </Text>
+                <Text style={styles.activationResultDescription}>
+                  Use os botões abaixo para definir o resultado da ativação do
+                  token para o Google Wallet:
+                </Text>
+
+                <View style={styles.opcButtonsContainer}>
+                  <TouchableOpacity
+                    style={[styles.clearButton, { backgroundColor: '#4caf50' }]}
+                    onPress={() =>
+                      handleSetActivationResult(GoogleActivationStatus.APPROVED)
+                    }
+                  >
+                    <Text style={styles.clearButtonText}>✅ Aprovar</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.pasteButton, { backgroundColor: '#ff9800' }]}
+                    onPress={() =>
+                      handleSetActivationResult(GoogleActivationStatus.DECLINED)
+                    }
+                  >
+                    <Text style={styles.pasteButtonText}>❌ Recusar</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.opcButtonsContainer}>
+                  <TouchableOpacity
+                    style={[styles.clearButton, { backgroundColor: '#f44336' }]}
+                    onPress={() =>
+                      handleSetActivationResult(GoogleActivationStatus.FAILURE)
+                    }
+                  >
+                    <Text style={styles.clearButtonText}>💥 Falha</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.pasteButton, { backgroundColor: '#2196f3' }]}
+                    onPress={() =>
+                      handleSetActivationResult(
+                        GoogleActivationStatus.APPROVED,
+                        'ACTIVATION_CODE_12345'
+                      )
+                    }
+                  >
+                    <Text style={styles.pasteButtonText}>
+                      ✅ Aprovar + Código
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Botões para finalizar atividade */}
+                <View style={styles.finishButtonsContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.finishButton,
+                      { backgroundColor: '#9c27b0' },
+                    ]}
+                    onPress={handleFinishActivity}
+                  >
+                    <Text style={styles.finishButtonText}>
+                      🚪 Finalizar e Voltar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        )}
-      </View>
+          )}
+        </View>
 
-      {/* Seção para adicionar cartão com OPC personalizado */}
-      <View style={styles.addCardSection}>
-        <Text style={styles.sectionTitle}>Adicionar Cartão à Google Wallet</Text>
-        
-        <Text style={styles.inputLabel}>OPC (Opaque Payment Card):</Text>
-        <TextInput
-          style={styles.opcInput}
-          value={opcValue}
-          onChangeText={setOpcValue}
-          placeholder="Cole aqui o OPC do seu cartão"
-          multiline
-          numberOfLines={3}
-        />
-        
-        {/* Botões de ação para o OPC */}
-        <View style={styles.opcButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.clearButton} 
-            onPress={handleClearOPC}
+        {/* Seção para adicionar cartão com OPC personalizado */}
+        <View style={styles.addCardSection}>
+          <Text style={styles.sectionTitle}>
+            Adicionar Cartão à Google Wallet
+          </Text>
+
+          <Text style={styles.inputLabel}>OPC (Opaque Payment Card):</Text>
+          <TextInput
+            style={styles.opcInput}
+            value={opcValue}
+            onChangeText={setOpcValue}
+            placeholder="Cole aqui o OPC do seu cartão"
+            multiline
+            numberOfLines={3}
+          />
+
+          {/* Botões de ação para o OPC */}
+          <View style={styles.opcButtonsContainer}>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={handleClearOPC}
+            >
+              <Text style={styles.clearButtonText}>🧹 Limpar OPC</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.pasteButton}
+              onPress={handlePasteOPC}
+            >
+              <Text style={styles.pasteButtonText}>📋 Colar OPC</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.googleWalletButton}
+            onPress={() => handleAddCard(opcValue)}
           >
-            <Text style={styles.clearButtonText}>🧹 Limpar OPC</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.pasteButton} 
-            onPress={handlePasteOPC}
-          >
-            <Text style={styles.pasteButtonText}>📋 Colar OPC</Text>
+            <Image
+              source={require('./assets/br_add_to_google_wallet_add-wallet-badge.png')}
+              style={styles.googleWalletBadge}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
-          style={styles.googleWalletButton} 
-          onPress={() => handleAddCard(opcValue)}
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleCheckAvailability}
         >
-          <Image 
-            source={require('./assets/br_add_to_google_wallet_add-wallet-badge.png')} 
-            style={styles.googleWalletBadge}
-            resizeMode="contain"
-          />
+          <Text style={styles.buttonText}>Verificar Disponibilidade</Text>
         </TouchableOpacity>
-      </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleCheckAvailability}>
-        <Text style={styles.buttonText}>Verificar Disponibilidade</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
+          <Text style={styles.buttonText}>Criar Google Wallet</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
-        <Text style={styles.buttonText}>Criar Google Wallet</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
+          <Text style={styles.buttonText}>Obter Informações da Wallet</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
-        <Text style={styles.buttonText}>Obter Informações da Wallet</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleGetTokenStatus}>
+          <Text style={styles.buttonText}>Status do Token</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleGetTokenStatus}>
-        <Text style={styles.buttonText}>Status do Token</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleGetEnvironment}>
+          <Text style={styles.buttonText}>Obter Environment</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleGetEnvironment}>
-        <Text style={styles.buttonText}>Obter Environment</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleIsTokenized}>
+          <Text style={styles.buttonText}>Verificar Tokenização</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleIsTokenized}>
-        <Text style={styles.buttonText}>Verificar Tokenização</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleViewToken}>
+          <Text style={styles.buttonText}>Visualizar Token</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleViewToken}>
-        <Text style={styles.buttonText}>Visualizar Token</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleListTokens}>
-        <Text style={styles.buttonText}>Listar Tokens</Text>
-      </TouchableOpacity>
-
-      
-    </ScrollView>
+        <TouchableOpacity style={styles.button} onPress={handleListTokens}>
+          <Text style={styles.buttonText}>Listar Tokens</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
