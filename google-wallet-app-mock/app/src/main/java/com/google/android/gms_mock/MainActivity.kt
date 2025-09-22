@@ -241,8 +241,8 @@ class MainActivity : ComponentActivity() {
 
     private fun generateSimulatedData(): String {
         val timestamp = System.currentTimeMillis()
-        val panReferenceId = "PAN_${timestamp}_${(1000..9999).random()}"
-        val tokenReferenceId = "TOKEN_${timestamp}_${(10000..99999).random()}"
+        val panReferenceId = "PAN_1758556574675_98397"
+        val tokenReferenceId = "TOKEN_1758556574675_98397"
 
         return """
         {
