@@ -860,8 +860,6 @@ class GoogleWalletMock : GoogleWalletContract {
         
         val constants = hashMapOf<String, Any>()
         
-        // SDK_AVAILABLE deve consultar o servidor
-        constants["SDK_AVAILABLE"] = checkSDKAvailability()
         constants["SDK_NAME"] = "GoogleWallet"
         
         // Constantes fixas baseadas nos valores fornecidos

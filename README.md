@@ -373,7 +373,6 @@ const environment = await GoogleWalletModule.getEnvironment();
 
 // Obter constantes do módulo
 const constants = GoogleWalletModule.getConstants();
-console.log('SDK disponível:', constants.SDK_AVAILABLE);
 console.log('ELO Provider:', constants.TOKEN_PROVIDER_ELO);
 console.log('ELO Network:', constants.CARD_NETWORK_ELO);
 ```
@@ -1190,7 +1189,6 @@ interface GoogleTokenInfo {
 
 // Constantes do Google Wallet
 interface GoogleWalletConstants {
-  SDK_AVAILABLE: boolean;  // Consulta servidor em tempo real
   SDK_NAME: string;
   CARD_NETWORK_ELO: number;  // 12
   TOKEN_PROVIDER_ELO: number;  // 14

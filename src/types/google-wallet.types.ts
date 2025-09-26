@@ -193,7 +193,6 @@ export interface GoogleWalletData {
 
 // Google Wallet - Constants
 export interface GoogleWalletConstants {
-  SDK_AVAILABLE: boolean;
   SDK_NAME: string;
   CARD_NETWORK_ELO: number;
   TOKEN_PROVIDER_ELO: number;

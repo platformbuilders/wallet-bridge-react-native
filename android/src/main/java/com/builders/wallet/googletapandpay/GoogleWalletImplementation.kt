@@ -1101,7 +1101,6 @@ class GoogleWalletImplementation(
         val constants = hashMapOf<String, Any>()
         
         // Adiciona constantes básicas sempre
-        constants["SDK_AVAILABLE"] = isSDKAvailable
         constants["SDK_NAME"] = "GoogleWallet"
         
         // Adiciona constantes do SDK se estiver disponível

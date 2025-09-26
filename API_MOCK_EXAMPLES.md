@@ -30,7 +30,6 @@ O mock retorna as seguintes constantes via `getConstants()`:
 
 ```json
 {
-  "SDK_AVAILABLE": true,  // Consulta servidor em tempo real
   "SDK_NAME": "GoogleWallet",
   "TOKEN_PROVIDER_ELO": 14,
   "CARD_NETWORK_ELO": 12,
@@ -42,8 +41,6 @@ O mock retorna as seguintes constantes via `getConstants()`:
   "TOKEN_STATE_FELICA_PENDING_PROVISIONING": 6
 }
 ```
-
-**Nota:** `SDK_AVAILABLE` é consultado dinamicamente do servidor mock via `GET /wallet/availability`.
 
 ### 1. **Verificar Disponibilidade da Carteira**
 
