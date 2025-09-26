@@ -249,11 +249,22 @@ class GoogleWalletMock : GoogleWalletContract {
 
     override fun checkWalletAvailability(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
-        
-        // Usar a mesma função que getConstants usa
-        val isAvailable = checkSDKAvailability()
-        Log.d(TAG, "✅ [MOCK] Wallet disponível: $isAvailable")
-        promise.resolve(isAvailable)
+        fetchFromLocalAPI(
+            endpoint = "/wallet/availability",
+            defaultResponse = { true },
+            onSuccess = { json ->
+                try {
+                    promise.resolve(json.optBoolean("available", true))
+                } catch (e: Exception) {
+                    Log.w(TAG, "⚠️ [MOCK] Erro ao processar disponibilidade, usando fallback: ${e.message}")
+                    promise.resolve(true)
+                }
+            },
+            onError = {
+                // Em caso de erro de rede, assume-se que está disponível (comportamento de fallback)
+                promise.resolve(true)
+            }
+        )
     }
 
     override fun getSecureWalletInfo(promise: Promise) {
@@ -875,43 +886,5 @@ class GoogleWalletMock : GoogleWalletContract {
         Log.d(TAG, "✅ [MOCK] Constantes obtidas (simuladas)")
         return constants
     }
-    
-    /**
-     * Verifica se o SDK está disponível consultando o servidor
-     */
-    private fun checkSDKAvailability(): Boolean {
-        val apiUrl = API_BASE_URL
-        if (apiUrl == null) {
-            Log.d(TAG, "🔄 [MOCK] API URL não configurada, retornando disponibilidade padrão")
-            return true // Fallback para true se API não estiver configurada
-        }
-        
-        return try {
-            val url = URL("$apiUrl/wallet/availability")
-            val connection = url.openConnection() as HttpURLConnection
-            connection.apply {
-                requestMethod = "GET"
-                connectTimeout = 2000 // 2 segundos para constante
-                readTimeout = 2000
-                setRequestProperty("Accept", "application/json")
-            }
-            
-            val responseCode = connection.responseCode
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                val inputStream = connection.inputStream
-                val reader = BufferedReader(InputStreamReader(inputStream))
-                val response = reader.readText()
-                reader.close()
-                inputStream.close()
-                
-                val jsonResponse = JSONObject(response)
-                jsonResponse.optBoolean("available", true)
-            } else {
-                true // Fallback para true se servidor não responder
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "⚠️ [MOCK] Erro ao verificar disponibilidade do SDK: ${e.message}")
-            true // Fallback para true se houver erro
-        }
-    }
+
 }
