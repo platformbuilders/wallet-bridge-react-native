@@ -70,12 +70,18 @@ export enum CommonStatusCode {
 }
 
 export enum GoogleTokenState {
-  TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION = 'TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION',
-  TOKEN_STATE_PENDING = 'TOKEN_STATE_PENDING',
-  TOKEN_STATE_SUSPENDED = 'TOKEN_STATE_SUSPENDED',
-  TOKEN_STATE_ACTIVE = 'TOKEN_STATE_ACTIVE',
-  TOKEN_STATE_FELICA_PENDING_PROVISIONING = 'TOKEN_STATE_FELICA_PENDING_PROVISIONING',
-  TOKEN_STATE_UNTOKENIZED = 'TOKEN_STATE_UNTOKENIZED',
+  /** Esse estado é visível no SDK, mas não é possível para provisionamento por push. É possível ignorar esse estado com segurança. */
+  TOKEN_STATE_UNTOKENIZED = 1,
+  /** O token não está disponível para pagamentos no momento, mas vai estar depois de algum tempo. */
+  TOKEN_STATE_PENDING = 2,
+  /** O token está na carteira ativa, mas requer autenticação extra do usuário para ser usado (acompanhamento do caminho amarelo). */
+  TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION = 3,
+  /** O token foi temporariamente suspenso. */
+  TOKEN_STATE_SUSPENDED = 4,
+  /** O token está ativo e disponível para pagamentos. */
+  TOKEN_STATE_ACTIVE = 5,
+  /** O token foi emitido pelo TSP, mas o provisionamento do Felica não foi concluído. */
+  TOKEN_STATE_FELICA_PENDING_PROVISIONING = 6,
 }
 
 export enum GoogleTokenProvider {
@@ -177,13 +183,7 @@ export interface GoogleTokenInfo {
 }
 
 // Google Wallet - TokenInfo simplificado para listTokens
-export interface GoogleTokenInfoSimple {
-  issuerTokenId: string;
-  lastDigits: string;
-  displayName: string;
-  tokenState: number;
-  network: number;
-}
+// Removido: GoogleTokenInfoSimple (campos legados não são mais usados)
 
 // Google Wallet - WalletData
 export interface GoogleWalletData {
@@ -201,12 +201,79 @@ export interface GoogleWalletConstants {
   TOKEN_STATE_PENDING: number;
   TOKEN_STATE_SUSPENDED: number;
   TOKEN_STATE_UNTOKENIZED: number;
+  TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION: number;
+  TOKEN_STATE_FELICA_PENDING_PROVISIONING: number;
 }
 
 // Google Wallet - TokenStatus
 export interface GoogleTokenStatus {
   tokenState: number;
   isSelected: boolean;
+}
+
+// Google Wallet - Utilitários para TokenState
+export class GoogleTokenStateUtils {
+  /**
+   * Converte um valor numérico de tokenState para string legível
+   * @param tokenState Valor numérico do tokenState
+   * @returns String descritiva do estado do token
+   */
+  static getTokenStateDescription(tokenState: number): string {
+    switch (tokenState) {
+      case GoogleTokenState.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION:
+        return 'Token requer verificação de identidade';
+      case GoogleTokenState.TOKEN_STATE_PENDING:
+        return 'Token pendente de ativação';
+      case GoogleTokenState.TOKEN_STATE_SUSPENDED:
+        return 'Token suspenso temporariamente';
+      case GoogleTokenState.TOKEN_STATE_ACTIVE:
+        return 'Token ativo e disponível';
+      case GoogleTokenState.TOKEN_STATE_FELICA_PENDING_PROVISIONING:
+        return 'Token aguardando provisionamento Felica';
+      case GoogleTokenState.TOKEN_STATE_UNTOKENIZED:
+        return 'Token não tokenizado';
+      default:
+        return `Estado desconhecido (${tokenState})`;
+    }
+  }
+
+  /**
+   * Verifica se um token está ativo e pode ser usado para pagamentos
+   * @param tokenState Valor numérico do tokenState
+   * @returns true se o token está ativo
+   */
+  static isTokenActive(tokenState: number): boolean {
+    return tokenState === GoogleTokenState.TOKEN_STATE_ACTIVE;
+  }
+
+  /**
+   * Verifica se um token requer verificação de identidade
+   * @param tokenState Valor numérico do tokenState
+   * @returns true se o token requer verificação
+   */
+  static requiresIdentityVerification(tokenState: number): boolean {
+    return (
+      tokenState === GoogleTokenState.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION
+    );
+  }
+
+  /**
+   * Verifica se um token está pendente
+   * @param tokenState Valor numérico do tokenState
+   * @returns true se o token está pendente
+   */
+  static isTokenPending(tokenState: number): boolean {
+    return tokenState === GoogleTokenState.TOKEN_STATE_PENDING;
+  }
+
+  /**
+   * Verifica se um token está suspenso
+   * @param tokenState Valor numérico do tokenState
+   * @returns true se o token está suspenso
+   */
+  static isTokenSuspended(tokenState: number): boolean {
+    return tokenState === GoogleTokenState.TOKEN_STATE_SUSPENDED;
+  }
 }
 
 // Google Wallet - DataFormat
@@ -251,10 +318,10 @@ export interface GoogleWalletSpec {
   viewToken(
     tokenServiceProvider: number,
     issuerTokenId: string
-  ): Promise<boolean>;
+  ): Promise<GoogleTokenInfo | null>;
   addCardToWallet(cardData: GooglePushTokenizeRequestForCard): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
-  listTokens(): Promise<GoogleTokenInfoSimple[]>;
+  listTokens(): Promise<GoogleTokenInfo[]>;
   getConstants(): GoogleWalletConstants;
 
   // Métodos de listener de intent

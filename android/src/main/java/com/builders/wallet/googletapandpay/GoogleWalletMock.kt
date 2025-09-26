@@ -4,11 +4,41 @@ import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.ReadableType
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.coroutines.*
+import org.json.JSONObject
+import com.builders.wallet.BuildConfig
 
 class GoogleWalletMock : GoogleWalletContract {
 
     companion object {
         private const val TAG = "GoogleWalletMock"
+        private const val DEFAULT_API_BASE_URL = "http://localhost:3000"
+        private const val REQUEST_TIMEOUT = 5000 // 5 segundos
+        
+        // Obter URL da API do BuildConfig
+        private val API_BASE_URL: String? by lazy {
+            try {
+                val buildConfigUrl = BuildConfig.GOOGLE_WALLET_MOCK_API_URL
+                if (buildConfigUrl.isNotEmpty()) {
+                    Log.d(TAG, "🌐 [MOCK] Usando API URL do BuildConfig: $buildConfigUrl")
+                    return@lazy buildConfigUrl
+                }
+                
+                // Se não configurado, retorna null para usar apenas valores padrão
+                Log.d(TAG, "🌐 [MOCK] API URL não configurada, usando apenas valores padrão")
+                null
+            } catch (e: Exception) {
+                Log.w(TAG, "⚠️ [MOCK] Erro ao obter URL da API: ${e.message}")
+                null
+            }
+        }
         
         // Enum de códigos de erro para push tokenize
         enum class PushTokenizeErrorCode(val code: String, val description: String) {
@@ -21,61 +51,377 @@ class GoogleWalletMock : GoogleWalletContract {
         }
     }
 
+    /**
+     * Função para buscar dados de uma API local com fallback para valores padrão
+     * @param endpoint Endpoint da API (ex: "/wallet/availability")
+     * @param defaultResponse Resposta padrão caso a API falhe
+     * @param onSuccess Callback chamado em caso de sucesso
+     * @param onError Callback chamado em caso de erro
+     */
+    private fun fetchFromLocalAPI(
+        endpoint: String,
+        defaultResponse: () -> Any,
+        onSuccess: (JSONObject) -> Unit,
+        onError: (Exception) -> Unit,
+        method: String = "GET",
+        body: String? = null
+    ) {
+        // Verificar se a API URL está configurada
+        val apiUrl = API_BASE_URL
+        if (apiUrl == null) {
+            Log.d(TAG, "🔄 [MOCK] API URL não configurada, usando resposta padrão")
+            CoroutineScope(Dispatchers.Main).launch {
+                onError(Exception("API URL não configurada"))
+            }
+            return
+        }
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            var connection: HttpURLConnection? = null
+            try {
+                val urlString = "$apiUrl$endpoint"
+                Log.d(TAG, "🌐 [API][REQUEST] ➜ ${'$'}method $urlString")
+                Log.d(TAG, "🌐 [API][REQUEST] Headers: Content-Type=application/json, Accept=application/json")
+                Log.d(TAG, "🌐 [API][REQUEST] Timeouts: connect=${REQUEST_TIMEOUT}ms, read=${REQUEST_TIMEOUT}ms")
+                if (body != null) {
+                    val bodyPreview = if (body.length > 512) body.substring(0, 512) + "…" else body
+                    Log.d(TAG, "🌐 [API][REQUEST] bodyPreview=${'$'}bodyPreview")
+                }
+                
+                val startAtMs = System.currentTimeMillis()
+                val url = URL(urlString)
+                connection = url.openConnection() as HttpURLConnection
+                
+                connection.apply {
+                    requestMethod = method
+                    connectTimeout = REQUEST_TIMEOUT
+                    readTimeout = REQUEST_TIMEOUT
+                    setRequestProperty("Content-Type", "application/json")
+                    setRequestProperty("Accept", "application/json")
+                    if (body != null) doOutput = true
+                }
+
+                if (body != null) {
+                    val writer = OutputStreamWriter(connection.outputStream)
+                    writer.write(body)
+                    writer.flush()
+                    writer.close()
+                }
+                
+                val responseCode = connection.responseCode
+                val tookMs = System.currentTimeMillis() - startAtMs
+                Log.d(TAG, "🌐 [API][RESPONSE] ⇦ code=$responseCode (${tookMs}ms)")
+                
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val inputStream = connection.inputStream
+                    val reader = BufferedReader(InputStreamReader(inputStream))
+                    val response = StringBuilder()
+                    
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        response.append(line)
+                    }
+                    reader.close()
+                    inputStream.close()
+                    
+                    val raw = response.toString()
+                    val preview = if (raw.length > 512) raw.substring(0, 512) + "…" else raw
+                    Log.d(TAG, "🌐 [API][RESPONSE] bodyPreview=${'$'}preview")
+                    val jsonResponse = JSONObject(raw)
+                    Log.d(TAG, "✅ [API] Dados obtidos com sucesso da API local (len=${raw.length})")
+                    
+                    withContext(Dispatchers.Main) {
+                        onSuccess(jsonResponse)
+                    }
+                } else {
+                    // Tentar ler corpo de erro, se houver
+                    val errorBody = try {
+                        val es = connection.errorStream
+                        if (es != null) {
+                            val er = BufferedReader(InputStreamReader(es))
+                            val sb = StringBuilder()
+                            var lineErr: String?
+                            while (er.readLine().also { lineErr = it } != null) {
+                                sb.append(lineErr)
+                            }
+                            er.close()
+                            es.close()
+                            val rawErr = sb.toString()
+                            if (rawErr.isNotEmpty()) rawErr else null
+                        } else null
+                    } catch (_: Exception) { null }
+                    if (errorBody != null) {
+                        val previewErr = if (errorBody.length > 512) errorBody.substring(0, 512) + "…" else errorBody
+                        Log.w(TAG, "⚠️ [API][RESPONSE] code=$responseCode errorBodyPreview=${'$'}previewErr")
+                    } else {
+                        Log.w(TAG, "⚠️ [API][RESPONSE] code=$responseCode (sem corpo de erro)")
+                    }
+                    throw Exception("API retornou código de erro: $responseCode")
+                }
+                
+            } catch (e: Exception) {
+                Log.w(TAG, "❌ [API] Erro ao buscar dados da API local: ${e::class.java.simpleName}: ${e.message}")
+                Log.d(TAG, "🔄 [API] Usando valor padrão como fallback")
+                
+                withContext(Dispatchers.Main) {
+                    onError(e)
+                }
+            } finally {
+                Log.d(TAG, "🌐 [API] Encerrando conexão com servidor mock")
+                connection?.disconnect()
+            }
+        }
+    }
+
+    /**
+     * Função auxiliar para buscar dados da API com Promise
+     * @param endpoint Endpoint da API
+     * @param defaultResponse Função que retorna o valor padrão
+     * @param promise Promise do React Native
+     */
+    private fun fetchFromAPIWithPromise(
+        endpoint: String,
+        defaultResponse: () -> Any,
+        promise: Promise
+    ) {
+        fetchFromLocalAPI(
+            endpoint = endpoint,
+            defaultResponse = defaultResponse,
+            onSuccess = { jsonResponse ->
+                try {
+                    // Converter JSONObject para ReadableMap se necessário
+                    val result = Arguments.createMap()
+                    val keys = jsonResponse.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val value = jsonResponse.get(key)
+                        when (value) {
+                            is String -> result.putString(key, value)
+                            is Int -> result.putInt(key, value)
+                            is Boolean -> result.putBoolean(key, value)
+                            is Double -> result.putDouble(key, value)
+                            else -> result.putString(key, value.toString())
+                        }
+                    }
+                    promise.resolve(result)
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
+                    promise.resolve(defaultResponse())
+                }
+            },
+            onError = { _ ->
+                promise.resolve(defaultResponse())
+            }
+        )
+    }
+
+    private fun readableArrayToJson(array: ReadableArray): org.json.JSONArray {
+        val jsonArray = org.json.JSONArray()
+        for (i in 0 until array.size()) {
+            when (array.getType(i)) {
+                ReadableType.Null -> jsonArray.put(org.json.JSONObject.NULL)
+                ReadableType.Boolean -> jsonArray.put(array.getBoolean(i))
+                ReadableType.Number -> jsonArray.put(array.getDouble(i))
+                ReadableType.String -> jsonArray.put(array.getString(i))
+                ReadableType.Map -> jsonArray.put(readableMapToJson(array.getMap(i)!!))
+                ReadableType.Array -> jsonArray.put(readableArrayToJson(array.getArray(i)!!))
+            }
+        }
+        return jsonArray
+    }
+
+    private fun readableMapToJson(map: ReadableMap): JSONObject {
+        val json = JSONObject()
+        val iterator = map.keySetIterator()
+        while (iterator.hasNextKey()) {
+            val key = iterator.nextKey()
+            when (map.getType(key)) {
+                ReadableType.Null -> json.put(key, JSONObject.NULL)
+                ReadableType.Boolean -> json.put(key, map.getBoolean(key))
+                ReadableType.Number -> json.put(key, map.getDouble(key))
+                ReadableType.String -> json.put(key, map.getString(key))
+                ReadableType.Map -> json.put(key, readableMapToJson(map.getMap(key)!!))
+                ReadableType.Array -> json.put(key, readableArrayToJson(map.getArray(key)!!))
+            }
+        }
+        return json
+    }
+
     override fun checkWalletAvailability(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
-        try {
-            // Simular verificação de disponibilidade
-            Log.d(TAG, "✅ [MOCK] Wallet disponível (simulado)")
-            promise.resolve(true)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em checkWalletAvailability: ${e.message}", e)
-            promise.reject("CHECK_WALLET_AVAILABILITY_ERROR", e.message, e)
-        }
+        
+        // Usar a mesma função que getConstants usa
+        val isAvailable = checkSDKAvailability()
+        Log.d(TAG, "✅ [MOCK] Wallet disponível: $isAvailable")
+        promise.resolve(isAvailable)
     }
 
     override fun getSecureWalletInfo(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] getSecureWalletInfo chamado")
-        try {
-            // Simular dados da carteira
-            val result = Arguments.createMap()
-            result.putString("deviceID", "mock_device_12345")
-            result.putString("walletAccountID", "mock_wallet_67890")
-            
-            Log.d(TAG, "✅ [MOCK] Informações da carteira obtidas (simuladas)")
-            promise.resolve(result)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em getSecureWalletInfo: ${e.message}", e)
-            promise.reject("GET_SECURE_WALLET_INFO_ERROR", e.message, e)
-        }
+        
+        // Tentar buscar da API local primeiro, com fallback para valor padrão
+        fetchFromAPIWithPromise(
+            endpoint = "/wallet/info",
+            defaultResponse = {
+                val result = Arguments.createMap()
+                result.putString("deviceID", "mock_device_12345")
+                result.putString("walletAccountID", "mock_wallet_67890")
+                Log.d(TAG, "✅ [MOCK] Informações da carteira obtidas (valor padrão)")
+                result
+            },
+            promise = promise
+        )
     }
 
     override fun getTokenStatus(tokenServiceProvider: Int, tokenReferenceId: String, promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] getTokenStatus chamado - Provider: $tokenServiceProvider, RefId: $tokenReferenceId")
+        
+        // Simular diferentes cenários baseados no tokenReferenceId
+        val endpoint = "/wallet/token/status?provider=$tokenServiceProvider&refId=$tokenReferenceId"
+        fetchFromLocalAPI(
+            endpoint = endpoint,
+            defaultResponse = { 
+                // Simular diferentes cenários baseados no tokenReferenceId
+                simulateTokenStatusResponse(tokenReferenceId, tokenServiceProvider)
+            },
+            onSuccess = { json ->
+                try {
+                    // Verificar se há erro na resposta
+                    if (json.has("error")) {
+                        val errorCode = json.getString("errorCode") ?: "TOKEN_STATUS_ERROR"
+                        val errorMessage = json.getString("error") ?: "Erro ao obter status do token"
+                        Log.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
+                        promise.reject(errorCode, errorMessage)
+                    } else {
+                        // Resposta de sucesso
+                        val result = Arguments.createMap()
+                        result.putInt("tokenState", json.optInt("tokenState", 5))
+                        result.putBoolean("isSelected", json.optBoolean("isSelected", true))
+                        Log.d(TAG, "✅ [MOCK] Status do token obtido da API")
+                        promise.resolve(result)
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
+                    // Fallback para simulação local
+                    val result = simulateTokenStatusResponse(tokenReferenceId, tokenServiceProvider)
+                    if (result is Exception) {
+                        promise.reject("TOKEN_STATUS_ERROR", result.message, result)
+                    } else {
+                        promise.resolve(result)
+                    }
+                }
+            },
+            onError = { error ->
+                // Simular diferentes tipos de erro baseados no erro da API
+                simulateTokenStatusError(error.toString(), tokenReferenceId, tokenServiceProvider, promise)
+            }
+        )
+    }
+    
+    /**
+     * Simula resposta do getTokenStatus baseada no tokenReferenceId
+     */
+    private fun simulateTokenStatusResponse(tokenReferenceId: String, tokenServiceProvider: Int): Any {
+        return when {
+            // Simular token não encontrado
+            tokenReferenceId.contains("not_found") || tokenReferenceId.contains("404") -> {
+                Log.w(TAG, "❌ [MOCK] Simulando token não encontrado: $tokenReferenceId")
+                Exception("Token não encontrado na carteira ativa")
+            }
+            // Simular calling package não verificado
+            tokenReferenceId.contains("unverified") || tokenReferenceId.contains("15009") -> {
+                Log.w(TAG, "❌ [MOCK] Simulando calling package não verificado: $tokenReferenceId")
+                Exception("15009: Calling package not verified")
+            }
+            // Simular token suspenso
+            tokenReferenceId.contains("suspended") || tokenReferenceId.contains("suspended") -> {
+                Log.d(TAG, "✅ [MOCK] Simulando token suspenso: $tokenReferenceId")
+                val result = Arguments.createMap()
+                result.putInt("tokenState", 4) // TOKEN_STATE_SUSPENDED
+                result.putBoolean("isSelected", false)
+                result
+            }
+            // Simular token pendente
+            tokenReferenceId.contains("pending") || tokenReferenceId.contains("pending") -> {
+                Log.d(TAG, "✅ [MOCK] Simulando token pendente: $tokenReferenceId")
+                val result = Arguments.createMap()
+                result.putInt("tokenState", 2) // TOKEN_STATE_PENDING
+                result.putBoolean("isSelected", false)
+                result
+            }
+            // Simular token ativo (padrão)
+            else -> {
+                Log.d(TAG, "✅ [MOCK] Simulando token ativo: $tokenReferenceId")
+                val result = Arguments.createMap()
+                result.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
+                result.putBoolean("isSelected", true)
+                result
+            }
+        }
+    }
+    
+    /**
+     * Simula erro do getTokenStatus baseado no erro da API
+     */
+    private fun simulateTokenStatusError(error: String, tokenReferenceId: String, tokenServiceProvider: Int, promise: Promise) {
         try {
-            // Simular status do token
-            val result = Arguments.createMap()
-            result.putInt("tokenState", 4) // TOKEN_STATE_ACTIVE
-            result.putBoolean("isSelected", true)
-            
-            Log.d(TAG, "✅ [MOCK] Status do token obtido (simulado)")
-            promise.resolve(result)
+            // Simular diferentes tipos de erro baseados no erro
+            when {
+                error.contains("15009") || error.contains("unverified") -> {
+                    Log.w(TAG, "❌ [MOCK] Simulando erro 15009: Calling package not verified")
+                    promise.reject("CALLING_PACKAGE_NOT_VERIFIED", "15009: Calling package not verified")
+                }
+                error.contains("15003") || error.contains("not_found") -> {
+                    Log.w(TAG, "❌ [MOCK] Simulando erro 15003: Token não encontrado")
+                    promise.reject("TOKEN_NOT_FOUND", "15003: Token não encontrado na carteira ativa")
+                }
+                error.contains("15004") || error.contains("invalid_state") -> {
+                    Log.w(TAG, "❌ [MOCK] Simulando erro 15004: Estado do token inválido")
+                    promise.reject("INVALID_TOKEN_STATE", "15004: Token encontrado mas em estado inválido")
+                }
+                error.contains("15005") || error.contains("attestation") -> {
+                    Log.w(TAG, "❌ [MOCK] Simulando erro 15005: Falha na verificação de compatibilidade")
+                    promise.reject("ATTESTATION_ERROR", "15005: Falha na verificação de compatibilidade do dispositivo")
+                }
+                error.contains("15002") || error.contains("no_wallet") -> {
+                    Log.w(TAG, "❌ [MOCK] Simulando erro 15002: Nenhuma carteira ativa")
+                    promise.reject("NO_ACTIVE_WALLET", "15002: Nenhuma carteira ativa encontrada")
+                }
+                else -> {
+                    // Fallback para sucesso padrão
+                    Log.d(TAG, "✅ [MOCK] Fallback para sucesso padrão")
+                    val result = Arguments.createMap()
+                    result.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
+                    result.putBoolean("isSelected", true)
+                    promise.resolve(result)
+                }
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em getTokenStatus: ${e.message}", e)
-            promise.reject("GET_TOKEN_STATUS_ERROR", e.message, e)
+            Log.w(TAG, "❌ [MOCK] Erro ao simular erro: ${e.message}")
+            promise.reject("TOKEN_STATUS_ERROR", "Erro ao obter status do token: ${e.message}")
         }
     }
 
     override fun getEnvironment(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] getEnvironment chamado")
-        try {
-            // Simular environment
-            val environment = "PRODUCTION"
-            Log.d(TAG, "✅ [MOCK] Environment obtido (simulado): $environment")
-            promise.resolve(environment)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em getEnvironment: ${e.message}", e)
-            promise.reject("GET_ENVIRONMENT_ERROR", e.message, e)
-        }
+        fetchFromLocalAPI(
+            endpoint = "/wallet/environment",
+            defaultResponse = { "PRODUCTION" },
+            onSuccess = { json ->
+                try {
+                    if (json.has("environment")) {
+                        promise.resolve(json.getString("environment"))
+                    } else {
+                        promise.resolve("PRODUCTION")
+                    }
+                } catch (e: Exception) {
+                    promise.resolve("PRODUCTION")
+                }
+            },
+            onError = { _ ->
+                promise.resolve("PRODUCTION")
+            }
+        )
     }
 
     override fun isTokenized(
@@ -85,15 +431,25 @@ class GoogleWalletMock : GoogleWalletContract {
         promise: Promise
     ) {
         Log.d(TAG, "🔍 [MOCK] isTokenized chamado - LastFour: $fpanLastFour, Network: $cardNetwork, Provider: $tokenServiceProvider")
-        try {
-            // Simular verificação de tokenização
-            val isTokenized = fpanLastFour == "1234" // Simular que apenas cartões terminados em 1234 estão tokenizados
-            Log.d(TAG, "✅ [MOCK] Verificação de tokenização (simulada): $isTokenized")
-            promise.resolve(isTokenized)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em isTokenized: ${e.message}", e)
-            promise.reject("IS_TOKENIZED_ERROR", e.message, e)
-        }
+        val endpoint = "/wallet/is-tokenized?lastFour=$fpanLastFour&network=$cardNetwork&provider=$tokenServiceProvider"
+        fetchFromLocalAPI(
+            endpoint = endpoint,
+            defaultResponse = { fpanLastFour == "1234" },
+            onSuccess = { json ->
+                try {
+                    if (json.has("isTokenized")) {
+                        promise.resolve(json.getBoolean("isTokenized"))
+                    } else {
+                        promise.resolve(fpanLastFour == "1234")
+                    }
+                } catch (e: Exception) {
+                    promise.resolve(fpanLastFour == "1234")
+                }
+            },
+            onError = { _ ->
+                promise.resolve(fpanLastFour == "1234")
+            }
+        )
     }
 
     override fun viewToken(
@@ -102,116 +458,350 @@ class GoogleWalletMock : GoogleWalletContract {
         promise: Promise
     ) {
         Log.d(TAG, "🔍 [MOCK] viewToken chamado - Provider: $tokenServiceProvider, TokenId: $issuerTokenId")
-        try {
-            // Simular visualização do token
-            Log.d(TAG, "✅ [MOCK] Token visualizado (simulado)")
-            promise.resolve(true)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em viewToken: ${e.message}", e)
-            promise.reject("VIEW_TOKEN_ERROR", e.message, e)
-        }
+        val endpoint = "/wallet/view-token?provider=$tokenServiceProvider&tokenId=$issuerTokenId"
+        fetchFromLocalAPI(
+            endpoint = endpoint,
+            defaultResponse = { 
+                // Simular dados do token encontrado
+                val tokenData = Arguments.createMap()
+                tokenData.putString("issuerTokenId", issuerTokenId)
+                tokenData.putString("issuerName", "Banco Mock")
+                tokenData.putString("fpanLastFour", "1234")
+                tokenData.putString("dpanLastFour", "4321")
+                tokenData.putInt("tokenServiceProvider", tokenServiceProvider)
+                tokenData.putInt("network", 12) // CARD_NETWORK_ELO
+                tokenData.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
+                tokenData.putBoolean("isDefaultToken", true)
+                tokenData.putString("portfolioName", "Carteira Principal")
+                Log.d(TAG, "✅ [MOCK] Dados do token simulados para: $issuerTokenId")
+                tokenData
+            },
+            onSuccess = { json ->
+                try {
+                    if (json.has("success") && json.getBoolean("success")) {
+                        // Se a API retornar sucesso, criar dados do token
+                        val tokenData = Arguments.createMap()
+                        tokenData.putString("issuerTokenId", issuerTokenId)
+                        tokenData.putString("issuerName", json.optString("issuerName", "Banco API"))
+                        tokenData.putString("fpanLastFour", json.optString("fpanLastFour", "1234"))
+                        tokenData.putString("dpanLastFour", json.optString("dpanLastFour", "4321"))
+                        tokenData.putInt("tokenServiceProvider", tokenServiceProvider)
+                        tokenData.putInt("network", json.optInt("network", 12))
+                        tokenData.putInt("tokenState", json.optInt("tokenState", 5))
+                        tokenData.putBoolean("isDefaultToken", json.optBoolean("isDefaultToken", true))
+                        tokenData.putString("portfolioName", json.optString("portfolioName", "Carteira Principal"))
+                        
+                        Log.d(TAG, "✅ [MOCK] Dados do token obtidos da API para: $issuerTokenId")
+                        promise.resolve(tokenData)
+                    } else {
+                        // Se não encontrou o token, retornar null
+                        Log.w(TAG, "❌ [MOCK] Token não encontrado: $issuerTokenId")
+                        promise.resolve(null)
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
+                    promise.resolve(null)
+                }
+            },
+            onError = { _ ->
+                // Em caso de erro, retornar dados simulados
+                val tokenData = Arguments.createMap()
+                tokenData.putString("issuerTokenId", issuerTokenId)
+                tokenData.putString("issuerName", "Banco Mock")
+                tokenData.putString("fpanLastFour", "1234")
+                tokenData.putString("dpanLastFour", "4321")
+                tokenData.putInt("tokenServiceProvider", tokenServiceProvider)
+                tokenData.putInt("network", 12) // CARD_NETWORK_ELO
+                tokenData.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
+                tokenData.putBoolean("isDefaultToken", true)
+                tokenData.putString("portfolioName", "Carteira Principal")
+                Log.d(TAG, "✅ [MOCK] Dados do token simulados (fallback) para: $issuerTokenId")
+                promise.resolve(tokenData)
+            }
+        )
     }
 
     override fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] addCardToWallet chamado")
         try {
+            // Validar dados do cartão (mesmo que na implementação real)
+            val validationError = validateCardData(cardData)
+            if (validationError != null) {
+                Log.w(TAG, "❌ [MOCK] $validationError")
+                promise.reject("INVALID_CARD_DATA", validationError)
+                return
+            }
+            
+            Log.d(TAG, "🔍 [MOCK] Dados validados com sucesso")
             Log.d(TAG, "🔍 [MOCK] Dados do cartão recebidos: $cardData")
             
-            // // 🔧 TESTE DE ERRO - Usando enum de códigos de erro
-            // val errorCode = PushTokenizeErrorCode.CANCELLED
-            // Log.d(TAG, "❌ [MOCK] Simulando erro de push tokenize: ${errorCode.description}")
-            // promise.reject("ADD_CARD_TO_WALLET_ERROR", "Push tokenize falhou - código: ${errorCode.code}")
-            
-            // Simular adição do cartão com delay (comentado para teste de erro)
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                try {
-                    val tokenId = "mock_token_${System.currentTimeMillis()}"
-                    Log.d(TAG, "✅ [MOCK] Cartão adicionado à carteira (simulado) - Token ID: $tokenId")
-                    promise.resolve(tokenId)
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ [MOCK] Erro ao simular adição do cartão: ${e.message}", e)
-                    promise.reject("ADD_CARD_TO_WALLET_ERROR", e.message, e)
-                }
-            }, 2000) // Simular delay de 2 segundos
-            
-            
+            val bodyJson = readableMapToJson(cardData).toString()
+            fetchFromLocalAPI(
+                endpoint = "/wallet/add-card",
+                defaultResponse = { 
+                    // Simular diferentes cenários baseados nos dados do cartão
+                    simulateAddCardResponse(cardData)
+                },
+                onSuccess = { json ->
+                    try {
+                        // Verificar se há erro na resposta
+                        if (json.has("error")) {
+                            val errorCode = json.getString("errorCode") ?: "ADD_CARD_ERROR"
+                            val errorMessage = json.getString("error") ?: "Erro ao adicionar cartão"
+                            Log.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
+                            promise.reject(errorCode, errorMessage)
+                        } else {
+                            // Verificar se há tokenId na resposta
+                            if (json.has("tokenId")) {
+                                val tokenId = json.getString("tokenId")
+                                Log.d(TAG, "✅ [MOCK] Token ID obtido da API: $tokenId")
+                                promise.resolve(tokenId)
+                            } else {
+                                // Fallback para geração de token mock
+                                val mockTokenId = "mock_token_${System.currentTimeMillis()}"
+                                Log.d(TAG, "✅ [MOCK] Token ID gerado (fallback): $mockTokenId")
+                                promise.resolve(mockTokenId)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
+                        val mockTokenId = "mock_token_${System.currentTimeMillis()}"
+                        promise.resolve(mockTokenId)
+                    }
+                },
+                onError = { error ->
+                    // Simular diferentes tipos de erro baseados no erro da API
+                    simulateAddCardError(error.toString(), cardData, promise)
+                },
+                method = "POST",
+                body = bodyJson
+            )
         } catch (e: Exception) {
             Log.e(TAG, "❌ [MOCK] Erro em addCardToWallet: ${e.message}", e)
             promise.reject("ADD_CARD_TO_WALLET_ERROR", e.message, e)
         }
     }
+    
+    /**
+     * Simula resposta padrão de sucesso do addCardToWallet
+     */
+    private fun simulateAddCardResponse(cardData: ReadableMap): String {
+        try {
+            // Sempre retorna sucesso para o fallback
+            val tokenId = "mock_token_${System.currentTimeMillis()}"
+            return """{"tokenId": "$tokenId", "success": true, "message": "Cartão adicionado com sucesso"}"""
+        } catch (e: Exception) {
+            Log.w(TAG, "❌ [MOCK] Erro ao simular resposta: ${e.message}")
+            val tokenId = "mock_token_${System.currentTimeMillis()}"
+            return """{"tokenId": "$tokenId", "success": true, "message": "Cartão adicionado com sucesso"}"""
+        }
+    }
+    
+    /**
+     * Simula fallback de erro do addCardToWallet (sempre sucesso)
+     */
+    private fun simulateAddCardError(error: String, cardData: ReadableMap, promise: Promise) {
+        try {
+            // Sempre retorna sucesso no fallback de erro
+            val mockTokenId = "mock_token_${System.currentTimeMillis()}"
+            Log.d(TAG, "✅ [MOCK] Token ID gerado (fallback de erro): $mockTokenId")
+            promise.resolve(mockTokenId)
+        } catch (e: Exception) {
+            Log.w(TAG, "❌ [MOCK] Erro ao simular erro: ${e.message}")
+            val mockTokenId = "mock_token_${System.currentTimeMillis()}"
+            promise.resolve(mockTokenId)
+        }
+    }
+    
+    /**
+     * Valida os dados do cartão para Push Provisioning (mesmo que na implementação real)
+     */
+    private fun validateCardData(cardData: ReadableMap): String? {
+        val address = cardData.getMap("address")
+        val card = cardData.getMap("card")
+        
+        if (address == null) {
+            return "Campo 'address' é obrigatório"
+        }
+        
+        if (card == null) {
+            return "Campo 'card' é obrigatório"
+        }
+        
+        // Validar campos obrigatórios do cartão
+        val opaquePaymentCard = card.getString("opaquePaymentCard")
+        val displayName = card.getString("displayName")
+        val lastDigits = card.getString("lastDigits")
+        
+        if (opaquePaymentCard.isNullOrEmpty()) {
+            return "Campo 'opaquePaymentCard' é obrigatório"
+        }
+        
+        if (displayName.isNullOrEmpty()) {
+            return "Campo 'displayName' é obrigatório"
+        }
+        
+        if (lastDigits.isNullOrEmpty()) {
+            return "Campo 'lastDigits' é obrigatório"
+        }
+        
+        // Validar formato do opaquePaymentCard (deve ser base64)
+        try {
+            android.util.Base64.decode(opaquePaymentCard, android.util.Base64.DEFAULT)
+        } catch (e: Exception) {
+            return "Campo 'opaquePaymentCard' deve estar em formato base64 válido"
+        }
+        
+        // Validar lastDigits (deve ter 4 dígitos)
+        if (!lastDigits.matches(Regex("\\d{4}"))) {
+            return "Campo 'lastDigits' deve conter exatamente 4 dígitos"
+        }
+        
+        return null // Validação passou
+    }
 
     override fun createWalletIfNeeded(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] createWalletIfNeeded chamado")
-        try {
-            // Simular criação da carteira
-            Log.d(TAG, "✅ [MOCK] Carteira criada (simulada)")
-            promise.resolve(true)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em createWalletIfNeeded: ${e.message}", e)
-            promise.reject("CREATE_WALLET_IF_NEEDED_ERROR", e.message, e)
-        }
+        fetchFromLocalAPI(
+            endpoint = "/wallet/create",
+            defaultResponse = { true },
+            onSuccess = { json ->
+                try {
+                    if (json.has("success")) {
+                        promise.resolve(json.getBoolean("success"))
+                    } else {
+                        promise.resolve(true)
+                    }
+                } catch (e: Exception) {
+                    promise.resolve(true)
+                }
+            },
+            onError = { _ ->
+                promise.resolve(true)
+            },
+            method = "POST"
+        )
     }
 
     override fun listTokens(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] listTokens chamado")
-        try {
-            // Simular lista de tokens
+        
+        // Função especial para arrays - precisa de tratamento diferente
+        val defaultArray = {
             val writableArray = Arguments.createArray()
             
             // Adicionar alguns tokens simulados
             val token1 = Arguments.createMap()
             token1.putString("issuerTokenId", "mock_token_001")
-            token1.putString("lastDigits", "1234")
-            token1.putString("displayName", "Cartão Mock Visa")
-            token1.putInt("tokenState", 4) // TOKEN_STATE_ACTIVE
+            token1.putString("issuerName", "Banco Mock")
+            token1.putString("fpanLastFour", "1234")
+            token1.putString("dpanLastFour", "4321")
+            token1.putInt("tokenServiceProvider", 1)
+            token1.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
             token1.putInt("network", 1) // VISA
+            token1.putBoolean("isDefaultToken", true)
+            token1.putString("portfolioName", "Carteira Principal")
             writableArray.pushMap(token1)
             
             val token2 = Arguments.createMap()
             token2.putString("issuerTokenId", "mock_token_002")
-            token2.putString("lastDigits", "5678")
-            token2.putString("displayName", "Cartão Mock Mastercard")
-            token2.putInt("tokenState", 4) // TOKEN_STATE_ACTIVE
+            token2.putString("issuerName", "Banco Mock")
+            token2.putString("fpanLastFour", "5678")
+            token2.putString("dpanLastFour", "8765")
+            token2.putInt("tokenServiceProvider", 1)
+            token2.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
             token2.putInt("network", 2) // MASTERCARD
+            token2.putBoolean("isDefaultToken", false)
+            token2.putString("portfolioName", "Outros Cartões")
             writableArray.pushMap(token2)
             
-            Log.d(TAG, "✅ [MOCK] Lista de tokens obtida (simulada) - ${writableArray.size()} tokens")
-            promise.resolve(writableArray)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em listTokens: ${e.message}", e)
-            promise.reject("LIST_TOKENS_ERROR", e.message, e)
+            Log.d(TAG, "✅ [MOCK] Lista de tokens obtida (valor padrão) - ${writableArray.size()} tokens")
+            writableArray
         }
+
+        fetchFromLocalAPI(
+            endpoint = "/wallet/tokens",
+            defaultResponse = defaultArray,
+            onSuccess = { jsonResponse ->
+                try {
+                    val writableArray = Arguments.createArray()
+                    
+                    // Se a API retornar um array de tokens
+                    if (jsonResponse.has("tokens")) {
+                        val tokensArray = jsonResponse.getJSONArray("tokens")
+                        for (i in 0 until tokensArray.length()) {
+                            val tokenJson = tokensArray.getJSONObject(i)
+                            val token = Arguments.createMap()
+                            
+                        if (tokenJson.has("issuerTokenId")) token.putString("issuerTokenId", tokenJson.getString("issuerTokenId"))
+                        if (tokenJson.has("issuerName")) token.putString("issuerName", tokenJson.getString("issuerName"))
+                        if (tokenJson.has("fpanLastFour")) token.putString("fpanLastFour", tokenJson.getString("fpanLastFour"))
+                        if (tokenJson.has("dpanLastFour")) token.putString("dpanLastFour", tokenJson.getString("dpanLastFour"))
+                        if (tokenJson.has("tokenServiceProvider")) token.putInt("tokenServiceProvider", tokenJson.getInt("tokenServiceProvider"))
+                        if (tokenJson.has("network")) token.putInt("network", tokenJson.getInt("network"))
+                        if (tokenJson.has("tokenState")) token.putInt("tokenState", tokenJson.getInt("tokenState"))
+                        if (tokenJson.has("isDefaultToken")) token.putBoolean("isDefaultToken", tokenJson.getBoolean("isDefaultToken"))
+                        if (tokenJson.has("portfolioName")) token.putString("portfolioName", tokenJson.getString("portfolioName"))
+                        // remover campos legados (não usados)
+                            
+                            writableArray.pushMap(token)
+                        }
+                    }
+                    
+                    Log.d(TAG, "✅ [API] Lista de tokens obtida da API - ${writableArray.size()} tokens")
+                    promise.resolve(writableArray)
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
+                    promise.resolve(defaultArray())
+                }
+            },
+            onError = { _ ->
+                promise.resolve(defaultArray())
+            }
+        )
     }
 
     override fun setIntentListener(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] setIntentListener chamado")
-        try {
-            // Simular ativação do listener
-            Log.d(TAG, "✅ [MOCK] Listener de intent ativado (simulado)")
-            promise.resolve(true)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em setIntentListener: ${e.message}", e)
-            promise.reject("SET_INTENT_LISTENER_ERROR", e.message, e)
-        }
+        fetchFromLocalAPI(
+            endpoint = "/wallet/set-intent-listener",
+            defaultResponse = { true },
+            onSuccess = { json ->
+                try {
+                    promise.resolve(json.optBoolean("success", true))
+                } catch (_: Exception) {
+                    promise.resolve(true)
+                }
+            },
+            onError = { _ ->
+                promise.resolve(true)
+            },
+            method = "POST"
+        )
     }
 
     override fun removeIntentListener(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] removeIntentListener chamado")
-        try {
-            // Simular desativação do listener
-            Log.d(TAG, "✅ [MOCK] Listener de intent desativado (simulado)")
-            promise.resolve(true)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em removeIntentListener: ${e.message}", e)
-            promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
-        }
+        fetchFromLocalAPI(
+            endpoint = "/wallet/remove-intent-listener",
+            defaultResponse = { true },
+            onSuccess = { json ->
+                try {
+                    promise.resolve(json.optBoolean("success", true))
+                } catch (_: Exception) {
+                    promise.resolve(true)
+                }
+            },
+            onError = { _ ->
+                promise.resolve(true)
+            },
+            method = "DELETE"
+        )
     }
 
     override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
         try {
-            // Validar status
             val validStatuses = listOf("approved", "declined", "failure")
             if (!validStatuses.contains(status)) {
                 Log.w(TAG, "❌ [MOCK] Status inválido: $status. Deve ser: approved, declined ou failure")
@@ -219,13 +809,27 @@ class GoogleWalletMock : GoogleWalletContract {
                 return
             }
 
-            // Simular definição do resultado de ativação
-            Log.d(TAG, "✅ [MOCK] Resultado de ativação definido (simulado) - Status: $status")
-            if (activationCode != null && !activationCode.isEmpty() && status == "approved") {
-                Log.d(TAG, "✅ [MOCK] ActivationCode incluído (simulado): $activationCode")
-            }
-            
-            promise.resolve(true)
+            val payload = JSONObject().apply {
+                put("status", status)
+                if (!activationCode.isNullOrEmpty()) put("activationCode", activationCode)
+            }.toString()
+
+            fetchFromLocalAPI(
+                endpoint = "/wallet/set-activation-result",
+                defaultResponse = { true },
+                onSuccess = { json ->
+                    try {
+                        promise.resolve(json.optBoolean("success", true))
+                    } catch (_: Exception) {
+                        promise.resolve(true)
+                    }
+                },
+                onError = { _ ->
+                    promise.resolve(true)
+                },
+                method = "POST",
+                body = payload
+            )
         } catch (e: Exception) {
             Log.e(TAG, "❌ [MOCK] Erro em setActivationResult: ${e.message}", e)
             promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
@@ -234,14 +838,21 @@ class GoogleWalletMock : GoogleWalletContract {
 
     override fun finishActivity(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] finishActivity chamado")
-        try {
-            // Simular finalização da atividade
-            Log.d(TAG, "✅ [MOCK] Atividade finalizada (simulado)")
-            promise.resolve(true)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em finishActivity: ${e.message}", e)
-            promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
-        }
+        fetchFromLocalAPI(
+            endpoint = "/wallet/finish-activity",
+            defaultResponse = { true },
+            onSuccess = { json ->
+                try {
+                    promise.resolve(json.optBoolean("success", true))
+                } catch (_: Exception) {
+                    promise.resolve(true)
+                }
+            },
+            onError = { _ ->
+                promise.resolve(true)
+            },
+            method = "POST"
+        )
     }
 
     override fun getConstants(): MutableMap<String, Any> {
@@ -249,19 +860,60 @@ class GoogleWalletMock : GoogleWalletContract {
         
         val constants = hashMapOf<String, Any>()
         
-        // Adicionar constantes simuladas
-        constants["SDK_AVAILABLE"] = true
-        constants["SDK_NAME"] = "GoogleWalletMock"
-        constants["TOKEN_PROVIDER_ELO"] = 1
-        constants["CARD_NETWORK_ELO"] = 1
-        constants["TOKEN_STATE_UNTOKENIZED"] = 0
-        constants["TOKEN_STATE_PENDING"] = 1
-        constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = 2
-        constants["TOKEN_STATE_SUSPENDED"] = 3
-        constants["TOKEN_STATE_ACTIVE"] = 4
-        constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = 5
+        // SDK_AVAILABLE deve consultar o servidor
+        constants["SDK_AVAILABLE"] = checkSDKAvailability()
+        constants["SDK_NAME"] = "GoogleWallet"
+        
+        // Constantes fixas baseadas nos valores fornecidos
+        constants["TOKEN_PROVIDER_ELO"] = 14  // ELO: 14
+        constants["CARD_NETWORK_ELO"] = 12    // ELO: 12
+        constants["TOKEN_STATE_UNTOKENIZED"] = 1
+        constants["TOKEN_STATE_PENDING"] = 2
+        constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = 3
+        constants["TOKEN_STATE_SUSPENDED"] = 4
+        constants["TOKEN_STATE_ACTIVE"] = 5
+        constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = 6
         
         Log.d(TAG, "✅ [MOCK] Constantes obtidas (simuladas)")
         return constants
+    }
+    
+    /**
+     * Verifica se o SDK está disponível consultando o servidor
+     */
+    private fun checkSDKAvailability(): Boolean {
+        val apiUrl = API_BASE_URL
+        if (apiUrl == null) {
+            Log.d(TAG, "🔄 [MOCK] API URL não configurada, retornando disponibilidade padrão")
+            return true // Fallback para true se API não estiver configurada
+        }
+        
+        return try {
+            val url = URL("$apiUrl/wallet/availability")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.apply {
+                requestMethod = "GET"
+                connectTimeout = 2000 // 2 segundos para constante
+                readTimeout = 2000
+                setRequestProperty("Accept", "application/json")
+            }
+            
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val inputStream = connection.inputStream
+                val reader = BufferedReader(InputStreamReader(inputStream))
+                val response = reader.readText()
+                reader.close()
+                inputStream.close()
+                
+                val jsonResponse = JSONObject(response)
+                jsonResponse.optBoolean("available", true)
+            } else {
+                true // Fallback para true se servidor não responder
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "⚠️ [MOCK] Erro ao verificar disponibilidade do SDK: ${e.message}")
+            true // Fallback para true se houver erro
+        }
     }
 }

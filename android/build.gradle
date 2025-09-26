@@ -44,7 +44,14 @@ android {
       project.hasProperty('GOOGLE_WALLET_USE_MOCK') ? 
         project.property('GOOGLE_WALLET_USE_MOCK') : 
         "false"
+    
+    // Configuração da URL da API Mock
+    buildConfigField "String", "GOOGLE_WALLET_MOCK_API_URL", 
+      project.hasProperty('GOOGLE_WALLET_MOCK_API_URL') ? 
+        "\"${project.property('GOOGLE_WALLET_MOCK_API_URL')}\"" : 
+        "\"\""
   }
+  
 
   buildTypes {
     release {

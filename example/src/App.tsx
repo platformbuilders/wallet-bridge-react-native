@@ -19,13 +19,65 @@ import type {
   GooglePushTokenizeRequest,
   GoogleWalletData,
   GoogleWalletIntentEvent,
-  GoogleTokenInfoSimple,
+  GoogleTokenInfo,
   GoogleWalletConstants,
   GoogleTokenStatus,
 } from '@platformbuilders/wallet-bridge-react-native';
 import { useState, useEffect } from 'react';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Funções para mapear valores numéricos para descrições legíveis
+const getTokenProviderDescription = (
+  provider: number,
+  constants: GoogleWalletConstants
+): string => {
+  // Mapear baseado nas constantes disponíveis
+  if (provider === constants.TOKEN_PROVIDER_ELO) {
+    return 'Elo';
+  }
+
+  return `Provedor Desconhecido (${provider})`;
+};
+
+const getCardNetworkDescription = (
+  network: number,
+  constants: GoogleWalletConstants
+): string => {
+  // Mapear baseado nas constantes disponíveis
+  if (network === constants.CARD_NETWORK_ELO) {
+    return 'Elo';
+  }
+
+  return `Rede Desconhecida (${network})`;
+};
+
+const getTokenStateDescription = (
+  state: number,
+  constants: GoogleWalletConstants
+): string => {
+  // Mapear baseado nas constantes disponíveis
+  if (state === constants.TOKEN_STATE_ACTIVE) {
+    return 'Ativo';
+  }
+  if (state === constants.TOKEN_STATE_PENDING) {
+    return 'Pendente';
+  }
+  if (state === constants.TOKEN_STATE_SUSPENDED) {
+    return 'Suspenso';
+  }
+  if (state === constants.TOKEN_STATE_UNTOKENIZED) {
+    return 'Não Tokenizado';
+  }
+  if (state === constants.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION) {
+    return 'Requer Verificação de Identidade';
+  }
+  if (state === constants.TOKEN_STATE_FELICA_PENDING_PROVISIONING) {
+    return 'Aguardando Provisionamento Felica';
+  }
+
+  return `Estado Desconhecido (${state})`;
+};
 
 // Mapeamento de códigos de erro para descrições em português
 const ERROR_DESCRIPTIONS: Record<string, string> = {
@@ -489,7 +541,7 @@ export default function App(): React.JSX.Element {
 
       Alert.alert(
         'Status do Token',
-        `Estado: ${tokenStatus.tokenState}\nSelecionado: ${tokenStatus.isSelected ? 'Sim' : 'Não'}`
+        `Estado: ${getTokenStateDescription(tokenStatus.tokenState, constants)} (${tokenStatus.tokenState})\nSelecionado: ${tokenStatus.isSelected ? 'Sim' : 'Não'}`
       );
     } catch (err) {
       console.log('❌ [JS] Erro ao obter status do token:', err);
@@ -562,19 +614,31 @@ export default function App(): React.JSX.Element {
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const issuerTokenId = 'test-token-id'; // ID de exemplo
 
-      const success: boolean = await googleWalletClient.viewToken(
-        tokenServiceProvider,
-        issuerTokenId
-      );
-      console.log('✅ [JS] Resultado viewToken:', success);
+      const tokenData: GoogleTokenInfo | null =
+        await googleWalletClient.viewToken(tokenServiceProvider, issuerTokenId);
+      console.log('✅ [JS] Resultado viewToken:', tokenData);
 
-      if (success) {
-        Alert.alert(
-          'Sucesso',
-          'Google Pay foi aberto para visualizar o token!'
-        );
+      if (tokenData) {
+        // Mostrar dados completos do token
+        const tokenInfo =
+          `Token encontrado e Google Pay aberto!\n\n` +
+          `📋 Dados do Token:\n` +
+          `ID: ${tokenData.issuerTokenId}\n` +
+          `Emissor: ${tokenData.issuerName}\n` +
+          `FPAN: ${tokenData.fpanLastFour}\n` +
+          `DPAN: ${tokenData.dpanLastFour}\n` +
+          `TSP: ${getTokenProviderDescription(tokenData.tokenServiceProvider, constants)}\n` +
+          `Rede: ${getCardNetworkDescription(tokenData.network, constants)}\n` +
+          `Estado: ${getTokenStateDescription(tokenData.tokenState, constants)} (${tokenData.tokenState})\n` +
+          `Padrão: ${tokenData.isDefaultToken ? 'Sim' : 'Não'}\n` +
+          `Portfólio: ${tokenData.portfolioName}`;
+
+        Alert.alert('✅ Token Visualizado', tokenInfo);
       } else {
-        Alert.alert('Aviso', 'Não foi possível abrir o Google Pay');
+        Alert.alert(
+          '⚠️ Token Não Encontrado',
+          'O token especificado não foi encontrado na carteira. Verifique se o ID está correto ou se o token existe.'
+        );
       }
     } catch (err) {
       console.log('❌ [JS] Erro ao visualizar token:', err);
@@ -675,15 +739,29 @@ export default function App(): React.JSX.Element {
   const handleListTokens = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando listagem de tokens...');
-      const tokens: GoogleTokenInfoSimple[] =
-        await googleWalletClient.listTokens();
+
+      // Obter constantes para usar nas descrições
+      const constants: GoogleWalletConstants =
+        googleWalletClient.getConstants();
+
+      console.log('🔍 [JS] Constantes obtidas:', constants);
+
+      const tokens: GoogleTokenInfo[] = await googleWalletClient.listTokens();
       console.log('✅ [JS] Tokens obtidos:', tokens);
 
       if (tokens && tokens.length > 0) {
         const tokenInfo = tokens
           .map(
-            (token: GoogleTokenInfoSimple, index: number) =>
-              `${index + 1}. ID: ${token.issuerTokenId}\n   Últimos dígitos: ${token.lastDigits}\n   Nome: ${token.displayName}\n   Estado: ${token.tokenState}\n   Rede: ${token.network}`
+            (token: GoogleTokenInfo, index: number) =>
+              `${index + 1}. ID: ${token.issuerTokenId}\n` +
+              `   Emissor: ${token.issuerName}\n` +
+              `   FPAN: ${token.fpanLastFour}\n` +
+              `   DPAN: ${token.dpanLastFour}\n` +
+              `   TSP: ${getTokenProviderDescription(token.tokenServiceProvider, constants)}\n` +
+              `   Rede: ${getCardNetworkDescription(token.network, constants)}\n` +
+              `   Estado: ${getTokenStateDescription(token.tokenState, constants)} (${token.tokenState})\n` +
+              `   Padrão: ${token.isDefaultToken ? 'Sim' : 'Não'}\n` +
+              `   Portfólio: ${token.portfolioName}`
           )
           .join('\n\n');
 

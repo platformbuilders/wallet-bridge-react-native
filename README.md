@@ -350,11 +350,32 @@ const isTokenized = await GoogleWalletModule.isTokenized(
   GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO
 );
 
+// Visualizar token específico e obter seus dados
+const tokenData = await GoogleWalletModule.viewToken(
+  GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO,
+  'token-id-específico'
+);
+
+if (tokenData) {
+  console.log('Token encontrado:', tokenData);
+  console.log('Emissor:', tokenData.issuerName);
+  console.log('Últimos 4 dígitos:', tokenData.fpanLastFour);
+  console.log('Estado:', tokenData.tokenState);
+} else {
+  console.log('Token não encontrado');
+}
+
 // Criar carteira se necessário
 const walletCreated = await GoogleWalletModule.createWalletIfNeeded();
 
 // Obter environment
 const environment = await GoogleWalletModule.getEnvironment();
+
+// Obter constantes do módulo
+const constants = GoogleWalletModule.getConstants();
+console.log('SDK disponível:', constants.SDK_AVAILABLE);
+console.log('ELO Provider:', constants.TOKEN_PROVIDER_ELO);
+console.log('ELO Network:', constants.CARD_NETWORK_ELO);
 ```
 
 #### Samsung Pay
@@ -840,6 +861,7 @@ yarn ios
 - ✅ Listener de intents App2App
 - ✅ Decodificação de dados base64
 - ✅ Tratamento de erros detalhado com códigos específicos
+- ✅ Códigos de erro específicos do Google Wallet (15002, 15003, 15004, 15005, 15009)
 - ✅ Definição de resultado de ativação de token
 
 #### Samsung Pay
@@ -848,7 +870,7 @@ yarn ios
 - ✅ Adição de cartão ao Samsung Pay
 - ✅ Listagem de tokens existentes
 - ✅ Verificação de status de token
-- ✅ Obtenção de constantes do módulo
+- ✅ Obtenção de constantes do módulo (GoogleWalletConstants)
 
 ## 🔧 Modo Mock para Desenvolvimento
 
@@ -861,10 +883,223 @@ GOOGLE_WALLET_USE_MOCK=true
 
 ### Comportamento do Mock
 
-- `checkWalletAvailability()`: Sempre retorna `true`
-- `getSecureWalletInfo()`: Retorna dados simulados
-- `addCardToWallet()`: Simula adição com delay de 2 segundos
-- `listTokens()`: Retorna 2 tokens simulados (Visa e Mastercard)
+- `checkWalletAvailability()`: Consulta servidor mock em tempo real (se configurado)
+- `getSecureWalletInfo()`: Retorna dados simulados ou da API local
+- `addCardToWallet()`: Valida dados e simula diferentes cenários baseados nos últimos dígitos
+- `listTokens()`: Retorna 2 tokens simulados (Visa e Mastercard) ou da API local
+- `getConstants()`: Retorna constantes corretas (ELO = 14/12, TOKEN_STATE_* = 1-6)
+- **API Local**: Suporte completo para servidor mock local (configurável via gradle.properties)
+
+### 🌍 Configuração via gradle.properties
+
+O mock pode ser configurado para usar um servidor local através da propriedade `GOOGLE_WALLET_MOCK_API_URL` no arquivo `gradle.properties`:
+
+```properties
+# example/android/gradle.properties
+# Configurar URL do servidor mock
+GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
+
+# Para emulador Android (usar IP do host)
+# GOOGLE_WALLET_MOCK_API_URL=http://10.0.2.2:3000
+
+# Para dispositivo físico (usar IP da rede local)
+# GOOGLE_WALLET_MOCK_API_URL=http://192.168.1.100:3000
+```
+
+**Comportamento**:
+- **Se configurada**: O mock fará requisições HTTP para o servidor especificado
+- **Se não configurada**: O mock usará apenas valores padrão simulados (sem requisições HTTP)
+
+### 📋 Configuração Detalhada
+
+#### Propriedade Disponível
+
+##### `GOOGLE_WALLET_MOCK_API_URL`
+
+**Descrição**: URL do servidor mock local para desenvolvimento  
+**Tipo**: String  
+**Padrão**: `http://localhost:3000`  
+**Obrigatória**: Não  
+**Arquivo**: `example/android/gradle.properties`
+
+#### Exemplos de Uso
+
+```properties
+# Desenvolvimento local
+GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
+
+# Servidor em IP específico
+GOOGLE_WALLET_MOCK_API_URL=http://192.168.1.100:3000
+
+# Para emulador Android (usar IP do host)
+GOOGLE_WALLET_MOCK_API_URL=http://10.0.2.2:3000
+
+# Servidor HTTPS
+GOOGLE_WALLET_MOCK_API_URL=https://mock-api.example.com
+```
+
+#### Configuração por Ambiente
+
+##### Desenvolvimento Local
+```properties
+# example/android/gradle.properties
+GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
+```
+
+##### Emulador Android
+```properties
+# example/android/gradle.properties
+GOOGLE_WALLET_MOCK_API_URL=http://10.0.2.2:3000
+```
+
+##### Dispositivo Físico
+```properties
+# example/android/gradle.properties
+GOOGLE_WALLET_MOCK_API_URL=http://192.168.1.100:3000
+```
+
+#### Configuração no Projeto
+
+##### Android Studio
+
+1. Abra o projeto no Android Studio
+2. Navegue até `example/android/gradle.properties`
+3. Adicione ou modifique a linha:
+   ```properties
+   GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
+   ```
+
+##### Gradle
+
+```gradle
+// android/build.gradle
+android {
+    defaultConfig {
+        // Configuração da URL da API Mock
+        buildConfigField "String", "GOOGLE_WALLET_MOCK_API_URL", 
+          project.hasProperty('GOOGLE_WALLET_MOCK_API_URL') ? 
+            "\"${project.property('GOOGLE_WALLET_MOCK_API_URL')}\"" : 
+            "\"\""
+    }
+}
+```
+
+**Como Funciona**:
+- A propriedade do `gradle.properties` é automaticamente convertida em `BuildConfig.GOOGLE_WALLET_MOCK_API_URL`
+- O código Kotlin acessa via `BuildConfig.GOOGLE_WALLET_MOCK_API_URL`
+- Se não configurado, retorna string vazia (usa valores padrão)
+
+#### Troubleshooting
+
+##### Problema: Mock não conecta com servidor
+
+**Sintomas**:
+- Logs mostram "API URL não configurada"
+- Apenas valores padrão são retornados
+
+**Soluções**:
+1. Verificar se a propriedade está configurada no `gradle.properties`:
+   ```properties
+   GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
+   ```
+
+2. Verificar se o servidor está rodando:
+   ```bash
+   curl http://localhost:3000/health
+   ```
+
+3. Verificar logs do Android:
+   ```bash
+   adb logcat | grep "GoogleWalletMock"
+   ```
+
+##### Problema: URL incorreta no emulador
+
+**Sintomas**:
+- Erro de conexão no emulador
+- Servidor funciona no host mas não no emulador
+
+**Solução**:
+```properties
+# example/android/gradle.properties
+# Usar IP do host para emulador
+GOOGLE_WALLET_MOCK_API_URL=http://10.0.2.2:3000
+```
+
+##### Problema: Propriedade não é carregada
+
+**Sintomas**:
+- Propriedade configurada mas não é detectada
+- Logs mostram "API URL não configurada"
+
+**Soluções**:
+1. Verificar se o arquivo `gradle.properties` está no local correto
+2. Verificar se o `buildConfigField` está configurado no `build.gradle`
+3. Limpar cache do Gradle: `./gradlew clean`
+4. Rebuild do projeto: `yarn android`
+5. Verificar se o `BuildConfig` foi gerado corretamente
+
+### 🌐 API Mock Local
+
+Para desenvolvimento avançado, a biblioteca suporta um servidor mock local que simula o comportamento real do Google Wallet:
+
+#### Configuração Rápida
+```bash
+# 1. Criar servidor Express.js
+mkdir google-wallet-mock-server
+cd google-wallet-mock-server
+npm init -y
+npm install express cors morgan
+
+# 2. Criar server.js (veja API_MOCK_EXAMPLES.md para código completo)
+# 3. Iniciar servidor
+node server.js
+
+# 4. Configurar propriedade no gradle.properties
+# Adicionar em example/android/gradle.properties:
+# GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
+
+# 5. Testar
+curl http://localhost:3000/health
+```
+
+#### Funcionalidades da API Mock
+- **Endpoints Completos**: Todos os métodos do Google Wallet
+- **Cenários de Erro**: Simulação de diferentes tipos de erro
+- **Códigos de Erro Específicos**: Suporte completo aos códigos 15002, 15003, 15004, 15005, 15009
+- **Dados Realistas**: Respostas baseadas em dados reais do Google Pay
+- **Logs Detalhados**: Monitoramento completo das requisições
+- **Fallback Automático**: Se API falhar, usa valores padrão
+
+#### Exemplos de Uso
+```bash
+# Verificar disponibilidade
+curl http://localhost:3000/wallet/availability
+
+# Listar tokens
+curl http://localhost:3000/wallet/tokens
+
+# Adicionar cartão (sucesso)
+curl -X POST http://localhost:3000/wallet/add-card \
+  -H "Content-Type: application/json" \
+  -d '{"address": {...}, "card": {"lastDigits": "1234", ...}}'
+
+# Adicionar cartão (erro simulado)
+curl -X POST http://localhost:3000/wallet/add-card \
+  -H "Content-Type: application/json" \
+  -d '{"address": {...}, "card": {"lastDigits": "0000", ...}}'
+
+# Testar status do token (sucesso)
+curl "http://localhost:3000/wallet/token/status?provider=1&refId=abc123"
+
+# Testar status do token (erro 15009 - calling package não verificado)
+curl "http://localhost:3000/wallet/token/status?provider=1&refId=abc123-unverified"
+
+# Testar status do token (erro 15003 - token não encontrado)
+curl "http://localhost:3000/wallet/token/status?provider=1&refId=abc123-not_found"
+```
+
+Para documentação completa da API mock, consulte [API_MOCK_EXAMPLES.md](API_MOCK_EXAMPLES.md).
 
 ## 📚 API Reference
 
@@ -875,10 +1110,10 @@ GOOGLE_WALLET_USE_MOCK=true
 | `checkWalletAvailability` | Verifica se o Google Pay está disponível | Nenhum | `Promise<boolean>` |
 | `getSecureWalletInfo` | Retorna informações do Google Pay | Nenhum | `Promise<GoogleWalletData>` |
 | `addCardToWallet` | Adiciona cartão ao Google Pay | `cardData: GooglePushTokenizeRequest` | `Promise<string>` |
-| `listTokens` | Lista tokens existentes no Google Pay | Nenhum | `Promise<GoogleTokenInfoSimple[]>` |
+| `listTokens` | Lista tokens existentes no Google Pay | Nenhum | `Promise<GoogleTokenInfo[]>` |
 | `getTokenStatus` | Status de um token específico | `tokenServiceProvider: number, tokenReferenceId: string` | `Promise<GoogleTokenStatus>` |
 | `isTokenized` | Verifica se cartão está tokenizado | `fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number` | `Promise<boolean>` |
-| `viewToken` | Abre Google Pay para visualizar token | `tokenServiceProvider: number, issuerTokenId: string` | `Promise<boolean>` |
+| `viewToken` | Abre Google Pay para visualizar token e retorna dados do token | `tokenServiceProvider: number, issuerTokenId: string` | `Promise<GoogleTokenInfo | null>` |
 | `createWalletIfNeeded` | Cria carteira se necessário | Nenhum | `Promise<boolean>` |
 | `getEnvironment` | Retorna environment atual | Nenhum | `Promise<string>` |
 | `getConstants` | Retorna constantes do módulo | Nenhum | `GoogleWalletConstants` |
@@ -940,13 +1175,31 @@ interface GoogleTokenStatus {
   isSelected: boolean;
 }
 
-// Informações do token
-interface GoogleTokenInfoSimple {
+// Informações do token (completa)
+interface GoogleTokenInfo {
   issuerTokenId: string;
-  lastDigits: string;
-  displayName: string;
-  tokenState: number;
+  issuerName: string;
+  fpanLastFour: string;
+  dpanLastFour: string;
+  tokenServiceProvider: number;
   network: number;
+  tokenState: number;
+  isDefaultToken: boolean;
+  portfolioName: string;
+}
+
+// Constantes do Google Wallet
+interface GoogleWalletConstants {
+  SDK_AVAILABLE: boolean;  // Consulta servidor em tempo real
+  SDK_NAME: string;
+  CARD_NETWORK_ELO: number;  // 12
+  TOKEN_PROVIDER_ELO: number;  // 14
+  TOKEN_STATE_UNTOKENIZED: number;  // 1
+  TOKEN_STATE_PENDING: number;  // 2
+  TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION: number;  // 3
+  TOKEN_STATE_SUSPENDED: number;  // 4
+  TOKEN_STATE_ACTIVE: number;  // 5
+  TOKEN_STATE_FELICA_PENDING_PROVISIONING: number;  // 6
 }
 
 // Status de ativação
@@ -1037,6 +1290,46 @@ interface WalletData {
   walletAccountID: string;
 }
 ```
+
+## 🚨 Códigos de Erro do Google Wallet
+
+A biblioteca suporta todos os códigos de erro oficiais do Google Wallet SDK:
+
+### Códigos de Erro Comuns
+
+| Código | Descrição | Quando Ocorre |
+|--------|-----------|---------------|
+| **15002** | Nenhuma carteira ativa encontrada | Quando não há carteira Google Pay configurada |
+| **15003** | Token não encontrado na carteira ativa | Quando o token especificado não existe |
+| **15004** | Token encontrado mas em estado inválido | Quando o token existe mas não pode ser usado |
+| **15005** | Falha na verificação de compatibilidade do dispositivo | Quando o dispositivo não é compatível |
+| **15009** | Calling package not verified | Quando o app não está verificado pelo Google |
+
+### Tratamento de Erros
+
+```javascript
+import { GoogleWalletModule } from '@platformbuilders/wallet-bridge-react-native';
+
+try {
+  const tokenStatus = await GoogleWalletModule.getTokenStatus(
+    GoogleWalletModule.getConstants().TOKEN_PROVIDER_ELO,
+    'token-id'
+  );
+  console.log('Status do token:', tokenStatus);
+} catch (error) {
+  console.error('Erro ao obter status do token:', error);
+  
+  // Verificar código de erro específico
+  if (error.code === 'CALLING_PACKAGE_NOT_VERIFIED') {
+    console.log('App não está verificado pelo Google');
+  } else if (error.code === 'TOKEN_NOT_FOUND') {
+    console.log('Token não encontrado na carteira');
+  } else if (error.code === 'NO_ACTIVE_WALLET') {
+    console.log('Nenhuma carteira ativa encontrada');
+  }
+}
+```
+
 
 ## 🛠️ Desenvolvimento
 
