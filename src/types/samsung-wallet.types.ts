@@ -91,7 +91,6 @@ export interface SamsungWalletData {
 
 // Samsung Pay - Constants
 export interface SamsungWalletConstants {
-  SDK_AVAILABLE: boolean;
   SDK_NAME: string;
   MODULE_NAME: string;
 }
@@ -106,13 +105,22 @@ export interface SamsungTokenStatus {
 export interface SamsungWalletSpec {
   checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<SamsungWalletData>;
-  getTokenStatus(tokenServiceProvider: number, tokenReferenceId: string): Promise<SamsungTokenStatus>;
+  getTokenStatus(
+    tokenServiceProvider: number,
+    tokenReferenceId: string
+  ): Promise<SamsungTokenStatus>;
   getEnvironment(): Promise<string>;
-  isTokenized(fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number): Promise<boolean>;
-  viewToken(tokenServiceProvider: number, issuerTokenId: string): Promise<boolean>;
+  isTokenized(
+    fpanLastFour: string,
+    cardNetwork: number,
+    tokenServiceProvider: number
+  ): Promise<boolean>;
+  viewToken(
+    tokenServiceProvider: number,
+    issuerTokenId: string
+  ): Promise<boolean>;
   addCardToWallet(cardData: SamsungCardData): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<SamsungTokenInfoSimple[]>;
   getConstants(): Promise<SamsungWalletConstants>;
 }
-

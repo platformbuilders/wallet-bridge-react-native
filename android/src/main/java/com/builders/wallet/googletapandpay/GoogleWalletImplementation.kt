@@ -114,6 +114,7 @@ class GoogleWalletImplementation(
         }
     }
 
+    // https://developers.google.com/pay/issuers/apis/push-provisioning/android/reading-wallet?pli=1&authuser=1&hl=pt-br#getactivewalletid
     override fun getSecureWalletInfo(promise: Promise) {
         Log.d(TAG, "🔍 [GOOGLE] getSecureWalletInfo chamado")
         try {
@@ -217,6 +218,7 @@ class GoogleWalletImplementation(
         }
     }
 
+    //https://developers.google.com/pay/issuers/apis/push-provisioning/android/reading-wallet?pli=1&authuser=1&hl=pt-br#gettokenstatus
     override fun getTokenStatus(tokenServiceProvider: Int, tokenReferenceId: String, promise: Promise) {
         Log.i(TAG, "--")
         Log.i(TAG, "> getTokenStatus started")
@@ -348,6 +350,7 @@ class GoogleWalletImplementation(
         }
     }
 
+    // https://developers.google.com/pay/issuers/apis/push-provisioning/android/reading-wallet?pli=1&authuser=1&hl=pt-br#getenvironment
     override fun getEnvironment(promise: Promise) {
         Log.i(TAG, "--")
         Log.i(TAG, "> getEnvironment started")
@@ -448,6 +451,7 @@ class GoogleWalletImplementation(
         }
     }
 
+    // https://developers.google.com/pay/issuers/apis/push-provisioning/android/reading-wallet?pli=1&authuser=1&hl=pt-br#istokenized
     override fun isTokenized(
         fpanLastFour: String,
         cardNetwork: Int,
@@ -571,13 +575,15 @@ class GoogleWalletImplementation(
         }
     }
 
+
+    // https://developers.google.com/pay/issuers/apis/push-provisioning/android/reading-wallet?pli=1&authuser=1&hl=pt-br#viewtoken
     override fun viewToken(
         tokenServiceProvider: Int,
         issuerTokenId: String,
         promise: Promise
     ) {
         Log.i(TAG, "--")
-        Log.i(TAG, "> viewToken started")
+        Log.i(TAG, "> viewToken started - Provider: $tokenServiceProvider, TokenId: $issuerTokenId")
         try {
             if (!isSDKAvailable) {
                 Log.w(TAG, "Google Pay SDK não está disponível")
@@ -599,29 +605,16 @@ class GoogleWalletImplementation(
             }
             
             try {
-                // Criar ViewTokenRequest usando reflexão
-                val viewTokenRequestClass = Class.forName("com.google.android.gms.tapandpay.issuer.ViewTokenRequest")
-                val builderClass = Class.forName("com.google.android.gms.tapandpay.issuer.ViewTokenRequest\$Builder")
-                val builder = builderClass.newInstance()
+                // Primeiro, listar tokens para encontrar o token específico
+                val listTokensMethod = tapAndPayClient?.javaClass?.getMethod("listTokens")
+                val listTask = listTokensMethod?.invoke(tapAndPayClient) as? Any
                 
-                // Configurar parâmetros do builder
-                builderClass.getMethod("setTokenServiceProvider", Int::class.java)
-                    .invoke(builder, tokenServiceProvider)
-                builderClass.getMethod("setIssuerTokenId", String::class.java)
-                    .invoke(builder, issuerTokenId)
-                
-                val request = builderClass.getMethod("build").invoke(builder)
-                
-                // Chamar viewToken usando reflexão
-                val viewTokenMethod = tapAndPayClient?.javaClass?.getMethod("viewToken", viewTokenRequestClass)
-                val task = viewTokenMethod?.invoke(tapAndPayClient, request) as? Any
-                
-                if (task != null) {
-                    Log.d(TAG, "🔍 [GOOGLE] Task obtida, configurando listener...")
+                if (listTask != null) {
+                    Log.d(TAG, "🔍 [GOOGLE] Listando tokens para encontrar: $issuerTokenId")
                     
-                    // Criar OnCompleteListener usando reflexão
+                    // Criar OnCompleteListener para listTokens
                     val onCompleteListenerClass = Class.forName("com.google.android.gms.tasks.OnCompleteListener")
-                    val onCompleteListener = java.lang.reflect.Proxy.newProxyInstance(
+                    val listListener = java.lang.reflect.Proxy.newProxyInstance(
                         onCompleteListenerClass.classLoader,
                         arrayOf(onCompleteListenerClass)
                     ) { _, method, args ->
@@ -629,72 +622,155 @@ class GoogleWalletImplementation(
                             try {
                                 val completedTask = args?.get(0) as? Any
                                 if (completedTask != null) {
-                                    Log.d(TAG, "🔍 [GOOGLE] Callback executado, processando resultado...")
-                                    
                                     val isSuccessfulMethod = completedTask.javaClass.getMethod("isSuccessful")
                                     val isSuccessful = isSuccessfulMethod.invoke(completedTask) as Boolean
                                     
-                                    Log.d(TAG, "🔍 [GOOGLE] Task bem-sucedida: $isSuccessful")
-                                    
                                     if (isSuccessful) {
                                         val getResultMethod = completedTask.javaClass.getMethod("getResult")
-                                        val pendingIntent = getResultMethod.invoke(completedTask)
+                                        val tokenList = getResultMethod.invoke(completedTask) as? List<*>
                                         
-                                        if (pendingIntent != null) {
-                                            Log.i(TAG, "- viewToken will send intent")
+                                        if (tokenList != null) {
+                                            Log.d(TAG, "🔍 [GOOGLE] Lista de tokens obtida: ${tokenList.size} tokens")
                                             
-                                            try {
-                                                // Enviar o PendingIntent
-                                                val sendMethod = pendingIntent.javaClass.getMethod("send")
-                                                sendMethod.invoke(pendingIntent)
+                                            // Procurar pelo token específico
+                                            val targetToken = tokenList.find { tokenInfo ->
+                                                try {
+                                                    val getIssuerTokenIdMethod = tokenInfo?.javaClass?.getMethod("getIssuerTokenId")
+                                                    val getTokenServiceProviderMethod = tokenInfo?.javaClass?.getMethod("getTokenServiceProvider")
+                                                    
+                                                    val tokenId = getIssuerTokenIdMethod?.invoke(tokenInfo) as? String
+                                                    val provider = getTokenServiceProviderMethod?.invoke(tokenInfo) as? Int
+                                                    
+                                                    tokenId == issuerTokenId && provider == tokenServiceProvider
+                                                } catch (e: Exception) {
+                                                    Log.w(TAG, "❌ [GOOGLE] Erro ao verificar token: ${e.message}")
+                                                    false
+                                                }
+                                            }
+                                            
+                                            if (targetToken != null) {
+                                                Log.d(TAG, "✅ [GOOGLE] Token encontrado: $issuerTokenId")
                                                 
-                                                Log.d(TAG, "✅ [GOOGLE] PendingIntent enviado com sucesso")
-                                                promise.resolve(true)
-                                            } catch (e: Exception) {
-                                                Log.w(TAG, "❌ [GOOGLE] Erro ao enviar PendingIntent: ${e.message}")
-                                                promise.reject("VIEW_TOKEN_ERROR", "Erro ao enviar PendingIntent: ${e.message}")
+                                                // Extrair dados do token usando reflexão
+                                                val tokenData = Arguments.createMap()
+                                                
+                                                try {
+                                                    tokenData.putString("issuerTokenId", getOptionalString(targetToken, "getIssuerTokenId"))
+                                                    tokenData.putString("issuerName", getOptionalString(targetToken, "getIssuerName"))
+                                                    tokenData.putString("fpanLastFour", getOptionalString(targetToken, "getFpanLastFour"))
+                                                    tokenData.putString("dpanLastFour", getOptionalString(targetToken, "getDpanLastFour"))
+                                                    tokenData.putInt("tokenServiceProvider", getOptionalInt(targetToken, "getTokenServiceProvider"))
+                                                    tokenData.putInt("network", getOptionalInt(targetToken, "getNetwork"))
+                                                    tokenData.putInt("tokenState", getOptionalInt(targetToken, "getTokenState"))
+                                                    tokenData.putBoolean("isDefaultToken", getOptionalBoolean(targetToken, "getIsDefaultToken"))
+                                                    tokenData.putString("portfolioName", getOptionalString(targetToken, "getPortfolioName"))
+                                                    
+                                                    Log.d(TAG, "✅ [GOOGLE] Dados do token extraídos com sucesso")
+                                                    
+                                                    // Agora criar ViewTokenRequest e enviar PendingIntent
+                                                    val viewTokenRequestClass = Class.forName("com.google.android.gms.tapandpay.issuer.ViewTokenRequest")
+                                                    val builderClass = Class.forName("com.google.android.gms.tapandpay.issuer.ViewTokenRequest\$Builder")
+                                                    val builder = builderClass.newInstance()
+                                                    
+                                                    builderClass.getMethod("setTokenServiceProvider", Int::class.java)
+                                                        .invoke(builder, tokenServiceProvider)
+                                                    builderClass.getMethod("setIssuerTokenId", String::class.java)
+                                                        .invoke(builder, issuerTokenId)
+                                                    
+                                                    val request = builderClass.getMethod("build").invoke(builder)
+                                                    
+                                                    // Chamar viewToken usando reflexão
+                                                    val viewTokenMethod = tapAndPayClient?.javaClass?.getMethod("viewToken", viewTokenRequestClass)
+                                                    val viewTask = viewTokenMethod?.invoke(tapAndPayClient, request) as? Any
+                                                    
+                                                    if (viewTask != null) {
+                                                        Log.d(TAG, "🔍 [GOOGLE] Enviando PendingIntent para visualizar token...")
+                                                        
+                                                        val viewListener = java.lang.reflect.Proxy.newProxyInstance(
+                                                            onCompleteListenerClass.classLoader,
+                                                            arrayOf(onCompleteListenerClass)
+                                                        ) { _, method, args ->
+                                                            if (method.name == "onComplete") {
+                                                                try {
+                                                                    val completedViewTask = args?.get(0) as? Any
+                                                                    if (completedViewTask != null) {
+                                                                        val isViewSuccessfulMethod = completedViewTask.javaClass.getMethod("isSuccessful")
+                                                                        val isViewSuccessful = isViewSuccessfulMethod.invoke(completedViewTask) as Boolean
+                                                                        
+                                                                        if (isViewSuccessful) {
+                                                                            val getViewResultMethod = completedViewTask.javaClass.getMethod("getResult")
+                                                                            val pendingIntent = getViewResultMethod.invoke(completedViewTask)
+                                                                            
+                                                                            if (pendingIntent != null) {
+                                                                                try {
+                                                                                    val sendMethod = pendingIntent.javaClass.getMethod("send")
+                                                                                    sendMethod.invoke(pendingIntent)
+                                                                                    
+                                                                                    Log.d(TAG, "✅ [GOOGLE] PendingIntent enviado com sucesso")
+                                                                                    promise.resolve(tokenData)
+                                                                                } catch (e: Exception) {
+                                                                                    Log.w(TAG, "❌ [GOOGLE] Erro ao enviar PendingIntent: ${e.message}")
+                                                                                    promise.reject("VIEW_TOKEN_ERROR", "Erro ao enviar PendingIntent: ${e.message}")
+                                                                                }
+                                                                            } else {
+                                                                                Log.w(TAG, "❌ [GOOGLE] PendingIntent é null")
+                                                                                promise.reject("VIEW_TOKEN_ERROR", "PendingIntent é null")
+                                                                            }
+                                                                        } else {
+                                                                            Log.w(TAG, "❌ [GOOGLE] Falha ao visualizar token")
+                                                                            promise.reject("VIEW_TOKEN_ERROR", "Falha ao visualizar token")
+                                                                        }
+                                                                    }
+                                                                } catch (e: Exception) {
+                                                                    Log.e(TAG, "❌ [GOOGLE] Erro ao processar viewToken: ${e.message}", e)
+                                                                    promise.reject("VIEW_TOKEN_ERROR", "Erro ao processar viewToken: ${e.message}")
+                                                                }
+                                                            }
+                                                            null
+                                                        }
+                                                        
+                                                        val addOnCompleteListenerMethod = viewTask.javaClass.getMethod("addOnCompleteListener", onCompleteListenerClass)
+                                                        addOnCompleteListenerMethod.invoke(viewTask, viewListener)
+                                                        
+                                                    } else {
+                                                        Log.w(TAG, "❌ [GOOGLE] Não foi possível obter task do viewToken")
+                                                        promise.reject("VIEW_TOKEN_ERROR", "Não foi possível obter task do viewToken")
+                                                    }
+                                                    
+                                                } catch (e: Exception) {
+                                                    Log.e(TAG, "❌ [GOOGLE] Erro ao extrair dados do token: ${e.message}", e)
+                                                    promise.reject("VIEW_TOKEN_ERROR", "Erro ao extrair dados do token: ${e.message}")
+                                                }
+                                                
+                                            } else {
+                                                Log.w(TAG, "❌ [GOOGLE] Token não encontrado: $issuerTokenId")
+                                                promise.resolve(null)
                                             }
                                         } else {
-                                            Log.w(TAG, "❌ [GOOGLE] PendingIntent é null")
-                                            promise.reject("VIEW_TOKEN_ERROR", "PendingIntent é null")
+                                            Log.w(TAG, "❌ [GOOGLE] Lista de tokens é null")
+                                            promise.reject("VIEW_TOKEN_ERROR", "Lista de tokens é null")
                                         }
                                     } else {
-                                        // Tentar obter o código de erro da task
-                                        var errorMessage = "Falha ao visualizar token - task não foi bem-sucedida"
-                                        try {
-                                            val getExceptionMethod = completedTask.javaClass.getMethod("getException")
-                                            val exception = getExceptionMethod.invoke(completedTask) as? Exception
-                                            if (exception != null) {
-                                                errorMessage = "Falha ao visualizar token - Erro: ${exception.message}"
-                                                Log.w(TAG, "❌ [GOOGLE] Exception da task: ${exception.message}")
-                                            }
-                                        } catch (e: Exception) {
-                                            Log.w(TAG, "❌ [GOOGLE] Não foi possível obter exception da task: ${e.message}")
-                                        }
-                                        
-                                        Log.w(TAG, "❌ [GOOGLE] $errorMessage")
-                                        promise.reject("VIEW_TOKEN_ERROR", errorMessage)
+                                        Log.w(TAG, "❌ [GOOGLE] Falha ao listar tokens")
+                                        promise.reject("VIEW_TOKEN_ERROR", "Falha ao listar tokens")
                                     }
-                                } else {
-                                    Log.w(TAG, "❌ [GOOGLE] CompletedTask é null")
-                                    promise.reject("VIEW_TOKEN_ERROR", "CompletedTask é null")
                                 }
                             } catch (e: Exception) {
-                                Log.e(TAG, "❌ [GOOGLE] Erro ao processar resultado do viewToken: ${e.message}", e)
-                                promise.reject("VIEW_TOKEN_ERROR", "Erro ao processar resultado do viewToken: ${e.message}")
+                                Log.e(TAG, "❌ [GOOGLE] Erro ao processar lista de tokens: ${e.message}", e)
+                                promise.reject("VIEW_TOKEN_ERROR", "Erro ao processar lista de tokens: ${e.message}")
                             }
                         }
                         null
                     }
                     
-                    val addOnCompleteListenerMethod = task.javaClass.getMethod("addOnCompleteListener", onCompleteListenerClass)
-                    addOnCompleteListenerMethod.invoke(task, onCompleteListener)
+                    val addOnCompleteListenerMethod = listTask.javaClass.getMethod("addOnCompleteListener", onCompleteListenerClass)
+                    addOnCompleteListenerMethod.invoke(listTask, listListener)
                     
-                    Log.d(TAG, "✅ [GOOGLE] Listener configurado com sucesso")
                 } else {
-                    Log.w(TAG, "❌ [GOOGLE] Não foi possível obter task do viewToken")
-                    promise.reject("VIEW_TOKEN_ERROR", "Não foi possível obter task do viewToken")
+                    Log.w(TAG, "❌ [GOOGLE] Não foi possível obter task do listTokens")
+                    promise.reject("VIEW_TOKEN_ERROR", "Não foi possível obter task do listTokens")
                 }
+                
             } catch (e: Exception) {
                 Log.e(TAG, "❌ [GOOGLE] Erro ao visualizar token: ${e.message}", e)
                 promise.reject("VIEW_TOKEN_ERROR", "Erro ao visualizar token: ${e.message}")
@@ -706,6 +782,7 @@ class GoogleWalletImplementation(
         }
     }
 
+    //https://developers.google.com/pay/issuers/apis/push-provisioning/android/wallet-operations?authuser=1&hl=pt-br#push_provisioning_operations
     override fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
         Log.d(TAG, "🔍 [GOOGLE] addCardToWallet chamado")
         try {
@@ -821,6 +898,7 @@ class GoogleWalletImplementation(
         }
     }
 
+    //https://developers.google.com/pay/issuers/apis/push-provisioning/android/wallet-operations?authuser=1&hl=pt-br#create_wallet
     override fun createWalletIfNeeded(promise: Promise) {
         Log.d(TAG, "🔍 [GOOGLE] createWalletIfNeeded chamado")
         try {
@@ -856,6 +934,7 @@ class GoogleWalletImplementation(
         }
     }
 
+    //https://developers.google.com/pay/issuers/apis/push-provisioning/android/reading-wallet?hl=pt-br&authuser=1#listtokens
     override fun listTokens(promise: Promise) {
         Log.i(TAG, "--")
         Log.i(TAG, "> listTokens started")
@@ -908,33 +987,14 @@ class GoogleWalletImplementation(
                                                 try {
                                                     // Converter TokenInfo para mapa serializável usando reflexão
                                                     val tokenMap = Arguments.createMap()
-                                                    
-                                                    // Obter issuerTokenId
-                                                    val issuerTokenIdMethod = tokenInfo?.javaClass?.getMethod("getIssuerTokenId")
-                                                    val issuerTokenId = issuerTokenIdMethod?.invoke(tokenInfo) as? String
-                                                    tokenMap.putString("issuerTokenId", issuerTokenId)
-                                                    
-                                                    // Obter lastDigits
-                                                    val lastDigitsMethod = tokenInfo?.javaClass?.getMethod("getLastDigits")
-                                                    val lastDigits = lastDigitsMethod?.invoke(tokenInfo) as? String
-                                                    tokenMap.putString("lastDigits", lastDigits)
-                                                    
-                                                    // Obter displayName
-                                                    val displayNameMethod = tokenInfo?.javaClass?.getMethod("getDisplayName")
-                                                    val displayName = displayNameMethod?.invoke(tokenInfo) as? String
-                                                    tokenMap.putString("displayName", displayName)
-                                                    
-                                                    // Obter tokenState
-                                                    val tokenStateMethod = tokenInfo?.javaClass?.getMethod("getTokenState")
-                                                    val tokenState = tokenStateMethod?.invoke(tokenInfo) as? Int
-                                                    tokenMap.putInt("tokenState", tokenState ?: -1)
-                                                    
-                                                    // Obter network
-                                                    val networkMethod = tokenInfo?.javaClass?.getMethod("getNetwork")
-                                                    val network = networkMethod?.invoke(tokenInfo) as? Int
-                                                    tokenMap.putInt("network", network ?: -1)
-                                                    
-                                                    Log.d(TAG, "🔍 [GOOGLE] Token processado - ID: $issuerTokenId, LastDigits: $lastDigits")
+
+                                                    tokenMap.putString("issuerTokenId", getOptionalString(tokenInfo!!, "getIssuerTokenId"))
+                                                    tokenMap.putString("lastDigits", getOptionalString(tokenInfo, "getLastDigits"))
+                                                    tokenMap.putString("displayName", getOptionalString(tokenInfo, "getDisplayName"))
+                                                    tokenMap.putInt("tokenState", getOptionalInt(tokenInfo, "getTokenState"))
+                                                    tokenMap.putInt("network", getOptionalInt(tokenInfo, "getNetwork"))
+
+                                                    Log.d(TAG, "🔍 [GOOGLE] Token processado - ID: ${tokenMap.getString("issuerTokenId")}, LastDigits: ${tokenMap.getString("lastDigits")}")
                                                     tokenMap
                                                 } catch (e: Exception) {
                                                     Log.w(TAG, "❌ [GOOGLE] Erro ao processar token: ${e.message}")
@@ -1004,6 +1064,7 @@ class GoogleWalletImplementation(
         }
     }
 
+    //https://developers.google.com/pay/issuers/apis/push-provisioning/android/enumerated-values?authuser=1&hl=pt-br#tapandpay_status_codes
     override fun getConstants(): MutableMap<String, Any> {
         Log.i(TAG, "--")
         Log.i(TAG, "> getConstants started")
@@ -1011,45 +1072,161 @@ class GoogleWalletImplementation(
         val constants = hashMapOf<String, Any>()
         
         // Adiciona constantes básicas sempre
-        constants["SDK_AVAILABLE"] = isSDKAvailable
         constants["SDK_NAME"] = "GoogleWallet"
         
         // Adiciona constantes do SDK se estiver disponível
         if (isSDKAvailable) {
             Log.i(TAG, "> SDK disponível, obtendo constantes do TapAndPay")
             
-            // Usa reflection para acessar as constantes do TapAndPay de forma segura
-            val tapAndPayClass = Class.forName("com.google.android.gms.tapandpay.TapAndPay")
-            
-            // Obtém as constantes usando reflection
-            constants["TOKEN_PROVIDER_ELO"] = tapAndPayClass.getField("TOKEN_PROVIDER_ELO").getInt(null)
-            constants["CARD_NETWORK_ELO"] = tapAndPayClass.getField("CARD_NETWORK_ELO").getInt(null)
-            constants["TOKEN_STATE_UNTOKENIZED"] = tapAndPayClass.getField("TOKEN_STATE_UNTOKENIZED").getInt(null)
-            constants["TOKEN_STATE_PENDING"] = tapAndPayClass.getField("TOKEN_STATE_PENDING").getInt(null)
-            constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = tapAndPayClass.getField("TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION").getInt(null)
-            constants["TOKEN_STATE_SUSPENDED"] = tapAndPayClass.getField("TOKEN_STATE_SUSPENDED").getInt(null)
-            constants["TOKEN_STATE_ACTIVE"] = tapAndPayClass.getField("TOKEN_STATE_ACTIVE").getInt(null)
-            constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = tapAndPayClass.getField("TOKEN_STATE_FELICA_PENDING_PROVISIONING").getInt(null)
-            
-            Log.i(TAG, "> Constantes do TapAndPay obtidas com sucesso")
+            try {
+                // Usa reflection para acessar as constantes do TapAndPay de forma segura
+                val tapAndPayClass = Class.forName("com.google.android.gms.tapandpay.TapAndPay")
+                // TapAndPay Status Codes obtidos da classe TapAndPayStatusCodes
+                val tapAndPayStatusCodesClass = Class.forName("com.google.android.gms.tapandpay.TapAndPayStatusCodes")
+                
+                // Google Token Provider
+                constants["TOKEN_PROVIDER_AMEX"] = tapAndPayClass.getField("TOKEN_PROVIDER_AMEX").getInt(null)
+                constants["TOKEN_PROVIDER_DISCOVER"] = tapAndPayClass.getField("TOKEN_PROVIDER_DISCOVER").getInt(null)
+                constants["TOKEN_PROVIDER_JCB"] = tapAndPayClass.getField("TOKEN_PROVIDER_JCB").getInt(null)
+                constants["TOKEN_PROVIDER_MASTERCARD"] = tapAndPayClass.getField("TOKEN_PROVIDER_MASTERCARD").getInt(null)
+                constants["TOKEN_PROVIDER_VISA"] = tapAndPayClass.getField("TOKEN_PROVIDER_VISA").getInt(null)
+                constants["TOKEN_PROVIDER_ELO"] = tapAndPayClass.getField("TOKEN_PROVIDER_ELO").getInt(null)
+                
+                // Google Card Network
+                constants["CARD_NETWORK_AMEX"] = tapAndPayClass.getField("CARD_NETWORK_AMEX").getInt(null)
+                constants["CARD_NETWORK_DISCOVER"] = tapAndPayClass.getField("CARD_NETWORK_DISCOVER").getInt(null)
+                constants["CARD_NETWORK_MASTERCARD"] = tapAndPayClass.getField("CARD_NETWORK_MASTERCARD").getInt(null)
+                constants["CARD_NETWORK_QUICPAY"] = tapAndPayClass.getField("CARD_NETWORK_QUICPAY").getInt(null)
+                constants["CARD_NETWORK_PRIVATE_LABEL"] = tapAndPayClass.getField("CARD_NETWORK_PRIVATE_LABEL").getInt(null)
+                constants["CARD_NETWORK_VISA"] = tapAndPayClass.getField("CARD_NETWORK_VISA").getInt(null)
+                constants["CARD_NETWORK_ELO"] = tapAndPayClass.getField("CARD_NETWORK_ELO").getInt(null)
+
+                // Google Token State
+                constants["TOKEN_STATE_ACTIVE"] = tapAndPayClass.getField("TOKEN_STATE_ACTIVE").getInt(null)
+                constants["TOKEN_STATE_PENDING"] = tapAndPayClass.getField("TOKEN_STATE_PENDING").getInt(null)
+                constants["TOKEN_STATE_SUSPENDED"] = tapAndPayClass.getField("TOKEN_STATE_SUSPENDED").getInt(null)
+                constants["TOKEN_STATE_UNTOKENIZED"] = tapAndPayClass.getField("TOKEN_STATE_UNTOKENIZED").getInt(null)
+                constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = tapAndPayClass.getField("TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION").getInt(null)
+                constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = tapAndPayClass.getField("TOKEN_STATE_FELICA_PENDING_PROVISIONING").getInt(null)
+                
+                // TapAndPay Status Codes - valores reais do SDK
+                constants["TAP_AND_PAY_NO_ACTIVE_WALLET"] = 15002
+                constants["TAP_AND_PAY_TOKEN_NOT_FOUND"] = 15003
+                constants["TAP_AND_PAY_INVALID_TOKEN_STATE"] = 15004
+                constants["TAP_AND_PAY_ATTESTATION_ERROR"] = 15005
+                constants["TAP_AND_PAY_UNAVAILABLE"] = 15009
+                constants["TAP_AND_PAY_SAVE_CARD_ERROR"] = 15019
+                constants["TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION"] = 15021
+                constants["TAP_AND_PAY_TOKENIZATION_DECLINED"] = 15022
+                constants["TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR"] = 15023
+                constants["TAP_AND_PAY_TOKENIZE_ERROR"] = 15024
+                constants["TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED"] = 15025
+                constants["TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"] = 15026
+                constants["TAP_AND_PAY_USER_CANCELED_FLOW"] = 15027
+                constants["TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED"] = 15028
+                
+                // Google Common Status Codes - valores reais do SDK
+                constants["SUCCESS"] = 0
+                constants["SUCCESS_CACHE"] = -1
+                constants["SERVICE_VERSION_UPDATE_REQUIRED"] = 2
+                constants["SERVICE_DISABLED"] = 3
+                constants["SIGN_IN_REQUIRED"] = 4
+                constants["INVALID_ACCOUNT"] = 5
+                constants["RESOLUTION_REQUIRED"] = 6
+                constants["NETWORK_ERROR"] = 7
+                constants["INTERNAL_ERROR"] = 8
+                constants["DEVELOPER_ERROR"] = 10
+                constants["ERROR"] = 13
+                constants["INTERRUPTED"] = 14
+                constants["TIMEOUT"] = 15
+                constants["CANCELED"] = 16
+                constants["API_NOT_CONNECTED"] = 17
+                constants["REMOTE_EXCEPTION"] = 19
+                constants["CONNECTION_SUSPENDED_DURING_CALL"] = 20
+                constants["RECONNECTION_TIMED_OUT_DURING_UPDATE"] = 21
+                constants["RECONNECTION_TIMED_OUT"] = 22
+                
+                Log.i(TAG, "> Constantes do TapAndPay obtidas com sucesso")
+            } catch (e: Exception) {
+                Log.w(TAG, "> Erro ao obter constantes do TapAndPay: ${e.message}")
+                // Se houver erro, usar valores padrão
+                addDefaultConstants(constants)
+            }
         } else {
             Log.w(TAG, "> SDK não disponível, retornando valores padrão para constantes")
-            
-            // Retorna valores padrão quando SDK não está disponível
-            constants["TOKEN_PROVIDER_ELO"] = -1
-            constants["CARD_NETWORK_ELO"] = -1
-            constants["TOKEN_STATE_UNTOKENIZED"] = -1
-            constants["TOKEN_STATE_PENDING"] = -1
-            constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = -1
-            constants["TOKEN_STATE_SUSPENDED"] = -1
-            constants["TOKEN_STATE_ACTIVE"] = -1
-            constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = -1
+            addDefaultConstants(constants)
         }
         
         Log.i(TAG, "> getConstants completed")
         return constants
     }
+    
+    private fun addDefaultConstants(constants: MutableMap<String, Any>) {
+        // Google Token Provider - valores padrão
+        constants["TOKEN_PROVIDER_AMEX"] = -1
+        constants["TOKEN_PROVIDER_DISCOVER"] = -1
+        constants["TOKEN_PROVIDER_JCB"] = -1
+        constants["TOKEN_PROVIDER_MASTERCARD"] = -1
+        constants["TOKEN_PROVIDER_VISA"] = -1
+        constants["TOKEN_PROVIDER_ELO"] = -1
+        
+        // Google Card Network - valores padrão
+        constants["CARD_NETWORK_AMEX"] = -1
+        constants["CARD_NETWORK_DISCOVER"] = -1
+        constants["CARD_NETWORK_MASTERCARD"] = -1
+        constants["CARD_NETWORK_QUICPAY"] = -1
+        constants["CARD_NETWORK_PRIVATE_LABEL"] = -1
+        constants["CARD_NETWORK_VISA"] = -1
+        constants["CARD_NETWORK_ELO"] = -1
+        
+        // TapAndPay Status Codes - valores reais do SDK
+        constants["TAP_AND_PAY_NO_ACTIVE_WALLET"] = 15002
+        constants["TAP_AND_PAY_TOKEN_NOT_FOUND"] = 15003
+        constants["TAP_AND_PAY_INVALID_TOKEN_STATE"] = 15004
+        constants["TAP_AND_PAY_ATTESTATION_ERROR"] = 15005
+        constants["TAP_AND_PAY_UNAVAILABLE"] = 15009
+        constants["TAP_AND_PAY_SAVE_CARD_ERROR"] = 15019
+        constants["TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION"] = 15021
+        constants["TAP_AND_PAY_TOKENIZATION_DECLINED"] = 15022
+        constants["TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR"] = 15023
+        constants["TAP_AND_PAY_TOKENIZE_ERROR"] = 15024
+        constants["TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED"] = 15025
+        constants["TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"] = 15026
+        constants["TAP_AND_PAY_USER_CANCELED_FLOW"] = 15027
+        constants["TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED"] = 15028
+        
+        // Google Token State - valores padrão
+        constants["TOKEN_STATE_ACTIVE"] = -1
+        constants["TOKEN_STATE_PENDING"] = -1
+        constants["TOKEN_STATE_SUSPENDED"] = -1
+        constants["TOKEN_STATE_UNTOKENIZED"] = -1
+        constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = -1
+        constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = -1
+        
+        // Google Common Status Codes - valores reais do SDK
+        constants["SUCCESS"] = 0
+        constants["SUCCESS_CACHE"] = -1
+        constants["SERVICE_VERSION_UPDATE_REQUIRED"] = 2
+        constants["SERVICE_DISABLED"] = 3
+        constants["SIGN_IN_REQUIRED"] = 4
+        constants["INVALID_ACCOUNT"] = 5
+        constants["RESOLUTION_REQUIRED"] = 6
+        constants["NETWORK_ERROR"] = 7
+        constants["INTERNAL_ERROR"] = 8
+        constants["DEVELOPER_ERROR"] = 10
+        constants["ERROR"] = 13
+        constants["INTERRUPTED"] = 14
+        constants["TIMEOUT"] = 15
+        constants["CANCELED"] = 16
+        constants["API_NOT_CONNECTED"] = 17
+        constants["REMOTE_EXCEPTION"] = 19
+        constants["CONNECTION_SUSPENDED_DURING_CALL"] = 20
+        constants["RECONNECTION_TIMED_OUT_DURING_UPDATE"] = 21
+        constants["RECONNECTION_TIMED_OUT"] = 22
+    }
 
+
+    //https://developers.google.com/pay/issuers/apis/push-provisioning/android/reading-wallet?hl=pt-br&authuser=1#add_a_listener_for_wallet_updates
     override fun setIntentListener(promise: Promise) {
         Log.d(TAG, "🔍 [GOOGLE] setIntentListener chamado")
         try {
@@ -1078,6 +1255,8 @@ class GoogleWalletImplementation(
         }
     }
 
+
+    //https://developers.google.com/pay/issuers/apis/push-provisioning/android/wallet-operations?authuser=1&hl=pt-br#handling_result_callbacks
     override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
         Log.d(TAG, "🔍 [GOOGLE] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
         try {
@@ -1297,6 +1476,33 @@ class GoogleWalletImplementation(
         }
         
         return null // Validação passou
+    }
+
+    private fun getOptionalString(target: Any, methodName: String): String? {
+        return try {
+            target.javaClass.getMethod(methodName).invoke(target) as? String
+        } catch (e: Exception) {
+            Log.w(TAG, "Falha ao obter campo '$methodName' via reflexão: ${e.message}")
+            null
+        }
+    }
+
+    private fun getOptionalInt(target: Any, methodName: String, defaultValue: Int = -1): Int {
+        return try {
+            (target.javaClass.getMethod(methodName).invoke(target) as? Int) ?: defaultValue
+        } catch (e: Exception) {
+            Log.w(TAG, "Falha ao obter campo '$methodName' via reflexão: ${e.message}")
+            defaultValue
+        }
+    }
+
+    private fun getOptionalBoolean(target: Any, methodName: String, defaultValue: Boolean = false): Boolean {
+        return try {
+            (target.javaClass.getMethod(methodName).invoke(target) as? Boolean) ?: defaultValue
+        } catch (e: Exception) {
+            Log.w(TAG, "Falha ao obter campo '$methodName' via reflexão: ${e.message}")
+            defaultValue
+        }
     }
 
     companion object {

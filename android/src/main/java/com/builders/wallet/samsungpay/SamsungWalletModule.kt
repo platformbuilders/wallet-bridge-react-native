@@ -139,7 +139,6 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
   @ReactMethod
   override fun getConstants(): MutableMap<String, Any> {
     return hashMapOf<String, Any>(
-      "SDK_AVAILABLE" to isSDKAvailable,
       "SDK_NAME" to "SamsungWallet",
       "MODULE_NAME" to getName()
     )
