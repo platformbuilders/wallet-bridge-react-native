@@ -655,25 +655,15 @@ class GoogleWalletImplementation(
                                                 val tokenData = Arguments.createMap()
                                                 
                                                 try {
-                                                    val getIssuerTokenIdMethod = targetToken.javaClass.getMethod("getIssuerTokenId")
-                                                    val getIssuerNameMethod = targetToken.javaClass.getMethod("getIssuerName")
-                                                    val getFpanLastFourMethod = targetToken.javaClass.getMethod("getFpanLastFour")
-                                                    val getDpanLastFourMethod = targetToken.javaClass.getMethod("getDpanLastFour")
-                                                    val getTokenServiceProviderMethod = targetToken.javaClass.getMethod("getTokenServiceProvider")
-                                                    val getNetworkMethod = targetToken.javaClass.getMethod("getNetwork")
-                                                    val getTokenStateMethod = targetToken.javaClass.getMethod("getTokenState")
-                                                    val getIsDefaultTokenMethod = targetToken.javaClass.getMethod("getIsDefaultToken")
-                                                    val getPortfolioNameMethod = targetToken.javaClass.getMethod("getPortfolioName")
-                                                    
-                                                    tokenData.putString("issuerTokenId", getIssuerTokenIdMethod.invoke(targetToken) as? String)
-                                                    tokenData.putString("issuerName", getIssuerNameMethod.invoke(targetToken) as? String)
-                                                    tokenData.putString("fpanLastFour", getFpanLastFourMethod.invoke(targetToken) as? String)
-                                                    tokenData.putString("dpanLastFour", getDpanLastFourMethod.invoke(targetToken) as? String)
-                                                    tokenData.putInt("tokenServiceProvider", getTokenServiceProviderMethod.invoke(targetToken) as? Int ?: -1)
-                                                    tokenData.putInt("network", getNetworkMethod.invoke(targetToken) as? Int ?: -1)
-                                                    tokenData.putInt("tokenState", getTokenStateMethod.invoke(targetToken) as? Int ?: -1)
-                                                    tokenData.putBoolean("isDefaultToken", getIsDefaultTokenMethod.invoke(targetToken) as? Boolean ?: false)
-                                                    tokenData.putString("portfolioName", getPortfolioNameMethod.invoke(targetToken) as? String)
+                                                    tokenData.putString("issuerTokenId", getOptionalString(targetToken, "getIssuerTokenId"))
+                                                    tokenData.putString("issuerName", getOptionalString(targetToken, "getIssuerName"))
+                                                    tokenData.putString("fpanLastFour", getOptionalString(targetToken, "getFpanLastFour"))
+                                                    tokenData.putString("dpanLastFour", getOptionalString(targetToken, "getDpanLastFour"))
+                                                    tokenData.putInt("tokenServiceProvider", getOptionalInt(targetToken, "getTokenServiceProvider"))
+                                                    tokenData.putInt("network", getOptionalInt(targetToken, "getNetwork"))
+                                                    tokenData.putInt("tokenState", getOptionalInt(targetToken, "getTokenState"))
+                                                    tokenData.putBoolean("isDefaultToken", getOptionalBoolean(targetToken, "getIsDefaultToken"))
+                                                    tokenData.putString("portfolioName", getOptionalString(targetToken, "getPortfolioName"))
                                                     
                                                     Log.d(TAG, "✅ [GOOGLE] Dados do token extraídos com sucesso")
                                                     
@@ -997,33 +987,14 @@ class GoogleWalletImplementation(
                                                 try {
                                                     // Converter TokenInfo para mapa serializável usando reflexão
                                                     val tokenMap = Arguments.createMap()
-                                                    
-                                                    // Obter issuerTokenId
-                                                    val issuerTokenIdMethod = tokenInfo?.javaClass?.getMethod("getIssuerTokenId")
-                                                    val issuerTokenId = issuerTokenIdMethod?.invoke(tokenInfo) as? String
-                                                    tokenMap.putString("issuerTokenId", issuerTokenId)
-                                                    
-                                                    // Obter lastDigits
-                                                    val lastDigitsMethod = tokenInfo?.javaClass?.getMethod("getLastDigits")
-                                                    val lastDigits = lastDigitsMethod?.invoke(tokenInfo) as? String
-                                                    tokenMap.putString("lastDigits", lastDigits)
-                                                    
-                                                    // Obter displayName
-                                                    val displayNameMethod = tokenInfo?.javaClass?.getMethod("getDisplayName")
-                                                    val displayName = displayNameMethod?.invoke(tokenInfo) as? String
-                                                    tokenMap.putString("displayName", displayName)
-                                                    
-                                                    // Obter tokenState
-                                                    val tokenStateMethod = tokenInfo?.javaClass?.getMethod("getTokenState")
-                                                    val tokenState = tokenStateMethod?.invoke(tokenInfo) as? Int
-                                                    tokenMap.putInt("tokenState", tokenState ?: -1)
-                                                    
-                                                    // Obter network
-                                                    val networkMethod = tokenInfo?.javaClass?.getMethod("getNetwork")
-                                                    val network = networkMethod?.invoke(tokenInfo) as? Int
-                                                    tokenMap.putInt("network", network ?: -1)
-                                                    
-                                                    Log.d(TAG, "🔍 [GOOGLE] Token processado - ID: $issuerTokenId, LastDigits: $lastDigits")
+
+                                                    tokenMap.putString("issuerTokenId", getOptionalString(tokenInfo!!, "getIssuerTokenId"))
+                                                    tokenMap.putString("lastDigits", getOptionalString(tokenInfo, "getLastDigits"))
+                                                    tokenMap.putString("displayName", getOptionalString(tokenInfo, "getDisplayName"))
+                                                    tokenMap.putInt("tokenState", getOptionalInt(tokenInfo, "getTokenState"))
+                                                    tokenMap.putInt("network", getOptionalInt(tokenInfo, "getNetwork"))
+
+                                                    Log.d(TAG, "🔍 [GOOGLE] Token processado - ID: ${tokenMap.getString("issuerTokenId")}, LastDigits: ${tokenMap.getString("lastDigits")}")
                                                     tokenMap
                                                 } catch (e: Exception) {
                                                     Log.w(TAG, "❌ [GOOGLE] Erro ao processar token: ${e.message}")
@@ -1390,6 +1361,33 @@ class GoogleWalletImplementation(
         }
         
         return null // Validação passou
+    }
+
+    private fun getOptionalString(target: Any, methodName: String): String? {
+        return try {
+            target.javaClass.getMethod(methodName).invoke(target) as? String
+        } catch (e: Exception) {
+            Log.w(TAG, "Falha ao obter campo '$methodName' via reflexão: ${e.message}")
+            null
+        }
+    }
+
+    private fun getOptionalInt(target: Any, methodName: String, defaultValue: Int = -1): Int {
+        return try {
+            (target.javaClass.getMethod(methodName).invoke(target) as? Int) ?: defaultValue
+        } catch (e: Exception) {
+            Log.w(TAG, "Falha ao obter campo '$methodName' via reflexão: ${e.message}")
+            defaultValue
+        }
+    }
+
+    private fun getOptionalBoolean(target: Any, methodName: String, defaultValue: Boolean = false): Boolean {
+        return try {
+            (target.javaClass.getMethod(methodName).invoke(target) as? Boolean) ?: defaultValue
+        } catch (e: Exception) {
+            Log.w(TAG, "Falha ao obter campo '$methodName' via reflexão: ${e.message}")
+            defaultValue
+        }
     }
 
     companion object {
