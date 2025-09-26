@@ -56,62 +56,84 @@ const getTokenStateDescription = (
   state: number,
   constants: GoogleWalletConstants
 ): string => {
-  // Mapear baseado nas constantes disponíveis
-  if (state === constants.TOKEN_STATE_ACTIVE) {
-    return 'Ativo';
-  }
-  if (state === constants.TOKEN_STATE_PENDING) {
-    return 'Pendente';
-  }
-  if (state === constants.TOKEN_STATE_SUSPENDED) {
-    return 'Suspenso';
-  }
-  if (state === constants.TOKEN_STATE_UNTOKENIZED) {
-    return 'Não Tokenizado';
-  }
-  if (state === constants.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION) {
-    return 'Requer Verificação de Identidade';
-  }
-  if (state === constants.TOKEN_STATE_FELICA_PENDING_PROVISIONING) {
-    return 'Aguardando Provisionamento Felica';
-  }
+  const TOKEN_STATE_DESCRIPTIONS = {
+    [constants.TOKEN_STATE_ACTIVE]: 'Ativo',
+    [constants.TOKEN_STATE_PENDING]: 'Pendente',
+    [constants.TOKEN_STATE_SUSPENDED]: 'Suspenso',
+    [constants.TOKEN_STATE_UNTOKENIZED]: 'Não Tokenizado',
+    [constants.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION]:
+      'Requer Verificação de Identidade',
+    [constants.TOKEN_STATE_FELICA_PENDING_PROVISIONING]:
+      'Aguardando Provisionamento Felica',
+  } as const;
 
-  return `Estado Desconhecido (${state})`;
+  return TOKEN_STATE_DESCRIPTIONS[state] ?? `Estado Desconhecido (${state})`;
 };
 
-// Mapeamento de códigos de erro para descrições em português
-const ERROR_DESCRIPTIONS: Record<string, string> = {
-  // Common Status Codes
-  '0': 'Operação cancelada pelo usuário', //Na doc do Google Wallet é - Operação realizada com sucesso
-  '-1': 'Operação realizada com sucesso (usando cache do dispositivo)',
-  '2': 'A versão instalada do Google Play Services está desatualizada. Atualize o aplicativo.',
-  '3': 'O Google Play Services foi desabilitado neste dispositivo',
-  '4': 'É necessário fazer login no Google para usar esta funcionalidade',
-  '5': 'Conta inválida especificada. Verifique sua conta do Google',
-  '6': 'É necessária uma resolução adicional para completar a operação',
-  '7': 'Erro de rede. Verifique sua conexão com a internet e tente novamente',
-  '8': 'Erro interno do sistema. Tente novamente em alguns instantes',
-  '10': 'Aplicativo mal configurado. Entre em contato com o suporte',
-  '13': 'Operação falhou sem informações detalhadas. Tente novamente',
-  '14': 'Operação foi interrompida. Tente novamente',
-  '15': 'Tempo limite excedido. Verifique sua conexão e tente novamente',
-  '16': 'Operação foi cancelada pelo usuário',
-  '17': 'API não conectada. Verifique se o Google Play Services está funcionando',
-  '19': 'Erro de comunicação com o serviço. Tente novamente',
-  '20': 'Conexão suspensa durante a chamada. Tente novamente',
-  '21': 'Conexão expirou durante atualização. Tente novamente',
-  '22': 'Conexão expirou ao tentar reconectar. Tente novamente',
+const getTapAndPayStatusDescription = (
+  status: string,
+  constants: GoogleWalletConstants
+): string => {
+  // Mapeamento de códigos de erro para descrições em português usando constants
+  const ERROR_DESCRIPTIONS: Record<string, string> = {
+    // Common Status Codes
+    [constants.SUCCESS]: 'Operação cancelada pelo usuário', //Na doc do Google Wallet é - Operação realizada com sucesso
+    [constants.SUCCESS_CACHE]:
+      'Operação realizada com sucesso (usando cache do dispositivo)',
+    [constants.SERVICE_VERSION_UPDATE_REQUIRED]:
+      'A versão instalada do Google Play Services está desatualizada. Atualize o aplicativo.',
+    [constants.SERVICE_DISABLED]:
+      'O Google Play Services foi desabilitado neste dispositivo',
+    [constants.SIGN_IN_REQUIRED]:
+      'É necessário fazer login no Google para usar esta funcionalidade',
+    [constants.INVALID_ACCOUNT]:
+      'Conta inválida especificada. Verifique sua conta do Google',
+    [constants.RESOLUTION_REQUIRED]:
+      'É necessária uma resolução adicional para completar a operação',
+    [constants.NETWORK_ERROR]:
+      'Erro de rede. Verifique sua conexão com a internet e tente novamente',
+    [constants.INTERNAL_ERROR]:
+      'Erro interno do sistema. Tente novamente em alguns instantes',
+    [constants.DEVELOPER_ERROR]:
+      'Aplicativo mal configurado. Entre em contato com o suporte',
+    [constants.ERROR]:
+      'Operação falhou sem informações detalhadas. Tente novamente',
+    [constants.INTERRUPTED]: 'Operação foi interrompida. Tente novamente',
+    [constants.TIMEOUT]:
+      'Tempo limite excedido. Verifique sua conexão e tente novamente',
+    [constants.CANCELED]: 'Operação foi cancelada pelo usuário',
+    [constants.API_NOT_CONNECTED]:
+      'API não conectada. Verifique se o Google Play Services está funcionando',
+    [constants.REMOTE_EXCEPTION]:
+      'Erro de comunicação com o serviço. Tente novamente',
+    [constants.CONNECTION_SUSPENDED_DURING_CALL]:
+      'Conexão suspensa durante a chamada. Tente novamente',
+    [constants.RECONNECTION_TIMED_OUT_DURING_UPDATE]:
+      'Conexão expirou durante atualização. Tente novamente',
+    [constants.RECONNECTION_TIMED_OUT]:
+      'Conexão expirou ao tentar reconectar. Tente novamente',
 
-  // Google Wallet Specific Status Codes
-  '15002': 'Não há carteira ativa. Crie uma carteira primeiro',
-  '15003': 'Token não encontrado na carteira ativa',
-  '15004': 'Token encontrado mas em estado inválido',
-  '15005': 'Falha na verificação de compatibilidade do dispositivo',
-  '15009': 'API TapAndPay não disponível para este aplicativo',
+    // Google Wallet Specific Status Codes
+    [constants.TAP_AND_PAY_NO_ACTIVE_WALLET]:
+      'Não há carteira ativa. Crie uma carteira primeiro',
+    [constants.TAP_AND_PAY_TOKEN_NOT_FOUND]:
+      'Token não encontrado na carteira ativa',
+    [constants.TAP_AND_PAY_INVALID_TOKEN_STATE]:
+      'Token encontrado mas em estado inválido',
+    [constants.TAP_AND_PAY_ATTESTATION_ERROR]:
+      'Falha na verificação de compatibilidade do dispositivo',
+    [constants.TAP_AND_PAY_UNAVAILABLE]:
+      'API TapAndPay não disponível para este aplicativo',
+  };
+
+  return ERROR_DESCRIPTIONS[status] ?? `Status Desconhecido (${status})`;
 };
 
 // Função para tratar erros do Google Wallet
-const handleGoogleWalletError = (error: unknown): string => {
+const handleGoogleWalletError = (
+  error: unknown,
+  constants: GoogleWalletConstants
+): string => {
   console.log('🔍 [JS] Analisando erro:', error);
 
   const errorMessage = error instanceof Error ? error.message : String(error);
@@ -124,7 +146,7 @@ const handleGoogleWalletError = (error: unknown): string => {
     const errorCode = resultCodeMatch[1];
     console.log('🎯 [JS] Código de erro encontrado:', errorCode);
 
-    const description = ERROR_DESCRIPTIONS[errorCode];
+    const description = getTapAndPayStatusDescription(errorCode, constants);
     if (description) {
       console.log('✅ [JS] Descrição encontrada:', description);
       return `Erro ${errorCode}: ${description}`;
@@ -140,7 +162,7 @@ const handleGoogleWalletError = (error: unknown): string => {
     const errorCode = statusCodeMatch[1];
     console.log('🎯 [JS] Status code encontrado:', errorCode);
 
-    const description = ERROR_DESCRIPTIONS[errorCode];
+    const description = getTapAndPayStatusDescription(errorCode, constants);
     if (description) {
       console.log('✅ [JS] Descrição encontrada:', description);
       return `Erro ${errorCode}: ${description}`;
@@ -153,7 +175,7 @@ const handleGoogleWalletError = (error: unknown): string => {
     const errorCode = numericCodeMatch[1];
     console.log('🎯 [JS] Código numérico encontrado:', errorCode);
 
-    const description = ERROR_DESCRIPTIONS[errorCode];
+    const description = getTapAndPayStatusDescription(errorCode, constants);
     if (description) {
       console.log('✅ [JS] Descrição encontrada:', description);
       return `Erro ${errorCode}: ${description}`;
@@ -186,6 +208,7 @@ export default function App(): React.JSX.Element {
   // Instanciar o GoogleWalletClient e EventEmitter
   const googleWalletClient = GoogleWalletClient;
   const eventEmitter = new GoogleWalletEventEmitter();
+  const constants: GoogleWalletConstants = googleWalletClient.getConstants();
 
   // Função para mostrar dados já decodificados
   const showDecodedData = (
@@ -527,8 +550,6 @@ export default function App(): React.JSX.Element {
       console.log('🔍 [JS] Iniciando verificação de status do token...');
 
       // Obter constantes para usar o tokenServiceProvider
-      const constants: GoogleWalletConstants =
-        googleWalletClient.getConstants();
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const tokenReferenceId = 'test-token-id'; // ID de exemplo
 
@@ -576,8 +597,6 @@ export default function App(): React.JSX.Element {
       console.log('🔍 [JS] Iniciando verificação se está tokenizado...');
 
       // Obter constantes para usar os valores corretos
-      const constants: GoogleWalletConstants =
-        googleWalletClient.getConstants();
       const cardNetwork = constants.CARD_NETWORK_ELO;
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const fpanLastFour = '6890'; // Últimos 4 dígitos de exemplo
@@ -609,8 +628,6 @@ export default function App(): React.JSX.Element {
       console.log('🔍 [JS] Iniciando visualização de token...');
 
       // Obter constantes para usar os valores corretos
-      const constants: GoogleWalletConstants =
-        googleWalletClient.getConstants();
       const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
       const issuerTokenId = 'test-token-id'; // ID de exemplo
 
@@ -656,8 +673,6 @@ export default function App(): React.JSX.Element {
       console.log('🔍 [JS] Iniciando processo de adição de cartão...');
 
       console.log('🔍 [JS] Obtendo constantes...');
-      const constants: GoogleWalletConstants =
-        googleWalletClient.getConstants();
       console.log('✅ [JS] Constantes obtidas:', constants);
 
       const cardData: GooglePushTokenizeRequest = {
@@ -708,7 +723,7 @@ export default function App(): React.JSX.Element {
       });
 
       // Usar a função de tratamento de erro personalizada
-      const errorMessage = handleGoogleWalletError(err);
+      const errorMessage = handleGoogleWalletError(err, constants);
       Alert.alert('Erro ao Adicionar Cartão', errorMessage);
     }
   };
@@ -741,9 +756,6 @@ export default function App(): React.JSX.Element {
       console.log('🔍 [JS] Iniciando listagem de tokens...');
 
       // Obter constantes para usar nas descrições
-      const constants: GoogleWalletConstants =
-        googleWalletClient.getConstants();
-
       console.log('🔍 [JS] Constantes obtidas:', constants);
 
       const tokens: GoogleTokenInfo[] = await googleWalletClient.listTokens();

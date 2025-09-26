@@ -1078,36 +1078,151 @@ class GoogleWalletImplementation(
         if (isSDKAvailable) {
             Log.i(TAG, "> SDK disponível, obtendo constantes do TapAndPay")
             
-            // Usa reflection para acessar as constantes do TapAndPay de forma segura
-            val tapAndPayClass = Class.forName("com.google.android.gms.tapandpay.TapAndPay")
-            
-            // Obtém as constantes usando reflection
-            constants["TOKEN_PROVIDER_ELO"] = tapAndPayClass.getField("TOKEN_PROVIDER_ELO").getInt(null)
-            constants["CARD_NETWORK_ELO"] = tapAndPayClass.getField("CARD_NETWORK_ELO").getInt(null)
-            constants["TOKEN_STATE_UNTOKENIZED"] = tapAndPayClass.getField("TOKEN_STATE_UNTOKENIZED").getInt(null)
-            constants["TOKEN_STATE_PENDING"] = tapAndPayClass.getField("TOKEN_STATE_PENDING").getInt(null)
-            constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = tapAndPayClass.getField("TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION").getInt(null)
-            constants["TOKEN_STATE_SUSPENDED"] = tapAndPayClass.getField("TOKEN_STATE_SUSPENDED").getInt(null)
-            constants["TOKEN_STATE_ACTIVE"] = tapAndPayClass.getField("TOKEN_STATE_ACTIVE").getInt(null)
-            constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = tapAndPayClass.getField("TOKEN_STATE_FELICA_PENDING_PROVISIONING").getInt(null)
-            
-            Log.i(TAG, "> Constantes do TapAndPay obtidas com sucesso")
+            try {
+                // Usa reflection para acessar as constantes do TapAndPay de forma segura
+                val tapAndPayClass = Class.forName("com.google.android.gms.tapandpay.TapAndPay")
+                // TapAndPay Status Codes obtidos da classe TapAndPayStatusCodes
+                val tapAndPayStatusCodesClass = Class.forName("com.google.android.gms.tapandpay.TapAndPayStatusCodes")
+                
+                // Google Token Provider
+                constants["TOKEN_PROVIDER_AMEX"] = tapAndPayClass.getField("TOKEN_PROVIDER_AMEX").getInt(null)
+                constants["TOKEN_PROVIDER_DISCOVER"] = tapAndPayClass.getField("TOKEN_PROVIDER_DISCOVER").getInt(null)
+                constants["TOKEN_PROVIDER_JCB"] = tapAndPayClass.getField("TOKEN_PROVIDER_JCB").getInt(null)
+                constants["TOKEN_PROVIDER_MASTERCARD"] = tapAndPayClass.getField("TOKEN_PROVIDER_MASTERCARD").getInt(null)
+                constants["TOKEN_PROVIDER_VISA"] = tapAndPayClass.getField("TOKEN_PROVIDER_VISA").getInt(null)
+                constants["TOKEN_PROVIDER_ELO"] = tapAndPayClass.getField("TOKEN_PROVIDER_ELO").getInt(null)
+                
+                // Google Card Network
+                constants["CARD_NETWORK_AMEX"] = tapAndPayClass.getField("CARD_NETWORK_AMEX").getInt(null)
+                constants["CARD_NETWORK_DISCOVER"] = tapAndPayClass.getField("CARD_NETWORK_DISCOVER").getInt(null)
+                constants["CARD_NETWORK_MASTERCARD"] = tapAndPayClass.getField("CARD_NETWORK_MASTERCARD").getInt(null)
+                constants["CARD_NETWORK_QUICPAY"] = tapAndPayClass.getField("CARD_NETWORK_QUICPAY").getInt(null)
+                constants["CARD_NETWORK_PRIVATE_LABEL"] = tapAndPayClass.getField("CARD_NETWORK_PRIVATE_LABEL").getInt(null)
+                constants["CARD_NETWORK_VISA"] = tapAndPayClass.getField("CARD_NETWORK_VISA").getInt(null)
+                constants["CARD_NETWORK_ELO"] = tapAndPayClass.getField("CARD_NETWORK_ELO").getInt(null)
+
+                // Google Token State
+                constants["TOKEN_STATE_ACTIVE"] = tapAndPayClass.getField("TOKEN_STATE_ACTIVE").getInt(null)
+                constants["TOKEN_STATE_PENDING"] = tapAndPayClass.getField("TOKEN_STATE_PENDING").getInt(null)
+                constants["TOKEN_STATE_SUSPENDED"] = tapAndPayClass.getField("TOKEN_STATE_SUSPENDED").getInt(null)
+                constants["TOKEN_STATE_UNTOKENIZED"] = tapAndPayClass.getField("TOKEN_STATE_UNTOKENIZED").getInt(null)
+                constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = tapAndPayClass.getField("TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION").getInt(null)
+                constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = tapAndPayClass.getField("TOKEN_STATE_FELICA_PENDING_PROVISIONING").getInt(null)
+                
+                // TapAndPay Status Codes - valores reais do SDK
+                constants["TAP_AND_PAY_NO_ACTIVE_WALLET"] = 15002
+                constants["TAP_AND_PAY_TOKEN_NOT_FOUND"] = 15003
+                constants["TAP_AND_PAY_INVALID_TOKEN_STATE"] = 15004
+                constants["TAP_AND_PAY_ATTESTATION_ERROR"] = 15005
+                constants["TAP_AND_PAY_UNAVAILABLE"] = 15009
+                constants["TAP_AND_PAY_SAVE_CARD_ERROR"] = 15019
+                constants["TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION"] = 15021
+                constants["TAP_AND_PAY_TOKENIZATION_DECLINED"] = 15022
+                constants["TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR"] = 15023
+                constants["TAP_AND_PAY_TOKENIZE_ERROR"] = 15024
+                constants["TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED"] = 15025
+                constants["TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"] = 15026
+                constants["TAP_AND_PAY_USER_CANCELED_FLOW"] = 15027
+                constants["TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED"] = 15028
+                
+                // Google Common Status Codes - valores reais do SDK
+                constants["SUCCESS"] = 0
+                constants["SUCCESS_CACHE"] = -1
+                constants["SERVICE_VERSION_UPDATE_REQUIRED"] = 2
+                constants["SERVICE_DISABLED"] = 3
+                constants["SIGN_IN_REQUIRED"] = 4
+                constants["INVALID_ACCOUNT"] = 5
+                constants["RESOLUTION_REQUIRED"] = 6
+                constants["NETWORK_ERROR"] = 7
+                constants["INTERNAL_ERROR"] = 8
+                constants["DEVELOPER_ERROR"] = 10
+                constants["ERROR"] = 13
+                constants["INTERRUPTED"] = 14
+                constants["TIMEOUT"] = 15
+                constants["CANCELED"] = 16
+                constants["API_NOT_CONNECTED"] = 17
+                constants["REMOTE_EXCEPTION"] = 19
+                constants["CONNECTION_SUSPENDED_DURING_CALL"] = 20
+                constants["RECONNECTION_TIMED_OUT_DURING_UPDATE"] = 21
+                constants["RECONNECTION_TIMED_OUT"] = 22
+                
+                Log.i(TAG, "> Constantes do TapAndPay obtidas com sucesso")
+            } catch (e: Exception) {
+                Log.w(TAG, "> Erro ao obter constantes do TapAndPay: ${e.message}")
+                // Se houver erro, usar valores padrão
+                addDefaultConstants(constants)
+            }
         } else {
             Log.w(TAG, "> SDK não disponível, retornando valores padrão para constantes")
-            
-            // Retorna valores padrão quando SDK não está disponível
-            constants["TOKEN_PROVIDER_ELO"] = -1
-            constants["CARD_NETWORK_ELO"] = -1
-            constants["TOKEN_STATE_UNTOKENIZED"] = -1
-            constants["TOKEN_STATE_PENDING"] = -1
-            constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = -1
-            constants["TOKEN_STATE_SUSPENDED"] = -1
-            constants["TOKEN_STATE_ACTIVE"] = -1
-            constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = -1
+            addDefaultConstants(constants)
         }
         
         Log.i(TAG, "> getConstants completed")
         return constants
+    }
+    
+    private fun addDefaultConstants(constants: MutableMap<String, Any>) {
+        // Google Token Provider - valores padrão
+        constants["TOKEN_PROVIDER_AMEX"] = -1
+        constants["TOKEN_PROVIDER_DISCOVER"] = -1
+        constants["TOKEN_PROVIDER_JCB"] = -1
+        constants["TOKEN_PROVIDER_MASTERCARD"] = -1
+        constants["TOKEN_PROVIDER_VISA"] = -1
+        constants["TOKEN_PROVIDER_ELO"] = -1
+        
+        // Google Card Network - valores padrão
+        constants["CARD_NETWORK_AMEX"] = -1
+        constants["CARD_NETWORK_DISCOVER"] = -1
+        constants["CARD_NETWORK_MASTERCARD"] = -1
+        constants["CARD_NETWORK_QUICPAY"] = -1
+        constants["CARD_NETWORK_PRIVATE_LABEL"] = -1
+        constants["CARD_NETWORK_VISA"] = -1
+        constants["CARD_NETWORK_ELO"] = -1
+        
+        // TapAndPay Status Codes - valores reais do SDK
+        constants["TAP_AND_PAY_NO_ACTIVE_WALLET"] = 15002
+        constants["TAP_AND_PAY_TOKEN_NOT_FOUND"] = 15003
+        constants["TAP_AND_PAY_INVALID_TOKEN_STATE"] = 15004
+        constants["TAP_AND_PAY_ATTESTATION_ERROR"] = 15005
+        constants["TAP_AND_PAY_UNAVAILABLE"] = 15009
+        constants["TAP_AND_PAY_SAVE_CARD_ERROR"] = 15019
+        constants["TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION"] = 15021
+        constants["TAP_AND_PAY_TOKENIZATION_DECLINED"] = 15022
+        constants["TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR"] = 15023
+        constants["TAP_AND_PAY_TOKENIZE_ERROR"] = 15024
+        constants["TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED"] = 15025
+        constants["TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"] = 15026
+        constants["TAP_AND_PAY_USER_CANCELED_FLOW"] = 15027
+        constants["TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED"] = 15028
+        
+        // Google Token State - valores padrão
+        constants["TOKEN_STATE_ACTIVE"] = -1
+        constants["TOKEN_STATE_PENDING"] = -1
+        constants["TOKEN_STATE_SUSPENDED"] = -1
+        constants["TOKEN_STATE_UNTOKENIZED"] = -1
+        constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = -1
+        constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = -1
+        
+        // Google Common Status Codes - valores reais do SDK
+        constants["SUCCESS"] = 0
+        constants["SUCCESS_CACHE"] = -1
+        constants["SERVICE_VERSION_UPDATE_REQUIRED"] = 2
+        constants["SERVICE_DISABLED"] = 3
+        constants["SIGN_IN_REQUIRED"] = 4
+        constants["INVALID_ACCOUNT"] = 5
+        constants["RESOLUTION_REQUIRED"] = 6
+        constants["NETWORK_ERROR"] = 7
+        constants["INTERNAL_ERROR"] = 8
+        constants["DEVELOPER_ERROR"] = 10
+        constants["ERROR"] = 13
+        constants["INTERRUPTED"] = 14
+        constants["TIMEOUT"] = 15
+        constants["CANCELED"] = 16
+        constants["API_NOT_CONNECTED"] = 17
+        constants["REMOTE_EXCEPTION"] = 19
+        constants["CONNECTION_SUSPENDED_DURING_CALL"] = 20
+        constants["RECONNECTION_TIMED_OUT_DURING_UPDATE"] = 21
+        constants["RECONNECTION_TIMED_OUT"] = 22
     }
 
 

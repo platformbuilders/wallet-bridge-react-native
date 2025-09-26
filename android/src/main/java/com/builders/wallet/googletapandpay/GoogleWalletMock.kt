@@ -417,20 +417,20 @@ class GoogleWalletMock : GoogleWalletContract {
         Log.d(TAG, "🔍 [MOCK] getEnvironment chamado")
         fetchFromLocalAPI(
             endpoint = "/wallet/environment",
-            defaultResponse = { "PRODUCTION" },
+            defaultResponse = { "PROD" },
             onSuccess = { json ->
                 try {
                     if (json.has("environment")) {
                         promise.resolve(json.getString("environment"))
                     } else {
-                        promise.resolve("PRODUCTION")
+                        promise.resolve("PROD")
                     }
                 } catch (e: Exception) {
-                    promise.resolve("PRODUCTION")
+                    promise.resolve("PROD")
                 }
             },
             onError = { _ ->
-                promise.resolve("PRODUCTION")
+                promise.resolve("PROD")
             }
         )
     }
@@ -873,15 +873,67 @@ class GoogleWalletMock : GoogleWalletContract {
         
         constants["SDK_NAME"] = "GoogleWallet"
         
-        // Constantes fixas baseadas nos valores fornecidos
-        constants["TOKEN_PROVIDER_ELO"] = 14  // ELO: 14
-        constants["CARD_NETWORK_ELO"] = 12    // ELO: 12
+        // Google Token Provider - valores simulados
+        constants["TOKEN_PROVIDER_AMEX"] = 1
+        constants["TOKEN_PROVIDER_DISCOVER"] = 2
+        constants["TOKEN_PROVIDER_JCB"] = 3
+        constants["TOKEN_PROVIDER_MASTERCARD"] = 4
+        constants["TOKEN_PROVIDER_VISA"] = 5
+        constants["TOKEN_PROVIDER_ELO"] = 14
+        
+        // Google Card Network - valores simulados
+        constants["CARD_NETWORK_AMEX"] = 1
+        constants["CARD_NETWORK_DISCOVER"] = 2
+        constants["CARD_NETWORK_MASTERCARD"] = 3
+        constants["CARD_NETWORK_QUICPAY"] = 4
+        constants["CARD_NETWORK_PRIVATE_LABEL"] = 5
+        constants["CARD_NETWORK_VISA"] = 6
+        constants["CARD_NETWORK_ELO"] = 12
+        
+        // TapAndPay Status Codes - valores reais do SDK
+        constants["TAP_AND_PAY_NO_ACTIVE_WALLET"] = 15002
+        constants["TAP_AND_PAY_TOKEN_NOT_FOUND"] = 15003
+        constants["TAP_AND_PAY_INVALID_TOKEN_STATE"] = 15004
+        constants["TAP_AND_PAY_ATTESTATION_ERROR"] = 15005
+        constants["TAP_AND_PAY_UNAVAILABLE"] = 15009
+        constants["TAP_AND_PAY_SAVE_CARD_ERROR"] = 15019
+        constants["TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION"] = 15021
+        constants["TAP_AND_PAY_TOKENIZATION_DECLINED"] = 15022
+        constants["TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR"] = 15023
+        constants["TAP_AND_PAY_TOKENIZE_ERROR"] = 15024
+        constants["TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED"] = 15025
+        constants["TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"] = 15026
+        constants["TAP_AND_PAY_USER_CANCELED_FLOW"] = 15027
+        constants["TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED"] = 15028
+        
+        // Google Token State - valores simulados
         constants["TOKEN_STATE_UNTOKENIZED"] = 1
         constants["TOKEN_STATE_PENDING"] = 2
         constants["TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION"] = 3
         constants["TOKEN_STATE_SUSPENDED"] = 4
         constants["TOKEN_STATE_ACTIVE"] = 5
         constants["TOKEN_STATE_FELICA_PENDING_PROVISIONING"] = 6
+        
+        // Google Common Status Codes - valores reais do SDK
+        constants["SUCCESS"] = 0
+        constants["SUCCESS_CACHE"] = -1
+        constants["SERVICE_VERSION_UPDATE_REQUIRED"] = 2
+        constants["SERVICE_DISABLED"] = 3
+        constants["SIGN_IN_REQUIRED"] = 4
+        constants["INVALID_ACCOUNT"] = 5
+        constants["RESOLUTION_REQUIRED"] = 6
+        constants["NETWORK_ERROR"] = 7
+        constants["INTERNAL_ERROR"] = 8
+        constants["DEVELOPER_ERROR"] = 10
+        constants["ERROR"] = 13
+        constants["INTERRUPTED"] = 14
+        constants["TIMEOUT"] = 15
+        constants["CANCELED"] = 16
+        constants["API_NOT_CONNECTED"] = 17
+        constants["REMOTE_EXCEPTION"] = 19
+        constants["CONNECTION_SUSPENDED_DURING_CALL"] = 20
+        constants["RECONNECTION_TIMED_OUT_DURING_UPDATE"] = 21
+        constants["RECONNECTION_TIMED_OUT"] = 22
         
         Log.d(TAG, "✅ [MOCK] Constantes obtidas (simuladas)")
         return constants
