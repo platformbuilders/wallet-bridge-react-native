@@ -1059,7 +1059,7 @@ app.get('/wallet/view-token', (req, res) => {
   // Simular busca do token na lista de tokens mock
   const mockTokens = mockData.tokens;
   const foundToken = mockTokens.find(token => 
-    token.issuerTokenId === tokenId && token.tokenServiceProvider == provider
+    token.issuerTokenId === tokenId && token.tokenServiceProvider === provider
   );
   
   if (foundToken) {
