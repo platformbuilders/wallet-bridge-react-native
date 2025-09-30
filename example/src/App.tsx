@@ -8,6 +8,9 @@ import {
   Image,
   View,
   Clipboard,
+  Animated,
+  Easing,
+  Dimensions,
 } from 'react-native';
 import {
   GoogleWalletModule as GoogleWalletClient,
@@ -187,7 +190,8 @@ const handleGoogleWalletError = (
   return `Erro ao adicionar cartão: ${errorMessage}`;
 };
 
-export default function App(): React.JSX.Element {
+// Componente GooglePayExample
+function GooglePayExample(): React.JSX.Element {
   // Estado para o OPC (Opaque Payment Card)
   const [opcValue, setOpcValue] = useState(
     'M0VGNkZENjRFMEM1MTdEOTgwOEU4N0RGMzRCNkE0M0U4QURBNUEyNjIzQjgyQzEzODZEQkZGN0JEQzM3NzI4NjQ0ODMzRDhBODlFREEwODhDREI2NkMwODM2NkQxRERCN0EzQ0U0RkZFMjJERUZFMEYwM0VCQjlBRkVGNDEzNUQxMjhFODg4NkIzMjBFREZENzk5OUMyODQ4ODRCMzNBMURCNDA0MjQwRDYxMEJDNzRFMjQzMTcwRkNBQzEzRjgzQ0Y4ODI0RTc1QkE4RENGRTY3MjRDQ0U4MEIxM0RCOUMwRjA2MkYzQkIzMjJBNjlE'
@@ -874,297 +878,432 @@ export default function App(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 40 }}
-      >
-        <Text style={styles.title}>Google Wallet - Exemplo</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
+      <Text style={styles.title}>Google Wallet - Exemplo</Text>
 
-        {/* Componente unificado de status e resultado do intent */}
-        <View style={styles.intentStatusSection}>
-          <Text style={styles.intentStatusTitle}>
-            Google Wallet - App 2 App
-          </Text>
-          <View
+      {/* Componente unificado de status e resultado do intent */}
+      <View style={styles.intentStatusSection}>
+        <Text style={styles.intentStatusTitle}>Google Wallet - App 2 App</Text>
+        <View
+          style={[
+            styles.intentStatusIndicator,
+            intentResult
+              ? styles.intentStatusActive
+              : isCheckingPendingData
+                ? styles.intentStatusChecking
+                : styles.intentStatusInactive,
+          ]}
+        >
+          <Text
             style={[
-              styles.intentStatusIndicator,
+              styles.intentStatusText,
               intentResult
-                ? styles.intentStatusActive
+                ? styles.intentStatusTextActive
                 : isCheckingPendingData
-                  ? styles.intentStatusChecking
-                  : styles.intentStatusInactive,
+                  ? styles.intentStatusTextChecking
+                  : styles.intentStatusTextInactive,
             ]}
           >
-            <Text
-              style={[
-                styles.intentStatusText,
-                intentResult
-                  ? styles.intentStatusTextActive
-                  : isCheckingPendingData
-                    ? styles.intentStatusTextChecking
-                    : styles.intentStatusTextInactive,
-              ]}
-            >
-              {intentResult
-                ? '🎯 Intent Recebido'
-                : isCheckingPendingData
-                  ? '🔍 Verificando Dados...'
-                  : '⏳ Aguardando Intent'}
-            </Text>
-          </View>
-          <Text style={styles.intentStatusDescription}>
             {intentResult
-              ? `Último intent recebido em ${new Date().toLocaleTimeString()}`
+              ? '🎯 Intent Recebido'
               : isCheckingPendingData
-                ? 'Verificando se há dados pendentes da MainActivity...'
-                : 'O app está escutando por intents da carteira do Google'}
+                ? '🔍 Verificando Dados...'
+                : '⏳ Aguardando Intent'}
           </Text>
+        </View>
+        <Text style={styles.intentStatusDescription}>
+          {intentResult
+            ? `Último intent recebido em ${new Date().toLocaleTimeString()}`
+            : isCheckingPendingData
+              ? 'Verificando se há dados pendentes da MainActivity...'
+              : 'O app está escutando por intents da carteira do Google'}
+        </Text>
 
-          {/* Seção de detalhes do intent quando disponível */}
-          {intentResult && (
-            <View style={styles.intentResultContent}>
+        {/* Seção de detalhes do intent quando disponível */}
+        {intentResult && (
+          <View style={styles.intentResultContent}>
+            <Text style={styles.intentResultText}>
+              <Text style={styles.intentResultLabel}>Tipo:</Text>{' '}
+              {intentResult.type}
+            </Text>
+            <Text style={styles.intentResultText}>
+              <Text style={styles.intentResultLabel}>Ação:</Text>{' '}
+              {intentResult.action}
+            </Text>
+            {intentResult.callingPackage && (
               <Text style={styles.intentResultText}>
-                <Text style={styles.intentResultLabel}>Tipo:</Text>{' '}
-                {intentResult.type}
+                <Text style={styles.intentResultLabel}>Package:</Text>{' '}
+                {intentResult.callingPackage}
               </Text>
+            )}
+            {intentResult.data && (
               <Text style={styles.intentResultText}>
-                <Text style={styles.intentResultLabel}>Ação:</Text>{' '}
-                {intentResult.action}
+                <Text style={styles.intentResultLabel}>Dados:</Text>{' '}
+                {intentResult.data.substring(0, 50)}...
               </Text>
-              {intentResult.callingPackage && (
-                <Text style={styles.intentResultText}>
-                  <Text style={styles.intentResultLabel}>Package:</Text>{' '}
-                  {intentResult.callingPackage}
-                </Text>
-              )}
-              {intentResult.data && (
-                <Text style={styles.intentResultText}>
-                  <Text style={styles.intentResultLabel}>Dados:</Text>{' '}
-                  {intentResult.data.substring(0, 50)}...
-                </Text>
-              )}
-              {intentResult.dataFormat && (
-                <Text style={styles.intentResultText}>
-                  <Text style={styles.intentResultLabel}>Formato:</Text>{' '}
-                  {intentResult.dataFormat}
-                </Text>
-              )}
-              {intentResult.originalData && (
-                <Text style={styles.intentResultText}>
-                  <Text style={styles.intentResultLabel}>
-                    Dados Originais (Base64):
-                  </Text>{' '}
-                  {intentResult.originalData.substring(0, 50)}...
-                </Text>
-              )}
-              {intentResult.error && (
-                <Text
-                  style={[styles.intentResultText, styles.intentResultError]}
-                >
-                  <Text style={styles.intentResultLabel}>Erro:</Text>{' '}
-                  {intentResult.error}
-                </Text>
-              )}
+            )}
+            {intentResult.dataFormat && (
               <Text style={styles.intentResultText}>
-                <Text style={styles.intentResultLabel}>Timestamp:</Text>{' '}
-                {new Date().toLocaleString()}
+                <Text style={styles.intentResultLabel}>Formato:</Text>{' '}
+                {intentResult.dataFormat}
               </Text>
+            )}
+            {intentResult.originalData && (
+              <Text style={styles.intentResultText}>
+                <Text style={styles.intentResultLabel}>
+                  Dados Originais (Base64):
+                </Text>{' '}
+                {intentResult.originalData.substring(0, 50)}...
+              </Text>
+            )}
+            {intentResult.error && (
+              <Text style={[styles.intentResultText, styles.intentResultError]}>
+                <Text style={styles.intentResultLabel}>Erro:</Text>{' '}
+                {intentResult.error}
+              </Text>
+            )}
+            <Text style={styles.intentResultText}>
+              <Text style={styles.intentResultLabel}>Timestamp:</Text>{' '}
+              {new Date().toLocaleString()}
+            </Text>
 
-              {/* Dados decodificados integrados */}
-              {decodedData && (
-                <>
-                  <View style={styles.decodedDataDivider} />
-                  <Text style={styles.decodedDataTitle}>
-                    📋 Dados Decodificados
-                    {intentResult.dataFormat ===
-                      GoogleWalletDataFormat.BASE64_DECODED && ' (Automático)'}
-                    {intentResult.dataFormat === GoogleWalletDataFormat.RAW &&
-                      ' (Manual)'}
-                  </Text>
-                  <View style={styles.decodedDataContent}>
-                    <Text style={styles.decodedDataText}>
-                      {typeof decodedData === 'object' && decodedData !== null
-                        ? JSON.stringify(decodedData, null, 2)
-                        : String(decodedData)}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.copyButton}
-                    onPress={() => {
-                      const dataToCopy =
-                        typeof decodedData === 'object'
-                          ? JSON.stringify(decodedData, null, 2)
-                          : String(decodedData);
-                      Clipboard.setString(dataToCopy);
-                      Alert.alert(
-                        'Sucesso',
-                        'Dados decodificados copiados para a área de transferência!'
-                      );
-                    }}
-                  >
-                    <Text style={styles.copyButtonText}>
-                      📋 Copiar Dados Decodificados
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              )}
-
-              {/* Seção para testar resultado de ativação - só aparece quando há intent result */}
-              <View style={styles.activationResultSection}>
+            {/* Dados decodificados integrados */}
+            {decodedData && (
+              <>
                 <View style={styles.decodedDataDivider} />
-                <Text style={styles.activationResultTitle}>
-                  🎯 Definir Resultado de Ativação
+                <Text style={styles.decodedDataTitle}>
+                  📋 Dados Decodificados
+                  {intentResult.dataFormat ===
+                    GoogleWalletDataFormat.BASE64_DECODED && ' (Automático)'}
+                  {intentResult.dataFormat === GoogleWalletDataFormat.RAW &&
+                    ' (Manual)'}
                 </Text>
-                <Text style={styles.activationResultDescription}>
-                  Use os botões abaixo para definir o resultado da ativação do
-                  token para o Google Wallet:
-                </Text>
-
-                <View style={styles.opcButtonsContainer}>
-                  <TouchableOpacity
-                    style={[styles.clearButton, { backgroundColor: '#4caf50' }]}
-                    onPress={() =>
-                      handleSetActivationResult(GoogleActivationStatus.APPROVED)
-                    }
-                  >
-                    <Text style={styles.clearButtonText}>✅ Aprovar</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.pasteButton, { backgroundColor: '#ff9800' }]}
-                    onPress={() =>
-                      handleSetActivationResult(GoogleActivationStatus.DECLINED)
-                    }
-                  >
-                    <Text style={styles.pasteButtonText}>❌ Recusar</Text>
-                  </TouchableOpacity>
+                <View style={styles.decodedDataContent}>
+                  <Text style={styles.decodedDataText}>
+                    {typeof decodedData === 'object' && decodedData !== null
+                      ? JSON.stringify(decodedData, null, 2)
+                      : String(decodedData)}
+                  </Text>
                 </View>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={() => {
+                    const dataToCopy =
+                      typeof decodedData === 'object'
+                        ? JSON.stringify(decodedData, null, 2)
+                        : String(decodedData);
+                    Clipboard.setString(dataToCopy);
+                    Alert.alert(
+                      'Sucesso',
+                      'Dados decodificados copiados para a área de transferência!'
+                    );
+                  }}
+                >
+                  <Text style={styles.copyButtonText}>
+                    📋 Copiar Dados Decodificados
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
 
-                <View style={styles.opcButtonsContainer}>
-                  <TouchableOpacity
-                    style={[styles.clearButton, { backgroundColor: '#f44336' }]}
-                    onPress={() =>
-                      handleSetActivationResult(GoogleActivationStatus.FAILURE)
-                    }
-                  >
-                    <Text style={styles.clearButtonText}>💥 Falha</Text>
-                  </TouchableOpacity>
+            {/* Seção para testar resultado de ativação - só aparece quando há intent result */}
+            <View style={styles.activationResultSection}>
+              <View style={styles.decodedDataDivider} />
+              <Text style={styles.activationResultTitle}>
+                🎯 Definir Resultado de Ativação
+              </Text>
+              <Text style={styles.activationResultDescription}>
+                Use os botões abaixo para definir o resultado da ativação do
+                token para o Google Wallet:
+              </Text>
 
-                  <TouchableOpacity
-                    style={[styles.pasteButton, { backgroundColor: '#2196f3' }]}
-                    onPress={() =>
-                      handleSetActivationResult(
-                        GoogleActivationStatus.APPROVED,
-                        'ACTIVATION_CODE_12345'
-                      )
-                    }
-                  >
-                    <Text style={styles.pasteButtonText}>
-                      ✅ Aprovar + Código
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.opcButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.clearButton, { backgroundColor: '#4caf50' }]}
+                  onPress={() =>
+                    handleSetActivationResult(GoogleActivationStatus.APPROVED)
+                  }
+                >
+                  <Text style={styles.clearButtonText}>✅ Aprovar</Text>
+                </TouchableOpacity>
 
-                {/* Botões para finalizar atividade */}
-                <View style={styles.finishButtonsContainer}>
-                  <TouchableOpacity
-                    style={[
-                      styles.finishButton,
-                      { backgroundColor: '#9c27b0' },
-                    ]}
-                    onPress={handleFinishActivity}
-                  >
-                    <Text style={styles.finishButtonText}>
-                      🚪 Finalizar e Voltar
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[styles.pasteButton, { backgroundColor: '#ff9800' }]}
+                  onPress={() =>
+                    handleSetActivationResult(GoogleActivationStatus.DECLINED)
+                  }
+                >
+                  <Text style={styles.pasteButtonText}>❌ Recusar</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.opcButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.clearButton, { backgroundColor: '#f44336' }]}
+                  onPress={() =>
+                    handleSetActivationResult(GoogleActivationStatus.FAILURE)
+                  }
+                >
+                  <Text style={styles.clearButtonText}>💥 Falha</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.pasteButton, { backgroundColor: '#2196f3' }]}
+                  onPress={() =>
+                    handleSetActivationResult(
+                      GoogleActivationStatus.APPROVED,
+                      'ACTIVATION_CODE_12345'
+                    )
+                  }
+                >
+                  <Text style={styles.pasteButtonText}>
+                    ✅ Aprovar + Código
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Botões para finalizar atividade */}
+              <View style={styles.finishButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.finishButton, { backgroundColor: '#9c27b0' }]}
+                  onPress={handleFinishActivity}
+                >
+                  <Text style={styles.finishButtonText}>
+                    🚪 Finalizar e Voltar
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
-          )}
-        </View>
-
-        {/* Seção para adicionar cartão com OPC personalizado */}
-        <View style={styles.addCardSection}>
-          <Text style={styles.sectionTitle}>
-            Adicionar Cartão à Google Wallet
-          </Text>
-
-          <Text style={styles.inputLabel}>OPC (Opaque Payment Card):</Text>
-          <TextInput
-            style={styles.opcInput}
-            value={opcValue}
-            onChangeText={setOpcValue}
-            placeholder="Cole aqui o OPC do seu cartão"
-            multiline
-            numberOfLines={3}
-          />
-
-          {/* Botões de ação para o OPC */}
-          <View style={styles.opcButtonsContainer}>
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={handleClearOPC}
-            >
-              <Text style={styles.clearButtonText}>🧹 Limpar OPC</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.pasteButton}
-              onPress={handlePasteOPC}
-            >
-              <Text style={styles.pasteButtonText}>📋 Colar OPC</Text>
-            </TouchableOpacity>
           </View>
+        )}
+      </View>
 
-          <TouchableOpacity
-            style={styles.googleWalletButton}
-            onPress={() => handleAddCard(opcValue)}
-          >
-            <Image
-              source={require('./assets/br_add_to_google_wallet_add-wallet-badge.png')}
-              style={styles.googleWalletBadge}
-              resizeMode="contain"
-            />
+      {/* Seção para adicionar cartão com OPC personalizado */}
+      <View style={styles.addCardSection}>
+        <Text style={styles.sectionTitle}>
+          Adicionar Cartão à Google Wallet
+        </Text>
+
+        <Text style={styles.inputLabel}>OPC (Opaque Payment Card):</Text>
+        <TextInput
+          style={styles.opcInput}
+          value={opcValue}
+          onChangeText={setOpcValue}
+          placeholder="Cole aqui o OPC do seu cartão"
+          multiline
+          numberOfLines={3}
+        />
+
+        {/* Botões de ação para o OPC */}
+        <View style={styles.opcButtonsContainer}>
+          <TouchableOpacity style={styles.clearButton} onPress={handleClearOPC}>
+            <Text style={styles.clearButtonText}>🧹 Limpar OPC</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.pasteButton} onPress={handlePasteOPC}>
+            <Text style={styles.pasteButtonText}>📋 Colar OPC</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={styles.button}
-          onPress={handleCheckAvailability}
+          style={styles.googleWalletButton}
+          onPress={() => handleAddCard(opcValue)}
         >
-          <Text style={styles.buttonText}>Verificar Disponibilidade</Text>
+          <Image
+            source={require('./assets/br_add_to_google_wallet_add-wallet-badge.png')}
+            style={styles.googleWalletBadge}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
+      </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
-          <Text style={styles.buttonText}>Criar Google Wallet</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleCheckAvailability}>
+        <Text style={styles.buttonText}>Verificar Disponibilidade</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
-          <Text style={styles.buttonText}>Obter Informações da Wallet</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleCreateWallet}>
+        <Text style={styles.buttonText}>Criar Google Wallet</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleGetTokenStatus}>
-          <Text style={styles.buttonText}>Status do Token</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleGetWalletInfo}>
+        <Text style={styles.buttonText}>Obter Informações da Wallet</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleGetEnvironment}>
-          <Text style={styles.buttonText}>Obter Environment</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleGetTokenStatus}>
+        <Text style={styles.buttonText}>Status do Token</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleIsTokenized}>
-          <Text style={styles.buttonText}>Verificar Tokenização</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleGetEnvironment}>
+        <Text style={styles.buttonText}>Obter Environment</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleViewToken}>
-          <Text style={styles.buttonText}>Visualizar Token</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleIsTokenized}>
+        <Text style={styles.buttonText}>Verificar Tokenização</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleListTokens}>
-          <Text style={styles.buttonText}>Listar Tokens</Text>
+      <TouchableOpacity style={styles.button} onPress={handleViewToken}>
+        <Text style={styles.buttonText}>Visualizar Token</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleListTokens}>
+        <Text style={styles.buttonText}>Listar Tokens</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+// Componente SamsungPayExample
+function SamsungPayExample(): React.JSX.Element {
+  const handleSamsungPayAction = (): void => {
+    Alert.alert(
+      'Samsung Pay',
+      'Funcionalidade do Samsung Pay será implementada em breve!',
+      [{ text: 'OK' }]
+    );
+  };
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
+      <Text style={styles.title}>Samsung Pay - Exemplo</Text>
+
+      <View style={styles.addCardSection}>
+        <Text style={styles.sectionTitle}>
+          Samsung Pay - Em Desenvolvimento
+        </Text>
+
+        <Text style={styles.inputLabel}>
+          Esta seção será implementada em breve com as funcionalidades do
+          Samsung Pay.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSamsungPayAction}
+        >
+          <Text style={styles.buttonText}>Testar Samsung Pay</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
+    </ScrollView>
+  );
+}
+
+// Componente de botão animado para alternar entre Google Pay e Samsung Pay
+function AnimatedToggleButton({
+  isGooglePay,
+  onToggle,
+}: {
+  isGooglePay: boolean;
+  onToggle: () => void;
+}): React.JSX.Element {
+  const slideAnimation = useState(new Animated.Value(isGooglePay ? 0 : 1))[0];
+  const scaleAnimation = useState(new Animated.Value(1))[0];
+
+  // Calcular largura dinâmica baseada na tela
+  const screenWidth = Dimensions.get('window').width;
+  const containerPadding = 40; // 20px de cada lado
+  const buttonWidth = screenWidth - containerPadding;
+  const indicatorWidth = buttonWidth / 2;
+
+  const toggleAnimation = (): void => {
+    // Animação de escala (pressionar)
+    Animated.sequence([
+      Animated.timing(scaleAnimation, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnimation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Animação de deslizamento
+    Animated.timing(slideAnimation, {
+      toValue: isGooglePay ? 1 : 0,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    onToggle();
+  };
+
+  const slideTranslateX = slideAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, indicatorWidth], // Metade da largura total do botão
+  });
+
+  return (
+    <View style={styles.animatedToggleContainer}>
+      <TouchableOpacity
+        style={[styles.animatedToggleButton, { width: buttonWidth }]}
+        onPress={toggleAnimation}
+        activeOpacity={0.8}
+      >
+        <Animated.View
+          style={[
+            styles.animatedToggleBackground,
+            {
+              transform: [{ scale: scaleAnimation }],
+            },
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.animatedToggleIndicator,
+              {
+                width: indicatorWidth,
+                transform: [{ translateX: slideTranslateX }],
+              },
+            ]}
+          />
+          <View style={styles.animatedToggleLabels}>
+            <Text
+              style={[
+                styles.animatedToggleLabel,
+                isGooglePay && styles.animatedToggleLabelActive,
+              ]}
+            >
+              Google Pay
+            </Text>
+            <Text
+              style={[
+                styles.animatedToggleLabel,
+                !isGooglePay && styles.animatedToggleLabelActive,
+              ]}
+            >
+              Samsung Pay
+            </Text>
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Componente principal App
+export default function App(): React.JSX.Element {
+  const [isGooglePay, setIsGooglePay] = useState(true);
+
+  const handleToggle = (): void => {
+    setIsGooglePay(!isGooglePay);
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      {/* Botão animado para alternar entre Google Pay e Samsung Pay */}
+      <AnimatedToggleButton isGooglePay={isGooglePay} onToggle={handleToggle} />
+
+      {/* Renderizar componente baseado no estado */}
+      {isGooglePay ? <GooglePayExample /> : <SamsungPayExample />}
     </SafeAreaView>
   );
 }
@@ -1466,5 +1605,61 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+  },
+  animatedToggleContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  animatedToggleButton: {
+    height: 50,
+  },
+  animatedToggleBackground: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  animatedToggleIndicator: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    height: 42,
+    backgroundColor: '#4285F4',
+    borderRadius: 21,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  animatedToggleLabels: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  animatedToggleLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    textAlign: 'center',
+    flex: 1,
+  },
+  animatedToggleLabelActive: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
