@@ -55,7 +55,7 @@ export function AnimatedToggleButton({
 
   const slideTranslateX = slideAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, indicatorWidth], // Metade da largura total do botão
+    outputRange: [0, indicatorWidth - 9], // Metade da largura total do botão
   });
 
   return (
