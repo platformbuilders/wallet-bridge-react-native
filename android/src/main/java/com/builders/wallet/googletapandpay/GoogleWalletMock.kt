@@ -1,11 +1,13 @@
 package com.builders.wallet.googletapandpay
 
+import android.app.Activity
 import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableType
+import com.facebook.react.bridge.ReactApplicationContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -15,7 +17,10 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 import com.builders.wallet.BuildConfig
 
-class GoogleWalletMock : GoogleWalletContract {
+class GoogleWalletMock(private val reactContext: ReactApplicationContext) : GoogleWalletContract {
+
+    private var activity: Activity? = null
+    private var intentListenerActive: Boolean = false
 
     companion object {
         private const val TAG = "GoogleWalletMock"
@@ -793,26 +798,26 @@ class GoogleWalletMock : GoogleWalletContract {
 
     override fun removeIntentListener(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] removeIntentListener chamado")
-        fetchFromLocalAPI(
-            endpoint = "/wallet/remove-intent-listener",
-            defaultResponse = { true },
-            onSuccess = { json ->
-                try {
-                    promise.resolve(json.optBoolean("success", true))
-                } catch (_: Exception) {
-                    promise.resolve(true)
-                }
-            },
-            onError = { _ ->
-                promise.resolve(true)
-            },
-            method = "DELETE"
-        )
+        try {
+            intentListenerActive = false
+            Log.d(TAG, "✅ [MOCK] Listener de intent desativado")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro ao desativar listener de intent: ${e.message}", e)
+            promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
+        }
     }
 
     override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
         try {
+            activity = reactContext.currentActivity
+            if (activity == null) {
+                Log.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para definir resultado")
+                promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
+                return
+            }
+
             val validStatuses = listOf("approved", "declined", "failure")
             if (!validStatuses.contains(status)) {
                 Log.w(TAG, "❌ [MOCK] Status inválido: $status. Deve ser: approved, declined ou failure")
@@ -820,50 +825,45 @@ class GoogleWalletMock : GoogleWalletContract {
                 return
             }
 
-            val payload = JSONObject().apply {
-                put("status", status)
-                if (!activationCode.isNullOrEmpty()) put("activationCode", activationCode)
-            }.toString()
+            val resultIntent = android.content.Intent()
+            resultIntent.putExtra("BANKING_APP_ACTIVATION_RESPONSE", status)
 
-            fetchFromLocalAPI(
-                endpoint = "/wallet/set-activation-result",
-                defaultResponse = { true },
-                onSuccess = { json ->
-                    try {
-                        promise.resolve(json.optBoolean("success", true))
-                    } catch (_: Exception) {
-                        promise.resolve(true)
-                    }
-                },
-                onError = { _ ->
-                    promise.resolve(true)
-                },
-                method = "POST",
-                body = payload
-            )
+            if (activationCode != null && activationCode.isNotEmpty() && status == "approved") {
+                Log.d(TAG, "🔍 [MOCK] Adicionando activationCode: $activationCode")
+                resultIntent.putExtra("BANKING_APP_ACTIVATION_CODE", activationCode)
+            }
+
+            activity?.setResult(Activity.RESULT_OK, resultIntent)
+
+            Log.d(TAG, "✅ [MOCK] Resultado de ativação definido - Status: $status")
+            if (activationCode != null && activationCode.isNotEmpty() && status == "approved") {
+                Log.d(TAG, "✅ [MOCK] ActivationCode incluído: $activationCode")
+            }
+
+            promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em setActivationResult: ${e.message}", e)
+            Log.e(TAG, "❌ [MOCK] Erro ao definir resultado de ativação: ${e.message}", e)
             promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
         }
     }
 
     override fun finishActivity(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] finishActivity chamado")
-        fetchFromLocalAPI(
-            endpoint = "/wallet/finish-activity",
-            defaultResponse = { true },
-            onSuccess = { json ->
-                try {
-                    promise.resolve(json.optBoolean("success", true))
-                } catch (_: Exception) {
-                    promise.resolve(true)
-                }
-            },
-            onError = { _ ->
-                promise.resolve(true)
-            },
-            method = "POST"
-        )
+        try {
+            activity = reactContext.currentActivity
+            if (activity == null) {
+                Log.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para finalizar")
+                promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
+                return
+            }
+
+            activity?.finish()
+            Log.d(TAG, "✅ [MOCK] Atividade finalizada com sucesso")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro ao finalizar atividade: ${e.message}", e)
+            promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
+        }
     }
 
     override fun getConstants(): MutableMap<String, Any> {
