@@ -28,7 +28,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         private const val REQUEST_TIMEOUT = 5000 // 5 segundos
         
         // Obter URL da API do BuildConfig
-        private val API_BASE_URL: String? by lazy {
+        private val API_BASE_URL: String by lazy {
             try {
                 val buildConfigUrl = BuildConfig.GOOGLE_WALLET_MOCK_API_URL
                 if (buildConfigUrl.isNotEmpty()) {
@@ -36,12 +36,12 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                     return@lazy buildConfigUrl
                 }
                 
-                // Se não configurado, retorna null para usar apenas valores padrão
-                Log.d(TAG, "🌐 [MOCK] API URL não configurada, usando apenas valores padrão")
-                null
+                // Se não configurado, usar DEFAULT_API_BASE_URL
+                Log.d(TAG, "🌐 [MOCK] API URL não configurada, usando DEFAULT: $DEFAULT_API_BASE_URL")
+                DEFAULT_API_BASE_URL
             } catch (e: Exception) {
                 Log.w(TAG, "⚠️ [MOCK] Erro ao obter URL da API: ${e.message}")
-                null
+                DEFAULT_API_BASE_URL
             }
         }
         
@@ -71,15 +71,8 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         method: String = "GET",
         body: String? = null
     ) {
-        // Verificar se a API URL está configurada
+        // API_BASE_URL sempre definido (usa DEFAULT quando não configurado)
         val apiUrl = API_BASE_URL
-        if (apiUrl == null) {
-            Log.d(TAG, "🔄 [MOCK] API URL não configurada, usando resposta padrão")
-            CoroutineScope(Dispatchers.Main).launch {
-                onError(Exception("API URL não configurada"))
-            }
-            return
-        }
         
         CoroutineScope(Dispatchers.IO).launch {
             var connection: HttpURLConnection? = null
