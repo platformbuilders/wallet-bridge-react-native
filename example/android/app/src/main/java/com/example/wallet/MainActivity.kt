@@ -5,14 +5,14 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
-import com.builders.wallet.googletapandpay.GoogleWalletImplementation
+import com.builders.wallet.googletapandpay.GoogleWalletModule
 
 class MainActivity : ReactActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Delegar processamento de intent para a implementação do Google Wallet
-        GoogleWalletImplementation.processIntent(this, intent)
+        GoogleWalletModule.processIntent(this, intent)
     }
 
     /**

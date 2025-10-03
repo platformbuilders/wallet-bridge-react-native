@@ -28,7 +28,7 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   private val googleWalletImplementation: GoogleWalletContract by lazy {
     if (useMock) {
       Log.d(TAG, "🔧 [MODULE] Usando implementação MOCK")
-      GoogleWalletMock()
+      GoogleWalletMock(reactContext)
     } else {
       Log.d(TAG, "🔧 [MODULE] Usando implementação REAL")
       GoogleWalletImplementation(reactContext)
@@ -109,6 +109,8 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
     googleWalletImplementation.finishActivity(promise)
   }
 
+
+
   override fun getConstants(): MutableMap<String, Any> {
     val constants = googleWalletImplementation.getConstants().toMutableMap()
     
@@ -127,5 +129,32 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "GoogleWallet"
     private const val TAG = "GoogleWallet"
+
+    @JvmStatic
+    fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
+      try {
+        // Determinar se deve usar mock baseado na configuração
+        val useMock = try {
+          val mockValue = BuildConfig.GOOGLE_WALLET_USE_MOCK
+          Log.d(TAG, "🔧 [STATIC] GOOGLE_WALLET_USE_MOCK = $mockValue")
+          mockValue
+        } catch (e: Exception) {
+          Log.w(TAG, "🔧 [STATIC] GOOGLE_WALLET_USE_MOCK não definido, usando padrão: false")
+          false
+        }
+
+        Log.d(TAG, "🔍 [STATIC] processIntent chamado - Action: ${intent.action}")
+        
+        if (useMock) {
+          Log.d(TAG, "🔧 [STATIC] Processando intent com MOCK")
+          GoogleWalletMock.processIntent(activity, intent)
+        } else {
+          Log.d(TAG, "🔧 [STATIC] Processando intent com IMPLEMENTATION")
+          GoogleWalletImplementation.processIntent(activity, intent)
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "❌ [STATIC] Erro ao processar intent: ${e.message}", e)
+      }
+    }
   }
 }
