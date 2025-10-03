@@ -106,48 +106,44 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
             Log.d(TAG, "🔍 [GOOGLE MOCK] processIntent chamado")
             
-            if (intent != null) {
-                Log.d(TAG, "🔍 [GOOGLE MOCK] Intent encontrada: ${intent.action}")
+            Log.d(TAG, "🔍 [GOOGLE MOCK] Intent encontrada: ${intent.action}")
+            
+            // Verificar se é um intent do Google Pay/Wallet
+            if (isGooglePayIntent(intent)) {
+                Log.d(TAG, "✅ [GOOGLE MOCK] Intent do Google Pay detectada")
                 
-                // Verificar se é um intent do Google Pay/Wallet
-                if (isGooglePayIntent(intent)) {
-                    Log.d(TAG, "✅ [GOOGLE MOCK] Intent do Google Pay detectada")
+                // Validar chamador
+                if (isValidCallingPackage(activity)) {
+                    Log.d(TAG, "✅ [GOOGLE MOCK] Chamador validado: Google Play Services")
                     
-                    // Validar chamador
-                    if (isValidCallingPackage(activity)) {
-                        Log.d(TAG, "✅ [GOOGLE MOCK] Chamador validado: Google Play Services")
+                    // Extrair dados da intent
+                    val extraText = intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
+                    if (!extraText.isNullOrEmpty()) {
+                        Log.d(TAG, "🔍 [GOOGLE MOCK] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
                         
-                        // Extrair dados da intent
-                        val extraText = intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
-                        if (!extraText.isNullOrEmpty()) {
-                            Log.d(TAG, "🔍 [GOOGLE MOCK] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
-                            
-                            // Armazenar dados para processamento posterior
-                            pendingIntentData = extraText
-                            pendingIntentAction = intent.action
-                            pendingCallingPackage = activity.callingPackage
-                            hasPendingIntentData = true
-                            
-                            Log.d(TAG, "✅ [GOOGLE MOCK] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
-                        } else {
-                            Log.w(TAG, "⚠️ [GOOGLE MOCK] Nenhum dado EXTRA_TEXT encontrado")
-                        }
+                        // Armazenar dados para processamento posterior
+                        pendingIntentData = extraText
+                        pendingIntentAction = intent.action
+                        pendingCallingPackage = activity.callingPackage
+                        hasPendingIntentData = true
                         
-                        // Limpar intent para evitar reprocessamento
-                        activity.intent = android.content.Intent()
-                        
+                        Log.d(TAG, "✅ [GOOGLE MOCK] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
                     } else {
-                        Log.w(TAG, "❌ [GOOGLE MOCK] Chamador inválido: ${activity.callingPackage}")
-                        
-                        // Abortar ativação do token
-                        activity.setResult(android.app.Activity.RESULT_CANCELED)
-                        activity.finish()
+                        Log.w(TAG, "⚠️ [GOOGLE MOCK] Nenhum dado EXTRA_TEXT encontrado")
                     }
+                    
+                    // Limpar intent para evitar reprocessamento
+                    activity.intent = android.content.Intent()
+                    
                 } else {
-                    Log.d(TAG, "🔍 [GOOGLE MOCK] Intent não relacionada ao Google Pay")
+                    Log.w(TAG, "❌ [GOOGLE MOCK] Chamador inválido: ${activity.callingPackage}")
+                    
+                    // Abortar ativação do token
+                    activity.setResult(android.app.Activity.RESULT_CANCELED)
+                    activity.finish()
                 }
             } else {
-                Log.d(TAG, "🔍 [GOOGLE MOCK] Nenhuma intent encontrada")
+                Log.d(TAG, "🔍 [GOOGLE MOCK] Intent não relacionada ao Google Pay")
             }
         }
         
