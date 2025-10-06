@@ -1,19 +1,31 @@
 package com.builders.wallet.samsungpay.util
 
-data class PartnerInfo(
-    val serviceId: String
-)
+import android.util.Log
 
-object PartnerInfoHolder {
-    private val partnerInfoMap = mutableMapOf<String, PartnerInfo>()
+class PartnerInfoHolder private constructor() {
+    var partnerInfo: Any? = null
 
-    fun getInstance(serviceId: String): PartnerInfoHolder {
-        if (!partnerInfoMap.containsKey(serviceId)) {
-            partnerInfoMap[serviceId] = PartnerInfo(serviceId)
+    companion object {
+        @Volatile
+        private var INSTANCE: PartnerInfoHolder? = null
+
+        fun getInstance(serviceId: String): PartnerInfoHolder {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: PartnerInfoHolder().also { instance ->
+                    instance.partnerInfo = createPartnerInfo(serviceId)
+                }
+            }
         }
-        return PartnerInfoHolder
-    }
 
-    val partnerInfo: PartnerInfo
-        get() = partnerInfoMap.values.firstOrNull() ?: PartnerInfo("default")
+        private fun createPartnerInfo(serviceId: String): Any? {
+            return try {
+                val clazz = Class.forName("com.samsung.android.sdk.samsungpay.v2.PartnerInfo")
+                val ctor = clazz.getConstructor(String::class.java)
+                ctor.newInstance(serviceId)
+            } catch (t: Throwable) {
+                Log.e("PartnerInfoHolder", "Falha ao instanciar PartnerInfo por reflexão: ${t.message}", t)
+                null
+            }
+        }
+    }
 }

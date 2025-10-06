@@ -45,10 +45,23 @@ android {
         project.property('GOOGLE_WALLET_USE_MOCK') : 
         "false"
     
-    // Configuração da URL da API Mock
+    // Configuração da URL da API Mock do Google Wallet
     buildConfigField "String", "GOOGLE_WALLET_MOCK_API_URL", 
       project.hasProperty('GOOGLE_WALLET_MOCK_API_URL') ? 
         "\"${project.property('GOOGLE_WALLET_MOCK_API_URL')}\"" : 
+        "\"\""
+    
+    // Configuração para Samsung Wallet Mock
+    // Define se deve usar implementação mock baseado em variável de ambiente
+    buildConfigField "boolean", "SAMSUNG_WALLET_USE_MOCK", 
+      project.hasProperty('SAMSUNG_WALLET_USE_MOCK') ? 
+        project.property('SAMSUNG_WALLET_USE_MOCK') : 
+        "false"
+    
+    // Configuração da URL da API Mock do Samsung Wallet
+    buildConfigField "String", "SAMSUNG_WALLET_MOCK_API_URL", 
+      project.hasProperty('SAMSUNG_WALLET_MOCK_API_URL') ? 
+        "\"${project.property('SAMSUNG_WALLET_MOCK_API_URL')}\"" : 
         "\"\""
   }
   
