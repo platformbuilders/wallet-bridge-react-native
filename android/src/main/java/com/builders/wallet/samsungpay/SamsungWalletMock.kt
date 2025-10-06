@@ -266,25 +266,67 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         val defaultArray = {
             val writableArray = Arguments.createArray()
             
-            // Adicionar alguns cartões simulados
+            // Adicionar alguns cartões simulados seguindo a estrutura do SerializableCard
             val card1 = Arguments.createMap()
+            // Campos básicos do Card
             card1.putString("cardId", "mock_card_001")
-            card1.putString("cardName", "Cartão Mock Visa")
-            card1.putString("lastFourDigits", "1234")
+            card1.putString("cardStatus", "ACTIVE")
+            card1.putString("cardBrand", "VISA")
+            
+            // Campos do cardInfo Bundle (Samsung Pay específicos)
+            card1.putString("last4FPan", "1234")
+            card1.putString("last4DPan", "1234")
+            card1.putString("app2AppPayload", "mock_payload_visa_001")
             card1.putString("cardType", "CREDIT")
             card1.putString("issuerName", "Banco Mock")
+            card1.putString("isDefaultCard", "true")
+            card1.putString("deviceType", "phone")
+            card1.putString("memberID", "mock_member_001")
+            card1.putString("countryCode", "BR")
+            card1.putString("cryptogramType", "UCAF")
+            card1.putString("requireCpf", "false")
+            card1.putString("cpfHolderName", "João Silva")
+            card1.putString("cpfNumber", "12345678901")
+            card1.putString("merchantRefId", "merchant_001")
+            card1.putString("transactionType", "PURCHASE")
+            
+            // Campos de compatibilidade
+            card1.putString("last4", "1234")
             card1.putString("tokenizationProvider", "VISA")
-            card1.putInt("cardState", 1) // ACTIVE
+            card1.putString("network", "VISA")
+            card1.putString("displayName", "Cartão Mock Visa")
+            
             writableArray.pushMap(card1)
             
             val card2 = Arguments.createMap()
+            // Campos básicos do Card
             card2.putString("cardId", "mock_card_002")
-            card2.putString("cardName", "Cartão Mock Mastercard")
-            card2.putString("lastFourDigits", "5678")
+            card2.putString("cardStatus", "ACTIVE")
+            card2.putString("cardBrand", "MASTERCARD")
+            
+            // Campos do cardInfo Bundle (Samsung Pay específicos)
+            card2.putString("last4FPan", "5678")
+            card2.putString("last4DPan", "5678")
+            card2.putString("app2AppPayload", "mock_payload_mc_002")
             card2.putString("cardType", "DEBIT")
             card2.putString("issuerName", "Banco Mock")
+            card2.putString("isDefaultCard", "false")
+            card2.putString("deviceType", "phone")
+            card2.putString("memberID", "mock_member_002")
+            card2.putString("countryCode", "BR")
+            card2.putString("cryptogramType", "ICC")
+            card2.putString("requireCpf", "true")
+            card2.putString("cpfHolderName", "Maria Santos")
+            card2.putString("cpfNumber", "98765432109")
+            card2.putString("merchantRefId", "merchant_002")
+            card2.putString("transactionType", "PURCHASE")
+            
+            // Campos de compatibilidade
+            card2.putString("last4", "5678")
             card2.putString("tokenizationProvider", "MASTERCARD")
-            card2.putInt("cardState", 1) // ACTIVE
+            card2.putString("network", "MASTERCARD")
+            card2.putString("displayName", "Cartão Mock Mastercard")
+            
             writableArray.pushMap(card2)
             
             Log.d(TAG, "✅ [MOCK] Lista de cartões obtida (valor padrão) - ${writableArray.size()} cartões")
@@ -304,13 +346,48 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                             val cardJson = cardsArray.getJSONObject(i)
                             val card = Arguments.createMap()
                             
+                            // Campos básicos do Card
                             if (cardJson.has("cardId")) card.putString("cardId", cardJson.getString("cardId"))
-                            if (cardJson.has("cardName")) card.putString("cardName", cardJson.getString("cardName"))
-                            if (cardJson.has("lastFourDigits")) card.putString("lastFourDigits", cardJson.getString("lastFourDigits"))
+                            if (cardJson.has("cardStatus")) card.putString("cardStatus", cardJson.getString("cardStatus"))
+                            if (cardJson.has("cardBrand")) card.putString("cardBrand", cardJson.getString("cardBrand"))
+                            
+                            // Campos do cardInfo Bundle (Samsung Pay específicos)
+                            if (cardJson.has("last4FPan")) card.putString("last4FPan", cardJson.getString("last4FPan"))
+                            if (cardJson.has("last4DPan")) card.putString("last4DPan", cardJson.getString("last4DPan"))
+                            if (cardJson.has("app2AppPayload")) card.putString("app2AppPayload", cardJson.getString("app2AppPayload"))
                             if (cardJson.has("cardType")) card.putString("cardType", cardJson.getString("cardType"))
                             if (cardJson.has("issuerName")) card.putString("issuerName", cardJson.getString("issuerName"))
+                            if (cardJson.has("isDefaultCard")) card.putString("isDefaultCard", cardJson.getString("isDefaultCard"))
+                            if (cardJson.has("deviceType")) card.putString("deviceType", cardJson.getString("deviceType"))
+                            if (cardJson.has("memberID")) card.putString("memberID", cardJson.getString("memberID"))
+                            if (cardJson.has("countryCode")) card.putString("countryCode", cardJson.getString("countryCode"))
+                            if (cardJson.has("cryptogramType")) card.putString("cryptogramType", cardJson.getString("cryptogramType"))
+                            if (cardJson.has("requireCpf")) card.putString("requireCpf", cardJson.getString("requireCpf"))
+                            if (cardJson.has("cpfHolderName")) card.putString("cpfHolderName", cardJson.getString("cpfHolderName"))
+                            if (cardJson.has("cpfNumber")) card.putString("cpfNumber", cardJson.getString("cpfNumber"))
+                            if (cardJson.has("merchantRefId")) card.putString("merchantRefId", cardJson.getString("merchantRefId"))
+                            if (cardJson.has("transactionType")) card.putString("transactionType", cardJson.getString("transactionType"))
+                            
+                            // Campos de compatibilidade
+                            if (cardJson.has("last4")) card.putString("last4", cardJson.getString("last4"))
                             if (cardJson.has("tokenizationProvider")) card.putString("tokenizationProvider", cardJson.getString("tokenizationProvider"))
-                            if (cardJson.has("cardState")) card.putInt("cardState", cardJson.getInt("cardState"))
+                            if (cardJson.has("network")) card.putString("network", cardJson.getString("network"))
+                            if (cardJson.has("displayName")) card.putString("displayName", cardJson.getString("displayName"))
+                            
+                            // Compatibilidade com campos antigos
+                            if (cardJson.has("cardName")) card.putString("displayName", cardJson.getString("cardName"))
+                            if (cardJson.has("lastFourDigits")) card.putString("last4", cardJson.getString("lastFourDigits"))
+                            if (cardJson.has("cardState")) {
+                                val cardState = cardJson.getInt("cardState")
+                                val status = when (cardState) {
+                                    1 -> "ACTIVE"
+                                    0 -> "INACTIVE"
+                                    2 -> "PENDING"
+                                    3 -> "SUSPENDED"
+                                    else -> "UNKNOWN"
+                                }
+                                card.putString("cardStatus", status)
+                            }
                             
                             writableArray.pushMap(card)
                         }
@@ -335,9 +412,9 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             endpoint = "/samsung/wallet-info",
             defaultResponse = {
                 val result = Arguments.createMap()
-                result.putString("WALLET_DM_ID", "mock_wallet_dm_12345")
-                result.putString("DEVICE_ID", "mock_device_67890")
-                result.putString("WALLET_USER_ID", "mock_user_54321")
+                result.putString("walletDMId", "mock_wallet_dm_12345")
+                result.putString("deviceId", "mock_device_67890")
+                result.putString("walletUserId", "mock_user_54321")
                 Log.d(TAG, "✅ [MOCK] Informações da carteira obtidas (valor padrão)")
                 result
             },
@@ -363,15 +440,37 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         fetchFromLocalAPI(
             endpoint = "/samsung/add-card",
             defaultResponse = { 
-                // Simular cartão adicionado com sucesso
+                // Simular cartão adicionado com sucesso seguindo a estrutura do SerializableCard
                 val card = Arguments.createMap()
-                card.putString("cardId", "mock_card_${System.currentTimeMillis()}")
-                card.putString("cardName", "Cartão Adicionado")
-                card.putString("lastFourDigits", "9999")
+                
+                // Campos básicos do Card
+                card.putString("cardId", "mock_card_added_001")
+                card.putString("cardStatus", "ACTIVE")
+                card.putString("cardBrand", tokenizationProvider)
+                
+                // Campos do cardInfo Bundle (Samsung Pay específicos)
+                card.putString("last4FPan", "9999")
+                card.putString("last4DPan", "9999")
+                card.putString("app2AppPayload", "mock_payload_added_001")
                 card.putString("cardType", "CREDIT")
                 card.putString("issuerName", "Banco Mock")
+                card.putString("isDefaultCard", "false")
+                card.putString("deviceType", "phone")
+                card.putString("memberID", "mock_member_added_001")
+                card.putString("countryCode", "BR")
+                card.putString("cryptogramType", "UCAF")
+                card.putString("requireCpf", "false")
+                card.putString("cpfHolderName", "Usuário Mock")
+                card.putString("cpfNumber", "00000000000")
+                card.putString("merchantRefId", "merchant_added_001")
+                card.putString("transactionType", "PURCHASE")
+                
+                // Campos de compatibilidade
+                card.putString("last4", "9999")
                 card.putString("tokenizationProvider", tokenizationProvider)
-                card.putInt("cardState", 1) // ACTIVE
+                card.putString("network", tokenizationProvider)
+                card.putString("displayName", "Cartão Adicionado")
+                
                 Log.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso (simulado)")
                 card
             },
@@ -384,13 +483,49 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                         promise.reject(errorCode, errorMessage)
                     } else {
                         val card = Arguments.createMap()
-                        card.putString("cardId", json.optString("cardId", "mock_card_${System.currentTimeMillis()}"))
-                        card.putString("cardName", json.optString("cardName", "Cartão Adicionado"))
-                        card.putString("lastFourDigits", json.optString("lastFourDigits", "9999"))
+                        
+                        // Campos básicos do Card
+                        card.putString("cardId", json.optString("cardId", "mock_card_added_001"))
+                        card.putString("cardStatus", json.optString("cardStatus", "ACTIVE"))
+                        card.putString("cardBrand", json.optString("cardBrand", tokenizationProvider))
+                        
+                        // Campos do cardInfo Bundle (Samsung Pay específicos)
+                        card.putString("last4FPan", json.optString("last4FPan", "9999"))
+                        card.putString("last4DPan", json.optString("last4DPan", "9999"))
+                        card.putString("app2AppPayload", json.optString("app2AppPayload", "mock_payload_added_001"))
                         card.putString("cardType", json.optString("cardType", "CREDIT"))
                         card.putString("issuerName", json.optString("issuerName", "Banco API"))
+                        card.putString("isDefaultCard", json.optString("isDefaultCard", "false"))
+                        card.putString("deviceType", json.optString("deviceType", "phone"))
+                        card.putString("memberID", json.optString("memberID", "mock_member_added_001"))
+                        card.putString("countryCode", json.optString("countryCode", "BR"))
+                        card.putString("cryptogramType", json.optString("cryptogramType", "UCAF"))
+                        card.putString("requireCpf", json.optString("requireCpf", "false"))
+                        card.putString("cpfHolderName", json.optString("cpfHolderName", "Usuário API"))
+                        card.putString("cpfNumber", json.optString("cpfNumber", "00000000000"))
+                        card.putString("merchantRefId", json.optString("merchantRefId", "merchant_added_001"))
+                        card.putString("transactionType", json.optString("transactionType", "PURCHASE"))
+                        
+                        // Campos de compatibilidade
+                        card.putString("last4", json.optString("last4", "9999"))
                         card.putString("tokenizationProvider", tokenizationProvider)
-                        card.putInt("cardState", json.optInt("cardState", 1))
+                        card.putString("network", json.optString("network", tokenizationProvider))
+                        card.putString("displayName", json.optString("displayName", "Cartão Adicionado"))
+                        
+                        // Compatibilidade com campos antigos
+                        if (json.has("cardName")) card.putString("displayName", json.getString("cardName"))
+                        if (json.has("lastFourDigits")) card.putString("last4", json.getString("lastFourDigits"))
+                        if (json.has("cardState")) {
+                            val cardState = json.getInt("cardState")
+                            val status = when (cardState) {
+                                1 -> "ACTIVE"
+                                0 -> "INACTIVE"
+                                2 -> "PENDING"
+                                3 -> "SUSPENDED"
+                                else -> "UNKNOWN"
+                            }
+                            card.putString("cardStatus", status)
+                        }
                         
                         Log.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso da API")
                         promise.resolve(card)
@@ -398,26 +533,70 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 } catch (e: Exception) {
                     Log.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
                     val card = Arguments.createMap()
-                    card.putString("cardId", "mock_card_${System.currentTimeMillis()}")
-                    card.putString("cardName", "Cartão Adicionado")
-                    card.putString("lastFourDigits", "9999")
+                    
+                    // Campos básicos do Card
+                    card.putString("cardId", "mock_card_added_001")
+                    card.putString("cardStatus", "ACTIVE")
+                    card.putString("cardBrand", tokenizationProvider)
+                    
+                    // Campos do cardInfo Bundle (Samsung Pay específicos)
+                    card.putString("last4FPan", "9999")
+                    card.putString("last4DPan", "9999")
+                    card.putString("app2AppPayload", "mock_payload_added_001")
                     card.putString("cardType", "CREDIT")
                     card.putString("issuerName", "Banco Mock")
+                    card.putString("isDefaultCard", "false")
+                    card.putString("deviceType", "phone")
+                    card.putString("memberID", "mock_member_added_001")
+                    card.putString("countryCode", "BR")
+                    card.putString("cryptogramType", "UCAF")
+                    card.putString("requireCpf", "false")
+                    card.putString("cpfHolderName", "Usuário Mock")
+                    card.putString("cpfNumber", "00000000000")
+                    card.putString("merchantRefId", "merchant_added_001")
+                    card.putString("transactionType", "PURCHASE")
+                    
+                    // Campos de compatibilidade
+                    card.putString("last4", "9999")
                     card.putString("tokenizationProvider", tokenizationProvider)
-                    card.putInt("cardState", 1)
+                    card.putString("network", tokenizationProvider)
+                    card.putString("displayName", "Cartão Adicionado")
+                    
                     promise.resolve(card)
                 }
             },
             onError = { error ->
                 // Sempre retorna sucesso no fallback de erro
                 val card = Arguments.createMap()
-                card.putString("cardId", "mock_card_${System.currentTimeMillis()}")
-                card.putString("cardName", "Cartão Adicionado")
-                card.putString("lastFourDigits", "9999")
+                
+                // Campos básicos do Card
+                card.putString("cardId", "mock_card_added_001")
+                card.putString("cardStatus", "ACTIVE")
+                card.putString("cardBrand", tokenizationProvider)
+                
+                // Campos do cardInfo Bundle (Samsung Pay específicos)
+                card.putString("last4FPan", "9999")
+                card.putString("last4DPan", "9999")
+                card.putString("app2AppPayload", "mock_payload_added_001")
                 card.putString("cardType", "CREDIT")
                 card.putString("issuerName", "Banco Mock")
+                card.putString("isDefaultCard", "false")
+                card.putString("deviceType", "phone")
+                card.putString("memberID", "mock_member_added_001")
+                card.putString("countryCode", "BR")
+                card.putString("cryptogramType", "UCAF")
+                card.putString("requireCpf", "false")
+                card.putString("cpfHolderName", "Usuário Mock")
+                card.putString("cpfNumber", "00000000000")
+                card.putString("merchantRefId", "merchant_added_001")
+                card.putString("transactionType", "PURCHASE")
+                
+                // Campos de compatibilidade
+                card.putString("last4", "9999")
                 card.putString("tokenizationProvider", tokenizationProvider)
-                card.putInt("cardState", 1)
+                card.putString("network", tokenizationProvider)
+                card.putString("displayName", "Cartão Adicionado")
+                
                 Log.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso (fallback)")
                 promise.resolve(card)
             },

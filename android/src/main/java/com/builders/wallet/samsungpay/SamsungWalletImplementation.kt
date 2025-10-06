@@ -36,6 +36,15 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     return true
   }
 
+  private fun requireInitialized(promise: Promise): Boolean {
+    if (samsungPay == null || cardManager == null) {
+      Log.e(TAG, "Samsung Pay não foi inicializado")
+      promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
+      return false
+    }
+    return true
+  }
+
   private fun getStaticInt(clazz: String, field: String, defaultValue: Int = 0): Int = try {
     Class.forName(clazz).getField(field).get(null) as? Int ?: defaultValue
   } catch (_: Throwable) { defaultValue }
@@ -95,33 +104,59 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     Log.i(TAG, "--")
     Log.i(TAG, "> getSamsungPayStatus started")
     if (!requireSdkAvailable(promise)) return
+    if (!requireInitialized(promise)) return
 
     val EXTRA_ERROR_REASON = getStaticString("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "EXTRA_ERROR_REASON")
     val ERROR_NONE = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_NONE")
     val SPAY_READY = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_READY")
+    val SPAY_NOT_READY = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_READY")
+    val SPAY_NOT_SUPPORTED = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_SUPPORTED")
+    val SPAY_NOT_ALLOWED_TEMPORALLY = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_ALLOWED_TEMPORALLY")
 
     val listener = proxy("com.samsung.android.sdk.samsungpay.v2.StatusListener", mapOf(
       "onSuccess" to { args: Array<out Any?> ->
         val status = (args[0] as? Number)?.toInt() ?: -1
         val bundle = args[1] as android.os.Bundle
-        Log.d(TAG, "onSuccess callback is called, status=$status,bundle:$bundle")
+        Log.d(TAG, "onSuccess callback is called, status=$status, bundle:$bundle")
+        
         val extraErrorReason = bundle.getInt(EXTRA_ERROR_REASON, ERROR_NONE)
+        val statusName = when (status) {
+          SPAY_READY -> "SPAY_READY"
+          SPAY_NOT_READY -> "SPAY_NOT_READY"
+          SPAY_NOT_SUPPORTED -> "SPAY_NOT_SUPPORTED"
+          SPAY_NOT_ALLOWED_TEMPORALLY -> "SPAY_NOT_ALLOWED_TEMPORALLY"
+          else -> "UNKNOWN_STATUS_$status"
+        }
+        
+        Log.i(TAG, "- Samsung Pay Status: $statusName ($status)")
+        
         if (status == SPAY_READY) {
-          Log.i(TAG, "- getSamsungPayStatus ready")
+          Log.i(TAG, "- Samsung Pay está pronto para uso")
           promise.resolve(status)
         } else {
-          val error = ErrorCode.getErrorCodeName(extraErrorReason)
-          Log.e(TAG, "Error when getting Samsung Pay status: $error")
-          promise.reject(status.toString(), error)
+          val error = if (extraErrorReason != ERROR_NONE) {
+            ErrorCode.getErrorCodeName(extraErrorReason)
+          } else {
+            "Samsung Pay não está pronto (Status: $statusName)"
+          }
+          Log.w(TAG, "Samsung Pay não está disponível: $error")
+          promise.resolve(status) // Retorna o status mesmo quando não está pronto
         }
         null
       },
       "onFail" to { args: Array<out Any?> ->
         val errorCode = (args[0] as? Number)?.toInt() ?: -1
         val bundle = args[1] as android.os.Bundle
-        Log.d(TAG, "onFail callback is called, i=$errorCode,bundle:$bundle")
-        val error = ErrorCode.getErrorCodeName(bundle.getInt(EXTRA_ERROR_REASON, ERROR_NONE))
-        Log.e(TAG, "Error when getting Samsung Pay status: $error")
+        Log.d(TAG, "onFail callback is called, errorCode=$errorCode, bundle:$bundle")
+        
+        val extraErrorReason = bundle.getInt(EXTRA_ERROR_REASON, ERROR_NONE)
+        val error = if (extraErrorReason != ERROR_NONE) {
+          ErrorCode.getErrorCodeName(extraErrorReason)
+        } else {
+          ErrorCode.getErrorCodeName(errorCode)
+        }
+        
+        Log.e(TAG, "Erro ao verificar status do Samsung Pay: $error")
         promise.reject(errorCode.toString(), error)
         null
       }
@@ -152,6 +187,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     Log.i(TAG, "--")
     Log.i(TAG, "> getAllCards started")
     if (!requireSdkAvailable(promise)) return
+    if (!requireInitialized(promise)) return
 
     val listener = proxy("com.samsung.android.sdk.samsungpay.v2.card.GetCardListener", mapOf(
       "onSuccess" to { args: Array<out Any?> ->
@@ -180,6 +216,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     Log.i(TAG, "--")
     Log.i(TAG, "> getWalletInfo started")
     if (!requireSdkAvailable(promise)) return
+    if (!requireInitialized(promise)) return
 
     val WALLET_DM_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.SamsungPay", "WALLET_DM_ID")
     val DEVICE_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.SamsungPay", "DEVICE_ID")
@@ -194,9 +231,9 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
         val clientDeviceId = walletData.getString(DEVICE_ID)
         val clientWalletAccountId = walletData.getString(WALLET_USER_ID)
         val result: WritableMap = Arguments.createMap().apply {
-          putString(WALLET_DM_ID, clientWalletDmId)
-          putString(DEVICE_ID, clientDeviceId)
-          putString(WALLET_USER_ID, clientWalletAccountId)
+          putString("walletDMId", clientWalletDmId)
+          putString("deviceId", clientDeviceId)
+          putString("walletUserId", clientWalletAccountId)
         }
         Log.i(TAG, "- Wallet Info: $result")
         promise.resolve(result)
@@ -231,6 +268,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     )
 
     if (!requireSdkAvailable(promise)) return
+    if (!requireInitialized(promise)) return
 
     val ADD_CARD_INFO = Class.forName("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo")
     val EXTRA_PROVISION_PAYLOAD = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "EXTRA_PROVISION_PAYLOAD")
