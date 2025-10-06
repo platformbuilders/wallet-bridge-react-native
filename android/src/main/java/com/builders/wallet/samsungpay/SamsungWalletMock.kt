@@ -5,6 +5,7 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
 import com.builders.wallet.BuildConfig
 import java.io.BufferedReader
@@ -165,33 +166,33 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         while (iterator.hasNextKey()) {
             val key = iterator.nextKey()
             when (map.getType(key)) {
-                com.facebook.react.bridge.ReadableType.Null -> json.put(key, JSONObject.NULL)
-                com.facebook.react.bridge.ReadableType.Boolean -> json.put(key, map.getBoolean(key))
-                com.facebook.react.bridge.ReadableType.Number -> json.put(key, map.getDouble(key))
-                com.facebook.react.bridge.ReadableType.String -> json.put(key, map.getString(key))
-                com.facebook.react.bridge.ReadableType.Map -> json.put(key, readableMapToJson(map.getMap(key)!!))
-                com.facebook.react.bridge.ReadableType.Array -> {
+                ReadableType.Null -> json.put(key, JSONObject.NULL)
+                ReadableType.Boolean -> json.put(key, map.getBoolean(key))
+                ReadableType.Number -> json.put(key, map.getDouble(key))
+                ReadableType.String -> json.put(key, map.getString(key))
+                ReadableType.Map -> json.put(key, readableMapToJson(map.getMap(key)!!))
+                ReadableType.Array -> {
                     // Para arrays, converter para JSONArray
                     val array = map.getArray(key)!!
                     val jsonArray = org.json.JSONArray()
                     for (i in 0 until array.size()) {
                         when (array.getType(i)) {
-                            com.facebook.react.bridge.ReadableType.Null -> jsonArray.put(org.json.JSONObject.NULL)
-                            com.facebook.react.bridge.ReadableType.Boolean -> jsonArray.put(array.getBoolean(i))
-                            com.facebook.react.bridge.ReadableType.Number -> jsonArray.put(array.getDouble(i))
-                            com.facebook.react.bridge.ReadableType.String -> jsonArray.put(array.getString(i))
-                            com.facebook.react.bridge.ReadableType.Map -> jsonArray.put(readableMapToJson(array.getMap(i)!!))
-                            com.facebook.react.bridge.ReadableType.Array -> {
+                            ReadableType.Null -> jsonArray.put(org.json.JSONObject.NULL)
+                            ReadableType.Boolean -> jsonArray.put(array.getBoolean(i))
+                            ReadableType.Number -> jsonArray.put(array.getDouble(i))
+                            ReadableType.String -> jsonArray.put(array.getString(i))
+                            ReadableType.Map -> jsonArray.put(readableMapToJson(array.getMap(i)!!))
+                            ReadableType.Array -> {
                                 // Para arrays aninhados, converter recursivamente
                                 val nestedArray = array.getArray(i)!!
                                 val nestedJsonArray = org.json.JSONArray()
                                 for (j in 0 until nestedArray.size()) {
                                     when (nestedArray.getType(j)) {
-                                        com.facebook.react.bridge.ReadableType.Null -> nestedJsonArray.put(org.json.JSONObject.NULL)
-                                        com.facebook.react.bridge.ReadableType.Boolean -> nestedJsonArray.put(nestedArray.getBoolean(j))
-                                        com.facebook.react.bridge.ReadableType.Number -> nestedJsonArray.put(nestedArray.getDouble(j))
-                                        com.facebook.react.bridge.ReadableType.String -> nestedJsonArray.put(nestedArray.getString(j))
-                                        com.facebook.react.bridge.ReadableType.Map -> nestedJsonArray.put(readableMapToJson(nestedArray.getMap(j)!!))
+                                        ReadableType.Null -> nestedJsonArray.put(org.json.JSONObject.NULL)
+                                        ReadableType.Boolean -> nestedJsonArray.put(nestedArray.getBoolean(j))
+                                        ReadableType.Number -> nestedJsonArray.put(nestedArray.getDouble(j))
+                                        ReadableType.String -> nestedJsonArray.put(nestedArray.getString(j))
+                                        ReadableType.Map -> nestedJsonArray.put(readableMapToJson(nestedArray.getMap(j)!!))
                                         else -> nestedJsonArray.put(nestedArray.getString(j))
                                     }
                                 }
