@@ -43,7 +43,8 @@
     "pkg:palmeiras": "./scripts/change-android-package-name-app-example.sh --package-name=br.com.pefisa.palmeiras.hml",
     "build:app-example": "./scripts/build-android-example.sh",
     "build:app-wallet-mock": "./scripts/build-android-wallet-mock.sh",
-    "log:google-wallet": "./scripts/quick-log-google-wallet.sh"
+    "log:google-wallet": "./scripts/quick-log-google-wallet.sh",
+    "log:samsung-wallet": "./scripts/quick-log-samsung-wallet.sh"
   },
   "keywords": [
     "react-native",

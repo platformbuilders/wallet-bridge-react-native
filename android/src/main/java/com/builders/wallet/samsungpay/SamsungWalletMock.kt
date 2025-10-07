@@ -210,6 +210,17 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
 
     override fun init(serviceId: String, promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] init chamado com serviceId: $serviceId")
+        
+        // Simular a criação do PartnerInfo com Bundle (como na implementação real)
+        try {
+            val bundle = android.os.Bundle()
+            bundle.putString("PartnerServiceType", "INAPP_PAYMENT")
+            bundle.putString("EXTRA_ISSUER_NAME", "Builders Wallet")
+            Log.d(TAG, "✅ [MOCK] PartnerInfo simulado com Bundle configurado (INAPP_PAYMENT + EXTRA_ISSUER_NAME)")
+        } catch (e: Exception) {
+            Log.w(TAG, "⚠️ [MOCK] Erro ao simular PartnerInfo: ${e.message}")
+        }
+        
         fetchFromLocalAPI(
             endpoint = "/samsung/init",
             defaultResponse = { true },
@@ -225,7 +236,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 promise.resolve(true)
             },
             method = "POST",
-            body = """{"serviceId": "$serviceId"}"""
+            body = """{"serviceId": "$serviceId", "serviceType": "INAPP_PAYMENT", "issuerName": "Builders Wallet"}"""
         )
     }
 
@@ -607,7 +618,23 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
 
     override fun checkWalletAvailability(promise: Promise) {
         Log.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
-        getSamsungPayStatus(promise)
+        fetchFromLocalAPI(
+            endpoint = "/samsung/availability",
+            defaultResponse = { true }, // Por padrão, Samsung Pay está disponível no mock
+            onSuccess = { json ->
+                try {
+                    val isAvailable = json.optBoolean("available", true)
+                    Log.d(TAG, "✅ [MOCK] Disponibilidade: $isAvailable")
+                    promise.resolve(isAvailable)
+                } catch (e: Exception) {
+                    Log.w(TAG, "⚠️ [MOCK] Erro ao processar disponibilidade, usando fallback: ${e.message}")
+                    promise.resolve(true)
+                }
+            },
+            onError = { _ ->
+                promise.resolve(true) // Por padrão, disponível no mock
+            }
+        )
     }
 
     override fun getSecureWalletInfo(promise: Promise) {

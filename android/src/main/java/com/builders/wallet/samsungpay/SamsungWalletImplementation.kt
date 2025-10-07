@@ -112,6 +112,8 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     val SPAY_NOT_READY = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_READY")
     val SPAY_NOT_SUPPORTED = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_SUPPORTED")
     val SPAY_NOT_ALLOWED_TEMPORALLY = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_ALLOWED_TEMPORALLY")
+    val SPAY_HAS_TRANSIT_CARD = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_HAS_TRANSIT_CARD")
+    val SPAY_HAS_NO_TRANSIT_CARD = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_HAS_NO_TRANSIT_CARD")
 
     val listener = proxy("com.samsung.android.sdk.samsungpay.v2.StatusListener", mapOf(
       "onSuccess" to { args: Array<out Any?> ->
@@ -125,6 +127,8 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
           SPAY_NOT_READY -> "SPAY_NOT_READY"
           SPAY_NOT_SUPPORTED -> "SPAY_NOT_SUPPORTED"
           SPAY_NOT_ALLOWED_TEMPORALLY -> "SPAY_NOT_ALLOWED_TEMPORALLY"
+          SPAY_HAS_TRANSIT_CARD -> "SPAY_HAS_TRANSIT_CARD"
+          SPAY_HAS_NO_TRANSIT_CARD -> "SPAY_HAS_NO_TRANSIT_CARD"
           else -> "UNKNOWN_STATUS_$status"
         }
         
@@ -140,7 +144,8 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
             "Samsung Pay não está pronto (Status: $statusName)"
           }
           Log.w(TAG, "Samsung Pay não está disponível: $error")
-          promise.resolve(status) // Retorna o status mesmo quando não está pronto
+          // Rejeita a promise com o status como código de erro e a mensagem de erro
+          promise.reject(status.toString(), error)
         }
         null
       },
@@ -218,30 +223,49 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     if (!requireSdkAvailable(promise)) return
     if (!requireInitialized(promise)) return
 
-    val WALLET_DM_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.SamsungPay", "WALLET_DM_ID")
-    val DEVICE_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.SamsungPay", "DEVICE_ID")
-    val WALLET_USER_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.SamsungPay", "WALLET_USER_ID")
+    // Obter as chaves necessárias para getWalletInfo conforme documentação
+    val WALLET_USER_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "WALLET_USER_ID")
+    val DEVICE_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "DEVICE_ID")
+    val WALLET_DM_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "WALLET_DM_ID")
 
-    val keys = listOf(WALLET_DM_ID, DEVICE_ID, WALLET_USER_ID)
+    // Criar ArrayList com as chaves necessárias (conforme exemplo da documentação)
+    val keys = java.util.ArrayList<String>().apply {
+      add(WALLET_USER_ID)
+      add(DEVICE_ID)
+      add(WALLET_DM_ID)
+    }
+
+    Log.d(TAG, "Chaves solicitadas para getWalletInfo: $keys")
+
     val listener = proxy("com.samsung.android.sdk.samsungpay.v2.StatusListener", mapOf(
       "onSuccess" to { args: Array<out Any?> ->
         val status = (args[0] as? Number)?.toInt() ?: -1
         val walletData = args[1] as android.os.Bundle
-        val clientWalletDmId = walletData.getString(WALLET_DM_ID)
-        val clientDeviceId = walletData.getString(DEVICE_ID)
-        val clientWalletAccountId = walletData.getString(WALLET_USER_ID)
+        Log.d(TAG, "onSuccess callback is called, status=$status, walletData=$walletData")
+        
+        // Extrair dados conforme documentação
+        val deviceId = walletData.getString(DEVICE_ID)
+        val walletUserId = walletData.getString(WALLET_USER_ID)
+        val walletDmId = walletData.getString(WALLET_DM_ID)
+        
+        Log.d(TAG, "Device ID: $deviceId")
+        Log.d(TAG, "Wallet User ID: $walletUserId")
+        Log.d(TAG, "Wallet DM ID: $walletDmId")
+        
         val result: WritableMap = Arguments.createMap().apply {
-          putString("walletDMId", clientWalletDmId)
-          putString("deviceId", clientDeviceId)
-          putString("walletUserId", clientWalletAccountId)
+          putString("walletDMId", walletDmId)
+          putString("deviceId", deviceId)
+          putString("walletUserId", walletUserId)
         }
-        Log.i(TAG, "- Wallet Info: $result")
+        Log.i(TAG, "- Wallet Info obtido com sucesso: $result")
         promise.resolve(result)
         null
       },
       "onFail" to { args: Array<out Any?> ->
         val errorCode = (args[0] as? Number)?.toInt() ?: -1
-        Log.d(TAG, "doGetWalletInfo onFail callback is called, errorCode:$errorCode")
+        val errorData = args[1] as android.os.Bundle
+        Log.d(TAG, "onFail callback is called, errorCode=$errorCode, errorData=$errorData")
+        
         val error = ErrorCode.getErrorCodeName(errorCode)
         Log.e(TAG, "Error when getting wallet info: $error")
         promise.reject(errorCode.toString(), error)
@@ -326,7 +350,47 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
   // Métodos de compatibilidade com a API anterior
   override fun checkWalletAvailability(promise: Promise) {
-    getSamsungPayStatus(promise)
+    Log.i(TAG, "--")
+    Log.i(TAG, "> checkWalletAvailability started")
+    if (!requireSdkAvailable(promise)) return
+    if (!requireInitialized(promise)) return
+
+    val EXTRA_ERROR_REASON = getStaticString("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "EXTRA_ERROR_REASON")
+    val ERROR_NONE = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_NONE")
+    val SPAY_READY = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_READY")
+
+    val listener = proxy("com.samsung.android.sdk.samsungpay.v2.StatusListener", mapOf(
+      "onSuccess" to { args: Array<out Any?> ->
+        val status = (args[0] as? Number)?.toInt() ?: -1
+        val bundle = args[1] as android.os.Bundle
+        Log.d(TAG, "onSuccess callback is called, status=$status, bundle:$bundle")
+        
+        val extraErrorReason = bundle.getInt(EXTRA_ERROR_REASON, ERROR_NONE)
+        val isAvailable = status == SPAY_READY
+        
+        Log.i(TAG, "- Samsung Pay disponível: $isAvailable (Status: $status)")
+        promise.resolve(isAvailable)
+        null
+      },
+      "onFail" to { args: Array<out Any?> ->
+        val errorCode = (args[0] as? Number)?.toInt() ?: -1
+        val bundle = args[1] as android.os.Bundle
+        Log.d(TAG, "onFail callback is called, errorCode=$errorCode, bundle:$bundle")
+        
+        val extraErrorReason = bundle.getInt(EXTRA_ERROR_REASON, ERROR_NONE)
+        val error = if (extraErrorReason != ERROR_NONE) {
+          ErrorCode.getErrorCodeName(extraErrorReason)
+        } else {
+          ErrorCode.getErrorCodeName(errorCode)
+        }
+        
+        Log.e(TAG, "Erro ao verificar disponibilidade do Samsung Pay: $error")
+        promise.resolve(false) // Retorna false em caso de erro
+        null
+      }
+    ))
+
+    call(samsungPay, "getSamsungPayStatus", listener)
   }
 
   override fun getSecureWalletInfo(promise: Promise) {

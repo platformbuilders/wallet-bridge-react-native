@@ -210,7 +210,7 @@ export interface SamsungWalletSpec {
   ): Promise<SamsungCard>;
 
   // Métodos de compatibilidade
-  checkWalletAvailability(): Promise<number>;
+  checkWalletAvailability(): Promise<boolean>;
   getSecureWalletInfo(): Promise<SamsungWalletInfo>;
   addCardToWallet(cardData: SamsungCardData): Promise<SamsungCard>;
   getCardStatusBySuffix(lastDigits: string): Promise<string>;
