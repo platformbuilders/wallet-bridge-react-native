@@ -15,6 +15,7 @@ interface SamsungWalletContract {
         payload: String,
         issuerId: String,
         tokenizationProvider: String,
+        cardType: String,
         progress: Callback,
         promise: Promise
     )

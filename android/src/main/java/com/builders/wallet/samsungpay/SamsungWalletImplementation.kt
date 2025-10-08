@@ -281,6 +281,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     payload: String,
     issuerId: String,
     tokenizationProvider: String,
+    cardType: String,
     progress: Callback,
     promise: Promise
   ) {
@@ -288,7 +289,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     Log.i(TAG, "> addCard started")
     Log.d(
       TAG,
-      "addCard payload : $payload, issuerId : $issuerId, tokenizationProvider : $tokenizationProvider"
+      "addCard payload : $payload, issuerId : $issuerId, tokenizationProvider : $tokenizationProvider, cardType : $cardType"
     )
 
     if (!requireSdkAvailable(promise)) return
@@ -298,8 +299,6 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     val EXTRA_PROVISION_PAYLOAD = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "EXTRA_PROVISION_PAYLOAD")
     val EXTRA_ISSUER_ID = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "EXTRA_ISSUER_ID")
     val PROVIDER_ELO = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_ELO")
-    val CARD = Class.forName("com.samsung.android.sdk.samsungpay.v2.card.Card")
-    val CARD_TYPE_CREDIT_DEBIT = (CARD.getField("CARD_TYPE_CREDIT_DEBIT").get(null) as? Int) ?: 0
     
     val cardDetail = android.os.Bundle().apply {
       putString(EXTRA_PROVISION_PAYLOAD, payload)
@@ -308,8 +307,10 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     if (tokenizationProvider == PROVIDER_ELO) {
       cardDetail.putString(EXTRA_ISSUER_ID, issuerId)
     }
-    val addCardInfo = ADD_CARD_INFO.getConstructor(Int::class.java, String::class.java, android.os.Bundle::class.java)
-      .newInstance(CARD_TYPE_CREDIT_DEBIT, tokenizationProvider, cardDetail)
+    
+    // Usar o cardType recebido como parâmetro (conforme exemplo fornecido)
+    val addCardInfo = ADD_CARD_INFO.getConstructor(String::class.java, String::class.java, android.os.Bundle::class.java)
+      .newInstance(cardType, tokenizationProvider, cardDetail)
 
     val EXTRA_ERROR_REASON_MESSAGE = getStaticString("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "EXTRA_ERROR_REASON_MESSAGE")
 
@@ -403,8 +404,9 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     val issuerId = cardData.getString("issuerId") ?: ""
     val PROVIDER_VISA = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_VISA")
     val tokenizationProvider = cardData.getString("tokenizationProvider") ?: PROVIDER_VISA
+    val cardType = cardData.getString("cardType") ?: "CREDIT" // Default para CREDIT se não especificado
     
-    addCard(payload, issuerId, tokenizationProvider, object : Callback {
+    addCard(payload, issuerId, tokenizationProvider, cardType, object : Callback {
       override fun invoke(vararg args: Any?) {
         // Progress callback vazio para compatibilidade
       }
@@ -430,9 +432,100 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
   override fun getConstants(): MutableMap<String, Any> {
-    return hashMapOf<String, Any>(
-      "SDK_NAME" to "SamsungWallet"
-    )
+    val constants = hashMapOf<String, Any>()
+    
+    // SDK Info
+    constants["SDK_NAME"] = "SamsungWallet"
+    
+    // Samsung Pay Status Codes
+    constants["SPAY_READY"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_READY", 2)
+    constants["SPAY_NOT_READY"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_READY", 1)
+    constants["SPAY_NOT_SUPPORTED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_SUPPORTED", 0)
+    constants["SPAY_NOT_ALLOWED_TEMPORALLY"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_NOT_ALLOWED_TEMPORALLY", 3)
+    constants["SPAY_HAS_TRANSIT_CARD"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_HAS_TRANSIT_CARD", 10)
+    constants["SPAY_HAS_NO_TRANSIT_CARD"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "SPAY_HAS_NO_TRANSIT_CARD", 11)
+    
+    // Samsung Card Types (da classe Card)
+    constants["CARD_TYPE"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "CARD_TYPE", "CARD_TYPE")
+    constants["CARD_TYPE_CREDIT_DEBIT"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "CARD_TYPE_CREDIT_DEBIT", "PAYMENT")
+    constants["CARD_TYPE_GIFT"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "CARD_TYPE_GIFT", "GIFT")
+    constants["CARD_TYPE_LOYALTY"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "CARD_TYPE_LOYALTY", "LOYALTY")
+    constants["CARD_TYPE_CREDIT"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "CARD_TYPE_CREDIT", "CREDIT")
+    constants["CARD_TYPE_DEBIT"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "CARD_TYPE_DEBIT", "DEBIT")
+    constants["CARD_TYPE_TRANSIT"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "CARD_TYPE_TRANSIT", "TRANSIT")
+    constants["CARD_TYPE_VACCINE_PASS"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "CARD_TYPE_VACCINE_PASS", "VACCINE_PASS")
+    
+    // Samsung Card States (da classe Card)
+    constants["ACTIVE"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "ACTIVE", "ACTIVE")
+    constants["DISPOSED"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "DISPOSED", "DISPOSED")
+    constants["EXPIRED"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "EXPIRED", "EXPIRED")
+    constants["PENDING_ENROLLED"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "PENDING_ENROLLED", "ENROLLED")
+    constants["PENDING_PROVISION"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "PENDING_PROVISION", "PENDING_PROVISION")
+    constants["SUSPENDED"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "SUSPENDED", "SUSPENDED")
+    constants["PENDING_ACTIVATION"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.Card", "PENDING_ACTIVATION", "PENDING_ACTIVATION")
+    
+    // Samsung Tokenization Providers (baseado na classe AddCardInfo)
+    constants["PROVIDER_VISA"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_VISA", "VI")
+    constants["PROVIDER_MASTERCARD"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_MASTERCARD", "MC")
+    constants["PROVIDER_AMEX"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_AMEX", "AX")
+    constants["PROVIDER_DISCOVER"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_DISCOVER", "DS")
+    constants["PROVIDER_PLCC"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_PLCC", "PL")
+    constants["PROVIDER_GIFT"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_GIFT", "GI")
+    constants["PROVIDER_LOYALTY"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_LOYALTY", "LO")
+    constants["PROVIDER_PAYPAL"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_PAYPAL", "PP")
+    constants["PROVIDER_GEMALTO"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_GEMALTO", "GT")
+    constants["PROVIDER_NAPAS"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_NAPAS", "NP")
+    constants["PROVIDER_MIR"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_MIR", "MI")
+    constants["PROVIDER_PAGOBANCOMAT"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_PAGOBANCOMAT", "PB")
+    constants["PROVIDER_VACCINE_PASS"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_VACCINE_PASS", "VaccinePass")
+    constants["PROVIDER_MADA"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_MADA", "MADA")
+    constants["PROVIDER_ELO"] = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_ELO", "ELO")
+    
+    // Samsung Error Codes (todos do ErrorCode.kt)
+    constants["ERROR_NONE"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_NONE", 0)
+    constants["ERROR_SPAY_INTERNAL"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SPAY_INTERNAL", -1)
+    constants["ERROR_INVALID_INPUT"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_INVALID_INPUT", -2)
+    constants["ERROR_NOT_SUPPORTED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_NOT_SUPPORTED", -3)
+    constants["ERROR_NOT_FOUND"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_NOT_FOUND", -4)
+    constants["ERROR_ALREADY_DONE"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_ALREADY_DONE", -5)
+    constants["ERROR_NOT_ALLOWED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_NOT_ALLOWED", -6)
+    constants["ERROR_USER_CANCELED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_USER_CANCELED", -7)
+    constants["ERROR_PARTNER_SDK_API_LEVEL"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_PARTNER_SDK_API_LEVEL", -10)
+    constants["ERROR_PARTNER_SERVICE_TYPE"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_PARTNER_SERVICE_TYPE", -11)
+    constants["ERROR_INVALID_PARAMETER"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_INVALID_PARAMETER", -12)
+    constants["ERROR_NO_NETWORK"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_NO_NETWORK", -21)
+    constants["ERROR_SERVER_NO_RESPONSE"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SERVER_NO_RESPONSE", -22)
+    constants["ERROR_PARTNER_INFO_INVALID"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_PARTNER_INFO_INVALID", -99)
+    constants["ERROR_INITIATION_FAIL"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_INITIATION_FAIL", -103)
+    constants["ERROR_REGISTRATION_FAIL"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_REGISTRATION_FAIL", -104)
+    constants["ERROR_DUPLICATED_SDK_API_CALLED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_DUPLICATED_SDK_API_CALLED", -105)
+    constants["ERROR_SDK_NOT_SUPPORTED_FOR_THIS_REGION"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SDK_NOT_SUPPORTED_FOR_THIS_REGION", -300)
+    constants["ERROR_SERVICE_ID_INVALID"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SERVICE_ID_INVALID", -301)
+    constants["ERROR_SERVICE_UNAVAILABLE_FOR_THIS_REGION"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SERVICE_UNAVAILABLE_FOR_THIS_REGION", -302)
+    constants["ERROR_PARTNER_APP_SIGNATURE_MISMATCH"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_PARTNER_APP_SIGNATURE_MISMATCH", -303)
+    constants["ERROR_PARTNER_APP_VERSION_NOT_SUPPORTED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_PARTNER_APP_VERSION_NOT_SUPPORTED", -304)
+    constants["ERROR_PARTNER_APP_BLOCKED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_PARTNER_APP_BLOCKED", -305)
+    constants["ERROR_USER_NOT_REGISTERED_FOR_DEBUG"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_USER_NOT_REGISTERED_FOR_DEBUG", -306)
+    constants["ERROR_SERVICE_NOT_APPROVED_FOR_RELEASE"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SERVICE_NOT_APPROVED_FOR_RELEASE", -307)
+    constants["ERROR_PARTNER_NOT_APPROVED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_PARTNER_NOT_APPROVED", -308)
+    constants["ERROR_UNAUTHORIZED_REQUEST_TYPE"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_UNAUTHORIZED_REQUEST_TYPE", -309)
+    constants["ERROR_EXPIRED_OR_INVALID_DEBUG_KEY"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_EXPIRED_OR_INVALID_DEBUG_KEY", -310)
+    constants["ERROR_SERVER_INTERNAL"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SERVER_INTERNAL", -311)
+    constants["ERROR_DEVICE_NOT_SAMSUNG"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_DEVICE_NOT_SAMSUNG", -350)
+    constants["ERROR_SPAY_PKG_NOT_FOUND"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SPAY_PKG_NOT_FOUND", -351)
+    constants["ERROR_SPAY_SDK_SERVICE_NOT_AVAILABLE"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SPAY_SDK_SERVICE_NOT_AVAILABLE", -352)
+    constants["ERROR_DEVICE_INTEGRITY_CHECK_FAIL"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_DEVICE_INTEGRITY_CHECK_FAIL", -353)
+    constants["ERROR_SPAY_APP_INTEGRITY_CHECK_FAIL"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SPAY_APP_INTEGRITY_CHECK_FAIL", -360)
+    constants["ERROR_ANDROID_PLATFORM_CHECK_FAIL"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_ANDROID_PLATFORM_CHECK_FAIL", -361)
+    constants["ERROR_MISSING_INFORMATION"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_MISSING_INFORMATION", -354)
+    constants["ERROR_SPAY_SETUP_NOT_COMPLETED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SPAY_SETUP_NOT_COMPLETED", -356)
+    constants["ERROR_SPAY_APP_NEED_TO_UPDATE"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SPAY_APP_NEED_TO_UPDATE", -357)
+    constants["ERROR_PARTNER_SDK_VERSION_NOT_ALLOWED"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_PARTNER_SDK_VERSION_NOT_ALLOWED", -358)
+    constants["ERROR_UNABLE_TO_VERIFY_CALLER"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_UNABLE_TO_VERIFY_CALLER", -359)
+    constants["ERROR_SPAY_FMM_LOCK"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SPAY_FMM_LOCK", -604)
+    constants["ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY"] = getStaticInt("com.samsung.android.sdk.samsungpay.v2.SpaySdk", "ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY", -605)
+    
+    return constants
   }
 
   companion object {

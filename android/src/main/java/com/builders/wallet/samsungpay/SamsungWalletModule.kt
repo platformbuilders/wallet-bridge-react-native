@@ -72,10 +72,11 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     payload: String,
     issuerId: String,
     tokenizationProvider: String,
+    cardType: String,
     progress: Callback,
     promise: Promise
   ) {
-    samsungWalletImplementation.addCard(payload, issuerId, tokenizationProvider, progress, promise)
+    samsungWalletImplementation.addCard(payload, issuerId, tokenizationProvider, cardType, progress, promise)
   }
 
   @ReactMethod

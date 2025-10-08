@@ -437,15 +437,17 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         payload: String,
         issuerId: String,
         tokenizationProvider: String,
+        cardType: String,
         progress: Callback,
         promise: Promise
     ) {
-        Log.d(TAG, "🔍 [MOCK] addCard chamado - Provider: $tokenizationProvider, IssuerId: $issuerId")
+        Log.d(TAG, "🔍 [MOCK] addCard chamado - Provider: $tokenizationProvider, IssuerId: $issuerId, CardType: $cardType")
         
         val bodyJson = JSONObject().apply {
             put("payload", payload)
             put("issuerId", issuerId)
             put("tokenizationProvider", tokenizationProvider)
+            put("cardType", cardType)
         }.toString()
         
         fetchFromLocalAPI(
@@ -648,8 +650,9 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             val payload = cardData.getString("payload") ?: ""
             val issuerId = cardData.getString("issuerId") ?: ""
             val tokenizationProvider = cardData.getString("tokenizationProvider") ?: "VISA"
+            val cardType = cardData.getString("cardType") ?: "CREDIT" // Default para CREDIT se não especificado
             
-            addCard(payload, issuerId, tokenizationProvider, object : Callback {
+            addCard(payload, issuerId, tokenizationProvider, cardType, object : Callback {
                 override fun invoke(vararg args: Any?) {
                     // Progress callback vazio para compatibilidade
                 }
@@ -720,39 +723,98 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         
         val constants = hashMapOf<String, Any>()
         
-        constants["SDK_NAME"] = "SamsungWallet"
+        // SDK Info
+        constants["SDK_NAME"] = "SamsungWalletMock"
         
-        // Samsung Pay Status Codes - valores simulados
-        constants["SPAY_READY"] = 1
-        constants["SPAY_NOT_READY"] = 0
-        constants["SPAY_NEED_UPDATE"] = 2
-        constants["SPAY_NEED_ACTIVATION"] = 3
+        // Samsung Pay Status Codes (valores reais do SpaySdk)
+        constants["SPAY_READY"] = 2
+        constants["SPAY_NOT_READY"] = 1
+        constants["SPAY_NOT_SUPPORTED"] = 0
+        constants["SPAY_NOT_ALLOWED_TEMPORALLY"] = 3
+        constants["SPAY_HAS_TRANSIT_CARD"] = 10
+        constants["SPAY_HAS_NO_TRANSIT_CARD"] = 11
         
-        // Samsung Card Types - valores simulados
-        constants["CARD_TYPE_CREDIT"] = 1
-        constants["CARD_TYPE_DEBIT"] = 2
-        constants["CARD_TYPE_CREDIT_DEBIT"] = 3
+        // Samsung Card Types (da classe Card)
+        constants["CARD_TYPE"] = "CARD_TYPE"
+        constants["CARD_TYPE_CREDIT_DEBIT"] = "PAYMENT"
+        constants["CARD_TYPE_GIFT"] = "GIFT"
+        constants["CARD_TYPE_LOYALTY"] = "LOYALTY"
+        constants["CARD_TYPE_CREDIT"] = "CREDIT"
+        constants["CARD_TYPE_DEBIT"] = "DEBIT"
+        constants["CARD_TYPE_TRANSIT"] = "TRANSIT"
+        constants["CARD_TYPE_VACCINE_PASS"] = "VACCINE_PASS"
         
-        // Samsung Card States - valores simulados
-        constants["CARD_STATE_ACTIVE"] = 1
-        constants["CARD_STATE_INACTIVE"] = 0
-        constants["CARD_STATE_PENDING"] = 2
-        constants["CARD_STATE_SUSPENDED"] = 3
+        // Samsung Card States (da classe Card)
+        constants["ACTIVE"] = "ACTIVE"
+        constants["DISPOSED"] = "DISPOSED"
+        constants["EXPIRED"] = "EXPIRED"
+        constants["PENDING_ENROLLED"] = "ENROLLED"
+        constants["PENDING_PROVISION"] = "PENDING_PROVISION"
+        constants["SUSPENDED"] = "SUSPENDED"
+        constants["PENDING_ACTIVATION"] = "PENDING_ACTIVATION"
         
-        // Samsung Tokenization Providers - valores simulados
-        constants["PROVIDER_VISA"] = "VISA"
-        constants["PROVIDER_MASTERCARD"] = "MASTERCARD"
-        constants["PROVIDER_AMEX"] = "AMEX"
+        // Samsung Tokenization Providers (baseado na classe AddCardInfo)
+        constants["PROVIDER_VISA"] = "VI"
+        constants["PROVIDER_MASTERCARD"] = "MC"
+        constants["PROVIDER_AMEX"] = "AX"
+        constants["PROVIDER_DISCOVER"] = "DS"
+        constants["PROVIDER_PLCC"] = "PL"
+        constants["PROVIDER_GIFT"] = "GI"
+        constants["PROVIDER_LOYALTY"] = "LO"
+        constants["PROVIDER_PAYPAL"] = "PP"
+        constants["PROVIDER_GEMALTO"] = "GT"
+        constants["PROVIDER_NAPAS"] = "NP"
+        constants["PROVIDER_MIR"] = "MI"
+        constants["PROVIDER_PAGOBANCOMAT"] = "PB"
+        constants["PROVIDER_VACCINE_PASS"] = "VaccinePass"
+        constants["PROVIDER_MADA"] = "MADA"
         constants["PROVIDER_ELO"] = "ELO"
         
-        // Samsung Error Codes - valores simulados
+        // Samsung Error Codes (todos do ErrorCode.kt)
         constants["ERROR_NONE"] = 0
-        constants["ERROR_SDK_NOT_AVAILABLE"] = 1001
-        constants["ERROR_INIT_FAILED"] = 1002
-        constants["ERROR_CARD_ADD_FAILED"] = 1003
-        constants["ERROR_WALLET_NOT_AVAILABLE"] = 1004
+        constants["ERROR_SPAY_INTERNAL"] = -1
+        constants["ERROR_INVALID_INPUT"] = -2
+        constants["ERROR_NOT_SUPPORTED"] = -3
+        constants["ERROR_NOT_FOUND"] = -4
+        constants["ERROR_ALREADY_DONE"] = -5
+        constants["ERROR_NOT_ALLOWED"] = -6
+        constants["ERROR_USER_CANCELED"] = -7
+        constants["ERROR_PARTNER_SDK_API_LEVEL"] = -10
+        constants["ERROR_PARTNER_SERVICE_TYPE"] = -11
+        constants["ERROR_INVALID_PARAMETER"] = -12
+        constants["ERROR_NO_NETWORK"] = -21
+        constants["ERROR_SERVER_NO_RESPONSE"] = -22
+        constants["ERROR_PARTNER_INFO_INVALID"] = -99
+        constants["ERROR_INITIATION_FAIL"] = -103
+        constants["ERROR_REGISTRATION_FAIL"] = -104
+        constants["ERROR_DUPLICATED_SDK_API_CALLED"] = -105
+        constants["ERROR_SDK_NOT_SUPPORTED_FOR_THIS_REGION"] = -300
+        constants["ERROR_SERVICE_ID_INVALID"] = -301
+        constants["ERROR_SERVICE_UNAVAILABLE_FOR_THIS_REGION"] = -302
+        constants["ERROR_PARTNER_APP_SIGNATURE_MISMATCH"] = -303
+        constants["ERROR_PARTNER_APP_VERSION_NOT_SUPPORTED"] = -304
+        constants["ERROR_PARTNER_APP_BLOCKED"] = -305
+        constants["ERROR_USER_NOT_REGISTERED_FOR_DEBUG"] = -306
+        constants["ERROR_SERVICE_NOT_APPROVED_FOR_RELEASE"] = -307
+        constants["ERROR_PARTNER_NOT_APPROVED"] = -308
+        constants["ERROR_UNAUTHORIZED_REQUEST_TYPE"] = -309
+        constants["ERROR_EXPIRED_OR_INVALID_DEBUG_KEY"] = -310
+        constants["ERROR_SERVER_INTERNAL"] = -311
+        constants["ERROR_DEVICE_NOT_SAMSUNG"] = -350
+        constants["ERROR_SPAY_PKG_NOT_FOUND"] = -351
+        constants["ERROR_SPAY_SDK_SERVICE_NOT_AVAILABLE"] = -352
+        constants["ERROR_DEVICE_INTEGRITY_CHECK_FAIL"] = -353
+        constants["ERROR_SPAY_APP_INTEGRITY_CHECK_FAIL"] = -360
+        constants["ERROR_ANDROID_PLATFORM_CHECK_FAIL"] = -361
+        constants["ERROR_MISSING_INFORMATION"] = -354
+        constants["ERROR_SPAY_SETUP_NOT_COMPLETED"] = -356
+        constants["ERROR_SPAY_APP_NEED_TO_UPDATE"] = -357
+        constants["ERROR_PARTNER_SDK_VERSION_NOT_ALLOWED"] = -358
+        constants["ERROR_UNABLE_TO_VERIFY_CALLER"] = -359
+        constants["ERROR_SPAY_FMM_LOCK"] = -604
+        constants["ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY"] = -605
         
-        Log.d(TAG, "✅ [MOCK] Constantes obtidas (simuladas)")
+        Log.d(TAG, "✅ [MOCK] Constantes obtidas (baseadas na classe Card)")
         return constants
     }
 }

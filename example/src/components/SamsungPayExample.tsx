@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Text,
   TouchableOpacity,
@@ -14,46 +14,236 @@ import {
   type SamsungCard,
 } from '@platformbuilders/wallet-bridge-react-native';
 
+// Funções para mapear valores para descrições legíveis
+const getSamsungPayStatusDescription = (
+  status: number,
+  constants: SamsungWalletConstants
+): string => {
+  const STATUS_DESCRIPTIONS = {
+    [constants.SPAY_READY]: 'Pronto para uso',
+    [constants.SPAY_NOT_READY]: 'Não está pronto',
+    [constants.SPAY_NOT_SUPPORTED]: 'Não suportado',
+    [constants.SPAY_NOT_ALLOWED_TEMPORALLY]: 'Não permitido temporariamente',
+    [constants.SPAY_HAS_TRANSIT_CARD]: 'Tem cartão de trânsito',
+    [constants.SPAY_HAS_NO_TRANSIT_CARD]: 'Não tem cartão de trânsito',
+  } as const;
+
+  return STATUS_DESCRIPTIONS[status] ?? `Status Desconhecido (${status})`;
+};
+
+const getSamsungCardTypeDescription = (
+  cardType: string,
+  constants: SamsungWalletConstants
+): string => {
+  const CARD_TYPE_DESCRIPTIONS = {
+    [constants.CARD_TYPE_CREDIT_DEBIT]: 'Pagamento (Crédito/Débito)',
+    [constants.CARD_TYPE_GIFT]: 'Cartão Presente',
+    [constants.CARD_TYPE_LOYALTY]: 'Fidelidade',
+    [constants.CARD_TYPE_CREDIT]: 'Crédito',
+    [constants.CARD_TYPE_DEBIT]: 'Débito',
+    [constants.CARD_TYPE_TRANSIT]: 'Trânsito',
+    [constants.CARD_TYPE_VACCINE_PASS]: 'Passe de Vacinação',
+  } as const;
+
+  return CARD_TYPE_DESCRIPTIONS[cardType] ?? `Tipo Desconhecido (${cardType})`;
+};
+
+const getSamsungProviderDescription = (
+  provider: string,
+  constants: SamsungWalletConstants
+): string => {
+  const PROVIDER_DESCRIPTIONS = {
+    [constants.PROVIDER_VISA]: 'Visa',
+    [constants.PROVIDER_MASTERCARD]: 'Mastercard',
+    [constants.PROVIDER_AMEX]: 'American Express',
+    [constants.PROVIDER_DISCOVER]: 'Discover',
+    [constants.PROVIDER_ELO]: 'Elo',
+    [constants.PROVIDER_MADA]: 'Mada',
+    [constants.PROVIDER_PAGOBANCOMAT]: 'PagoBancomat',
+    [constants.PROVIDER_PAYPAL]: 'PayPal',
+    [constants.PROVIDER_GEMALTO]: 'Gemalto',
+    [constants.PROVIDER_NAPAS]: 'Napas',
+    [constants.PROVIDER_MIR]: 'Mir',
+    [constants.PROVIDER_VACCINE_PASS]: 'Passe de Vacinação',
+    [constants.PROVIDER_PLCC]: 'PLCC',
+    [constants.PROVIDER_GIFT]: 'Gift',
+    [constants.PROVIDER_LOYALTY]: 'Loyalty',
+  } as const;
+
+  return (
+    PROVIDER_DESCRIPTIONS[provider] ?? `Provedor Desconhecido (${provider})`
+  );
+};
+
+const getSamsungCardStateDescription = (
+  cardState: string,
+  constants: SamsungWalletConstants
+): string => {
+  const CARD_STATE_DESCRIPTIONS = {
+    [constants.ACTIVE]: 'Ativo',
+    [constants.DISPOSED]: 'Descartado',
+    [constants.EXPIRED]: 'Expirado',
+    [constants.PENDING_ENROLLED]: 'Inscrito Pendente',
+    [constants.PENDING_PROVISION]: 'Provisionamento Pendente',
+    [constants.SUSPENDED]: 'Suspenso',
+    [constants.PENDING_ACTIVATION]: 'Ativação Pendente',
+  } as const;
+
+  return (
+    CARD_STATE_DESCRIPTIONS[cardState] ?? `Estado Desconhecido (${cardState})`
+  );
+};
+
+const getSamsungErrorDescription = (
+  errorCode: number,
+  constants: SamsungWalletConstants
+): string => {
+  const ERROR_DESCRIPTIONS = {
+    [constants.ERROR_NONE]: 'Nenhum erro',
+    [constants.ERROR_SPAY_INTERNAL]: 'Erro interno do Samsung Pay',
+    [constants.ERROR_INVALID_INPUT]: 'Entrada inválida',
+    [constants.ERROR_NOT_SUPPORTED]: 'Não suportado',
+    [constants.ERROR_NOT_FOUND]: 'Não encontrado',
+    [constants.ERROR_ALREADY_DONE]: 'Já foi feito',
+    [constants.ERROR_NOT_ALLOWED]: 'Não permitido',
+    [constants.ERROR_USER_CANCELED]: 'Cancelado pelo usuário',
+    [constants.ERROR_PARTNER_SDK_API_LEVEL]:
+      'Nível de API do parceiro inválido',
+    [constants.ERROR_PARTNER_SERVICE_TYPE]:
+      'Tipo de serviço do parceiro inválido',
+    [constants.ERROR_INVALID_PARAMETER]: 'Parâmetro inválido',
+    [constants.ERROR_NO_NETWORK]: 'Sem conexão de rede',
+    [constants.ERROR_SERVER_NO_RESPONSE]: 'Servidor sem resposta',
+    [constants.ERROR_PARTNER_INFO_INVALID]: 'Informações do parceiro inválidas',
+    [constants.ERROR_INITIATION_FAIL]: 'Falha na inicialização',
+    [constants.ERROR_REGISTRATION_FAIL]: 'Falha no registro',
+    [constants.ERROR_DUPLICATED_SDK_API_CALLED]: 'API do SDK chamada duplicada',
+    [constants.ERROR_SDK_NOT_SUPPORTED_FOR_THIS_REGION]:
+      'SDK não suportado para esta região',
+    [constants.ERROR_SERVICE_ID_INVALID]: 'ID do serviço inválido',
+    [constants.ERROR_SERVICE_UNAVAILABLE_FOR_THIS_REGION]:
+      'Serviço indisponível para esta região',
+    [constants.ERROR_PARTNER_APP_SIGNATURE_MISMATCH]:
+      'Assinatura do app do parceiro não confere',
+    [constants.ERROR_PARTNER_APP_VERSION_NOT_SUPPORTED]:
+      'Versão do app do parceiro não suportada',
+    [constants.ERROR_PARTNER_APP_BLOCKED]: 'App do parceiro bloqueado',
+    [constants.ERROR_USER_NOT_REGISTERED_FOR_DEBUG]:
+      'Usuário não registrado para debug',
+    [constants.ERROR_SERVICE_NOT_APPROVED_FOR_RELEASE]:
+      'Serviço não aprovado para release',
+    [constants.ERROR_PARTNER_NOT_APPROVED]: 'Parceiro não aprovado',
+    [constants.ERROR_UNAUTHORIZED_REQUEST_TYPE]:
+      'Tipo de requisição não autorizado',
+    [constants.ERROR_EXPIRED_OR_INVALID_DEBUG_KEY]:
+      'Chave de debug expirada ou inválida',
+    [constants.ERROR_SERVER_INTERNAL]: 'Erro interno do servidor',
+    [constants.ERROR_DEVICE_NOT_SAMSUNG]: 'Dispositivo não é Samsung',
+    [constants.ERROR_SPAY_PKG_NOT_FOUND]: 'Pacote Samsung Pay não encontrado',
+    [constants.ERROR_SPAY_SDK_SERVICE_NOT_AVAILABLE]:
+      'Serviço SDK Samsung Pay não disponível',
+    [constants.ERROR_DEVICE_INTEGRITY_CHECK_FAIL]:
+      'Falha na verificação de integridade do dispositivo',
+    [constants.ERROR_SPAY_APP_INTEGRITY_CHECK_FAIL]:
+      'Falha na verificação de integridade do app Samsung Pay',
+    [constants.ERROR_ANDROID_PLATFORM_CHECK_FAIL]:
+      'Falha na verificação da plataforma Android',
+    [constants.ERROR_MISSING_INFORMATION]: 'Informações em falta',
+    [constants.ERROR_SPAY_SETUP_NOT_COMPLETED]:
+      'Configuração do Samsung Pay não concluída',
+    [constants.ERROR_SPAY_APP_NEED_TO_UPDATE]:
+      'App Samsung Pay precisa ser atualizado',
+    [constants.ERROR_PARTNER_SDK_VERSION_NOT_ALLOWED]:
+      'Versão do SDK do parceiro não permitida',
+    [constants.ERROR_UNABLE_TO_VERIFY_CALLER]:
+      'Não foi possível verificar o chamador',
+    [constants.ERROR_SPAY_FMM_LOCK]: 'Samsung Pay bloqueado pelo FMM',
+    [constants.ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY]:
+      'Samsung Pay conectado com display externo',
+  } as const;
+
+  return ERROR_DESCRIPTIONS[errorCode] ?? `Erro Desconhecido (${errorCode})`;
+};
+
+// Função para tratar erros do Samsung Pay
+const handleSamsungPayError = (
+  error: unknown,
+  constants: SamsungWalletConstants
+): string => {
+  console.log('🔍 [JS] Analisando erro Samsung Pay:', error);
+
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.log('🔍 [JS] Mensagem de erro:', errorMessage);
+
+  // Procurar por códigos de erro numéricos na string de erro
+  const errorCodeMatch = errorMessage.match(/(\d+)/);
+  if (errorCodeMatch && errorCodeMatch[1]) {
+    const errorCode = parseInt(errorCodeMatch[1]);
+    console.log('🎯 [JS] Código de erro encontrado:', errorCode);
+
+    const description = getSamsungErrorDescription(errorCode, constants);
+    if (description) {
+      console.log('✅ [JS] Descrição encontrada:', description);
+      return `Erro ${errorCode}: ${description}`;
+    }
+  }
+
+  // Se não encontrar código específico, retornar a mensagem original
+  console.log('⚠️ [JS] Nenhum código de erro específico encontrado');
+  return `Erro Samsung Pay: ${errorMessage}`;
+};
+
 export function SamsungPayExample(): React.JSX.Element {
   const [serviceId, setServiceId] = useState<string>('SERVICE_ID_DE_EXEMPLO');
   const [payload, setPayload] = useState<string>('PAYLOAD_BASE64_AQUI');
   const [issuerId, setIssuerId] = useState<string>('ISSUER_ID_EXEMPLO');
   const [tokenizationProvider, setTokenizationProvider] =
-    useState<string>('VISA');
+    useState<string>('VI'); // Usar código real do provider
+  const [cardType, setCardType] = useState<string>('CREDIT');
   const [lastDigits, setLastDigits] = useState<string>('1234');
   const [identifier, setIdentifier] = useState<string>('IDENTIFIER_EXEMPLO');
-  const [tsp, setTsp] = useState<string>('VISA');
+  const [tsp, setTsp] = useState<string>('VI');
 
-  // Obter constantes do módulo (compatível se for função ou objeto constante)
-  const constants: SamsungWalletConstants | undefined = useMemo(() => {
-    try {
-      const anyClient: any = SamsungWalletClient as any;
-      if (anyClient && typeof anyClient.getConstants === 'function') {
-        // Alguns módulos expõem via método sync/async; aqui mantemos simples (pode ser undefined)
-        return undefined as unknown as SamsungWalletConstants;
-      }
-      if (anyClient && typeof anyClient.getConstants === 'object') {
-        return anyClient.getConstants as SamsungWalletConstants;
-      }
-    } catch {}
-    return undefined;
-  }, []);
+  // Instanciar o SamsungWalletClient e obter constantes
+  const samsungWalletClient = SamsungWalletClient;
+  const constants: SamsungWalletConstants = (
+    samsungWalletClient as any
+  ).getConstants() as SamsungWalletConstants;
 
   const handleInit = async (): Promise<void> => {
     try {
-      const initialized = await SamsungWalletClient.init(serviceId);
+      console.log('🔍 [JS] Iniciando inicialização do Samsung Pay...');
+      console.log('🔍 [JS] Service ID:', serviceId);
+
+      const initialized = await samsungWalletClient.init(serviceId);
+      console.log('✅ [JS] Inicialização concluída:', initialized);
+
       Alert.alert('Init', `Inicializado: ${initialized ? 'Sim' : 'Não'}`);
     } catch (err) {
-      Alert.alert('Erro', `Falha ao inicializar: ${String(err)}`);
+      console.log('❌ [JS] Erro ao inicializar:', err);
+      const errorMessage = handleSamsungPayError(err, constants);
+      Alert.alert('Erro', errorMessage);
     }
   };
 
   const handleGetStatus = async (): Promise<void> => {
     try {
-      const status = await SamsungWalletClient.getSamsungPayStatus();
-      Alert.alert('Status do Samsung Pay', `Código: ${status}`);
+      console.log('🔍 [JS] Iniciando verificação de status do Samsung Pay...');
+      const status = await samsungWalletClient.getSamsungPayStatus();
+      console.log('✅ [JS] Status obtido:', status);
+
+      const statusDescription = getSamsungPayStatusDescription(
+        status,
+        constants
+      );
+      Alert.alert(
+        'Status do Samsung Pay',
+        `Código: ${status}\nDescrição: ${statusDescription}`
+      );
     } catch (err) {
-      Alert.alert('Erro', `Falha ao obter status: ${String(err)}`);
+      console.log('❌ [JS] Erro ao obter status:', err);
+      const errorMessage = handleSamsungPayError(err, constants);
+      Alert.alert('Erro', errorMessage);
     }
   };
 
@@ -78,20 +268,51 @@ export function SamsungPayExample(): React.JSX.Element {
 
   const handleGetAllCards = async (): Promise<void> => {
     try {
-      const cards: SamsungCard[] = await SamsungWalletClient.getAllCards();
-      Alert.alert(
-        'Cartões',
-        cards.length
-          ? cards
-              .map(
-                (c, i) =>
-                  `${i + 1}. ${c.displayName ?? 'Sem nome'} ••••${c.last4 ?? c.last4FPan ?? ''} (${c.cardBrand})`
-              )
-              .join('\n')
-          : 'Nenhum cartão encontrado'
-      );
+      console.log('🔍 [JS] Iniciando listagem de cartões...');
+      const cards: SamsungCard[] = await samsungWalletClient.getAllCards();
+      console.log('✅ [JS] Cartões obtidos:', cards);
+
+      if (cards.length > 0) {
+        const cardInfo = cards
+          .map((card: SamsungCard, index: number) => {
+            const cardTypeDesc = card.cardType
+              ? getSamsungCardTypeDescription(card.cardType, constants)
+              : 'Desconhecido';
+            const providerDesc = card.tokenizationProvider
+              ? getSamsungProviderDescription(
+                  String(card.tokenizationProvider),
+                  constants
+                )
+              : 'Desconhecido';
+            const cardStateDesc = card.cardStatus
+              ? getSamsungCardStateDescription(card.cardStatus, constants)
+              : 'Desconhecido';
+
+            return (
+              `${index + 1}. ${card.displayName ?? 'Sem nome'}\n` +
+              `   ••••${card.last4 ?? card.last4FPan ?? ''}\n` +
+              `   Brand: ${card.cardBrand}\n` +
+              `   Tipo: ${cardTypeDesc}\n` +
+              `   Provedor: ${providerDesc}\n` +
+              `   Status: ${cardStateDesc} (${card.cardStatus})`
+            );
+          })
+          .join('\n\n');
+
+        Alert.alert(
+          'Cartões na Carteira',
+          `Encontrados ${cards.length} cartão(ões):\n\n${cardInfo}`
+        );
+      } else {
+        Alert.alert(
+          'Cartões na Carteira',
+          'Nenhum cartão encontrado na carteira.'
+        );
+      }
     } catch (err) {
-      Alert.alert('Erro', `Falha ao listar cartões: ${String(err)}`);
+      console.log('❌ [JS] Erro ao listar cartões:', err);
+      const errorMessage = handleSamsungPayError(err, constants);
+      Alert.alert('Erro', errorMessage);
     }
   };
 
@@ -109,21 +330,48 @@ export function SamsungPayExample(): React.JSX.Element {
 
   const handleAddCard = async (): Promise<void> => {
     try {
-      const card = await SamsungWalletClient.addCard(
+      console.log('🔍 [JS] Iniciando processo de adição de cartão...');
+      console.log('🔍 [JS] Dados do cartão:', {
+        payload: payload.substring(0, 50) + '...',
+        issuerId,
+        tokenizationProvider,
+        cardType,
+      });
+
+      const card = await samsungWalletClient.addCard(
         payload,
         issuerId,
         tokenizationProvider,
+        cardType,
         // Progresso opcional
         (current: number, total: number) => {
           console.log(`[SamsungPay] Progresso: ${current}/${total}`);
         }
       );
+
+      console.log('✅ [JS] Cartão adicionado com sucesso:', card);
+
+      const cardTypeDesc = getSamsungCardTypeDescription(
+        card.cardType || cardType,
+        constants
+      );
+      const providerDesc = getSamsungProviderDescription(
+        tokenizationProvider,
+        constants
+      );
+
       Alert.alert(
         'Cartão Adicionado',
-        `ID: ${card.cardId}\nBrand: ${card.cardBrand}\nStatus: ${card.cardStatus}`
+        `ID: ${card.cardId}\n` +
+          `Brand: ${card.cardBrand}\n` +
+          `Status: ${card.cardStatus}\n` +
+          `Tipo: ${cardTypeDesc}\n` +
+          `Provedor: ${providerDesc}`
       );
     } catch (err) {
-      Alert.alert('Erro', `Falha ao adicionar cartão: ${String(err)}`);
+      console.log('❌ [JS] Erro ao adicionar cartão:', err);
+      const errorMessage = handleSamsungPayError(err, constants);
+      Alert.alert('Erro', errorMessage);
     }
   };
 
@@ -133,6 +381,7 @@ export function SamsungPayExample(): React.JSX.Element {
         payload,
         issuerId,
         tokenizationProvider,
+        cardType, // Adicionar cardType no objeto
       });
       Alert.alert(
         'Cartão Adicionado (Compatibilidade)',
@@ -148,13 +397,18 @@ export function SamsungPayExample(): React.JSX.Element {
 
   const handleCheckAvailability = async (): Promise<void> => {
     try {
-      const isAvailable = await SamsungWalletClient.checkWalletAvailability();
+      console.log('🔍 [JS] Iniciando verificação de disponibilidade...');
+      const isAvailable = await samsungWalletClient.checkWalletAvailability();
+      console.log('✅ [JS] Disponibilidade verificada:', isAvailable);
+
       Alert.alert(
         'Disponibilidade',
         `Samsung Pay disponível: ${isAvailable ? 'Sim' : 'Não'}`
       );
     } catch (err) {
-      Alert.alert('Erro', `Falha ao verificar disponibilidade: ${String(err)}`);
+      console.log('❌ [JS] Erro ao verificar disponibilidade:', err);
+      const errorMessage = handleSamsungPayError(err, constants);
+      Alert.alert('Erro', errorMessage);
     }
   };
 
@@ -194,18 +448,65 @@ export function SamsungPayExample(): React.JSX.Element {
 
   const handleShowConstants = async (): Promise<void> => {
     try {
-      let c: any = constants;
-      if (!c) {
-        const maybe = (SamsungWalletClient as any)?.getConstants;
-        if (typeof maybe === 'function') {
-          // Caso seja exposto como método
-          c = await maybe.call(SamsungWalletClient);
-        } else if (typeof maybe === 'object') {
-          c = maybe;
-        }
-      }
-      Alert.alert('Constantes', JSON.stringify(c ?? {}, null, 2));
+      console.log('🔍 [JS] Obtendo constantes do Samsung Pay...');
+      console.log('✅ [JS] Constantes obtidas:', constants);
+
+      // Organizar constantes por categoria
+      const organizedConstants = {
+        'Status Codes': {
+          SPAY_READY: constants.SPAY_READY,
+          SPAY_NOT_READY: constants.SPAY_NOT_READY,
+          SPAY_NOT_SUPPORTED: constants.SPAY_NOT_SUPPORTED,
+          SPAY_NOT_ALLOWED_TEMPORALLY: constants.SPAY_NOT_ALLOWED_TEMPORALLY,
+          SPAY_HAS_TRANSIT_CARD: constants.SPAY_HAS_TRANSIT_CARD,
+          SPAY_HAS_NO_TRANSIT_CARD: constants.SPAY_HAS_NO_TRANSIT_CARD,
+        },
+        'Card Types': {
+          CARD_TYPE_CREDIT_DEBIT: constants.CARD_TYPE_CREDIT_DEBIT,
+          CARD_TYPE_GIFT: constants.CARD_TYPE_GIFT,
+          CARD_TYPE_LOYALTY: constants.CARD_TYPE_LOYALTY,
+          CARD_TYPE_CREDIT: constants.CARD_TYPE_CREDIT,
+          CARD_TYPE_DEBIT: constants.CARD_TYPE_DEBIT,
+          CARD_TYPE_TRANSIT: constants.CARD_TYPE_TRANSIT,
+          CARD_TYPE_VACCINE_PASS: constants.CARD_TYPE_VACCINE_PASS,
+        },
+        'Card States': {
+          ACTIVE: constants.ACTIVE,
+          DISPOSED: constants.DISPOSED,
+          EXPIRED: constants.EXPIRED,
+          PENDING_ENROLLED: constants.PENDING_ENROLLED,
+          PENDING_PROVISION: constants.PENDING_PROVISION,
+          SUSPENDED: constants.SUSPENDED,
+          PENDING_ACTIVATION: constants.PENDING_ACTIVATION,
+        },
+        'Tokenization Providers': {
+          PROVIDER_VISA: constants.PROVIDER_VISA,
+          PROVIDER_MASTERCARD: constants.PROVIDER_MASTERCARD,
+          PROVIDER_AMEX: constants.PROVIDER_AMEX,
+          PROVIDER_DISCOVER: constants.PROVIDER_DISCOVER,
+          PROVIDER_ELO: constants.PROVIDER_ELO,
+          PROVIDER_MADA: constants.PROVIDER_MADA,
+          PROVIDER_PAGOBANCOMAT: constants.PROVIDER_PAGOBANCOMAT,
+          PROVIDER_PAYPAL: constants.PROVIDER_PAYPAL,
+        },
+        'Error Codes (Sample)': {
+          ERROR_NONE: constants.ERROR_NONE,
+          ERROR_SPAY_INTERNAL: constants.ERROR_SPAY_INTERNAL,
+          ERROR_INVALID_INPUT: constants.ERROR_INVALID_INPUT,
+          ERROR_NOT_SUPPORTED: constants.ERROR_NOT_SUPPORTED,
+          ERROR_USER_CANCELED: constants.ERROR_USER_CANCELED,
+          ERROR_DEVICE_NOT_SAMSUNG: constants.ERROR_DEVICE_NOT_SAMSUNG,
+        },
+      };
+
+      Alert.alert(
+        'Constantes Samsung Pay',
+        `SDK: ${constants.SDK_NAME}\nMock: ${constants.useMock ? 'Sim' : 'Não'}\n\n` +
+          `📊 Constantes organizadas por categoria:\n\n` +
+          JSON.stringify(organizedConstants, null, 2)
+      );
     } catch (err) {
+      console.log('❌ [JS] Erro ao obter constantes:', err);
       Alert.alert('Erro', `Falha ao obter constantes: ${String(err)}`);
     }
   };
@@ -251,12 +552,19 @@ export function SamsungPayExample(): React.JSX.Element {
           onChangeText={setIssuerId}
           placeholder="Issuer ID"
         />
-        <Text style={styles.inputLabel}>Tokenization Provider (ex: VISA):</Text>
+        <Text style={styles.inputLabel}>Tokenization Provider:</Text>
         <TextInput
           style={styles.input}
           value={tokenizationProvider}
           onChangeText={setTokenizationProvider}
-          placeholder="Provedor (VISA/MASTERCARD/etc)"
+          placeholder={`Provedor (ex: ${constants.PROVIDER_VISA}/${constants.PROVIDER_MASTERCARD})`}
+        />
+        <Text style={styles.inputLabel}>Card Type:</Text>
+        <TextInput
+          style={styles.input}
+          value={cardType}
+          onChangeText={setCardType}
+          placeholder={`Tipo (ex: ${constants.CARD_TYPE_CREDIT}/${constants.CARD_TYPE_DEBIT}/${constants.CARD_TYPE_CREDIT_DEBIT})`}
         />
         <TouchableOpacity style={styles.button} onPress={handleAddCard}>
           <Text style={styles.buttonText}>Adicionar (SDK)</Text>

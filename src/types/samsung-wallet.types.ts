@@ -2,140 +2,29 @@
 // TYPES ESPECÍFICOS DO SAMSUNG PAY / SAMSUNG WALLET
 // ============================================================================
 
-// Samsung Pay Status (baseado no SpaySdk)
-export enum SamsungPayStatus {
-  SPAY_NOT_SUPPORTED = 0,
-  SPAY_NOT_READY = 1,
-  SPAY_READY = 2,
-  SPAY_NOT_ALLOWED_TEMPORALLY = 3,
-  SPAY_HAS_TRANSIT_CARD = 10,
-  SPAY_HAS_NO_TRANSIT_CARD = 11,
-}
-
-// Samsung Pay Error Codes (baseado no SpaySdk)
-export enum SamsungPayErrorCode {
-  ERROR_NONE = 0,
-  ERROR_SPAY_INTERNAL = -1,
-  ERROR_INVALID_INPUT = -2,
-  ERROR_NOT_SUPPORTED = -3,
-  ERROR_NOT_FOUND = -4,
-  ERROR_ALREADY_DONE = -5,
-  ERROR_NOT_ALLOWED = -6,
-  ERROR_USER_CANCELED = -7,
-  ERROR_PARTNER_SDK_API_LEVEL = -10,
-  ERROR_PARTNER_SERVICE_TYPE = -11,
-  ERROR_INVALID_PARAMETER = -12,
-  ERROR_NO_NETWORK = -21,
-  ERROR_SERVER_NO_RESPONSE = -22,
-  ERROR_PARTNER_INFO_INVALID = -99,
-  ERROR_INITIATION_FAIL = -103,
-  ERROR_REGISTRATION_FAIL = -104,
-  ERROR_DUPLICATED_SDK_API_CALLED = -105,
-  ERROR_SDK_NOT_SUPPORTED_FOR_THIS_REGION = -300,
-  ERROR_SERVICE_ID_INVALID = -301,
-  ERROR_SERVICE_UNAVAILABLE_FOR_THIS_REGION = -302,
-  ERROR_PARTNER_APP_SIGNATURE_MISMATCH = -303,
-  ERROR_PARTNER_APP_VERSION_NOT_SUPPORTED = -304,
-  ERROR_PARTNER_APP_BLOCKED = -305,
-  ERROR_USER_NOT_REGISTERED_FOR_DEBUG = -306,
-  ERROR_SERVICE_NOT_APPROVED_FOR_RELEASE = -307,
-  ERROR_PARTNER_NOT_APPROVED = -308,
-  ERROR_UNAUTHORIZED_REQUEST_TYPE = -309,
-  ERROR_EXPIRED_OR_INVALID_DEBUG_KEY = -310,
-  ERROR_SERVER_INTERNAL = -311,
-  ERROR_DEVICE_NOT_SAMSUNG = -350,
-  ERROR_SPAY_PKG_NOT_FOUND = -351,
-  ERROR_SPAY_SDK_SERVICE_NOT_AVAILABLE = -352,
-  ERROR_DEVICE_INTEGRITY_CHECK_FAIL = -353,
-  ERROR_SPAY_APP_INTEGRITY_CHECK_FAIL = -360,
-  ERROR_ANDROID_PLATFORM_CHECK_FAIL = -361,
-  ERROR_MISSING_INFORMATION = -354,
-  ERROR_SPAY_SETUP_NOT_COMPLETED = -356,
-  ERROR_SPAY_APP_NEED_TO_UPDATE = -357,
-  ERROR_PARTNER_SDK_VERSION_NOT_ALLOWED = -358,
-  ERROR_UNABLE_TO_VERIFY_CALLER = -359,
-  ERROR_SPAY_FMM_LOCK = -604,
-  ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY = -605,
-}
-
-// Samsung Card Brand (baseado no SpaySdk.Brand)
-export enum SamsungCardBrand {
-  AMERICANEXPRESS = 'AMERICANEXPRESS',
-  MASTERCARD = 'MASTERCARD',
-  VISA = 'VISA',
-  DISCOVER = 'DISCOVER',
-  CHINAUNIONPAY = 'CHINAUNIONPAY',
-  UNKNOWN_CARD = 'UNKNOWN_CARD',
-  OCTOPUS = 'OCTOPUS',
-  ECI = 'ECI',
-  PAGOBANCOMAT = 'PAGOBANCOMAT',
-  ELO = 'ELO',
-  MADA = 'MADA',
-}
-
-// Samsung Card Type (baseado no Card constants)
-export enum SamsungCardType {
-  CARD_TYPE_CREDIT_DEBIT = 'PAYMENT',
-  CARD_TYPE_GIFT = 'GIFT',
-  CARD_TYPE_LOYALTY = 'LOYALTY',
-  CARD_TYPE_CREDIT = 'CREDIT',
-  CARD_TYPE_DEBIT = 'DEBIT',
-  CARD_TYPE_TRANSIT = 'TRANSIT',
-  CARD_TYPE_VACCINE_PASS = 'VACCINE_PASS',
-}
-
-// Samsung Card Status (baseado no Card constants)
-export enum SamsungCardStatus {
-  ACTIVE = 'ACTIVE',
-  DISPOSED = 'DISPOSED',
-  EXPIRED = 'EXPIRED',
-  PENDING_ENROLLED = 'ENROLLED',
-  PENDING_PROVISION = 'PENDING_PROVISION',
-  SUSPENDED = 'SUSPENDED',
-  PENDING_ACTIVATION = 'PENDING_ACTIVATION',
-}
-
-// Samsung Device Type (baseado no SpaySdk)
-export enum SamsungDeviceType {
-  PHONE = 'phone',
-  GEAR = 'gear',
-}
-
-// Samsung Cryptogram Type (baseado no SpaySdk)
-export enum SamsungCryptogramType {
-  UCAF = 'UCAF',
-  ICC = 'ICC',
-}
-
-// Samsung Transaction Type (baseado no SpaySdk)
-export enum SamsungTransactionType {
-  PURCHASE = 'PURCHASE',
-  PREAUTHORIZATION = 'PREAUTHORIZATION',
-}
-
 // Samsung Pay - Card (baseado na classe Card do SDK e SerializableCard)
 export interface SamsungCard {
   // Campos básicos do Card
   cardId: string;
-  cardStatus: SamsungCardStatus;
-  cardBrand: SamsungCardBrand;
+  cardStatus: string;
+  cardBrand: string;
 
   // Campos do cardInfo Bundle (Samsung Pay específicos)
   last4FPan?: string;
   last4DPan?: string;
   app2AppPayload?: string;
-  cardType?: SamsungCardType;
+  cardType?: string;
   issuerName?: string;
   isDefaultCard?: string;
-  deviceType?: SamsungDeviceType;
+  deviceType?: string;
   memberID?: string;
   countryCode?: string;
-  cryptogramType?: SamsungCryptogramType;
+  cryptogramType?: string;
   requireCpf?: string;
   cpfHolderName?: string;
   cpfNumber?: string;
   merchantRefId?: string;
-  transactionType?: SamsungTransactionType;
+  transactionType?: string;
 
   // Campos de compatibilidade (outros SDKs)
   last4?: string;
@@ -166,31 +55,101 @@ export interface SamsungCardData {
   payload: string;
   issuerId: string;
   tokenizationProvider: string;
+  cardType?: string; // Opcional para compatibilidade
 }
 
-// Samsung Pay - Constants (baseado no getConstants)
+// Samsung Pay - Constants (apenas tipos, valores vêm da bridge)
 export interface SamsungWalletConstants {
   SDK_NAME: string;
   useMock: boolean;
-  // Constantes do SDK
+
+  // Samsung Pay Status Codes
   SPAY_READY: number;
   SPAY_NOT_READY: number;
   SPAY_NOT_SUPPORTED: number;
-  CARD_TYPE_CREDIT_DEBIT: number;
-  CARD_TYPE_CREDIT: number;
-  CARD_TYPE_DEBIT: number;
-  CARD_STATE_ACTIVE: number;
-  CARD_STATE_PENDING: number;
-  CARD_STATE_SUSPENDED: number;
+  SPAY_NOT_ALLOWED_TEMPORALLY: number;
+  SPAY_HAS_TRANSIT_CARD: number;
+  SPAY_HAS_NO_TRANSIT_CARD: number;
+
+  // Samsung Card Types (da classe Card)
+  CARD_TYPE: string;
+  CARD_TYPE_CREDIT_DEBIT: string;
+  CARD_TYPE_GIFT: string;
+  CARD_TYPE_LOYALTY: string;
+  CARD_TYPE_CREDIT: string;
+  CARD_TYPE_DEBIT: string;
+  CARD_TYPE_TRANSIT: string;
+  CARD_TYPE_VACCINE_PASS: string;
+
+  // Samsung Card States (da classe Card)
+  ACTIVE: string;
+  DISPOSED: string;
+  EXPIRED: string;
+  PENDING_ENROLLED: string;
+  PENDING_PROVISION: string;
+  SUSPENDED: string;
+  PENDING_ACTIVATION: string;
+
+  // Samsung Tokenization Providers
   PROVIDER_VISA: string;
   PROVIDER_MASTERCARD: string;
   PROVIDER_AMEX: string;
+  PROVIDER_DISCOVER: string;
+  PROVIDER_PLCC: string;
+  PROVIDER_GIFT: string;
+  PROVIDER_LOYALTY: string;
+  PROVIDER_PAYPAL: string;
+  PROVIDER_GEMALTO: string;
+  PROVIDER_NAPAS: string;
+  PROVIDER_MIR: string;
+  PROVIDER_PAGOBANCOMAT: string;
+  PROVIDER_VACCINE_PASS: string;
+  PROVIDER_MADA: string;
   PROVIDER_ELO: string;
+
+  // Samsung Error Codes
   ERROR_NONE: number;
-  ERROR_SDK_NOT_AVAILABLE: number;
-  ERROR_INIT_FAILED: number;
-  ERROR_CARD_ADD_FAILED: number;
-  ERROR_WALLET_NOT_AVAILABLE: number;
+  ERROR_SPAY_INTERNAL: number;
+  ERROR_INVALID_INPUT: number;
+  ERROR_NOT_SUPPORTED: number;
+  ERROR_NOT_FOUND: number;
+  ERROR_ALREADY_DONE: number;
+  ERROR_NOT_ALLOWED: number;
+  ERROR_USER_CANCELED: number;
+  ERROR_PARTNER_SDK_API_LEVEL: number;
+  ERROR_PARTNER_SERVICE_TYPE: number;
+  ERROR_INVALID_PARAMETER: number;
+  ERROR_NO_NETWORK: number;
+  ERROR_SERVER_NO_RESPONSE: number;
+  ERROR_PARTNER_INFO_INVALID: number;
+  ERROR_INITIATION_FAIL: number;
+  ERROR_REGISTRATION_FAIL: number;
+  ERROR_DUPLICATED_SDK_API_CALLED: number;
+  ERROR_SDK_NOT_SUPPORTED_FOR_THIS_REGION: number;
+  ERROR_SERVICE_ID_INVALID: number;
+  ERROR_SERVICE_UNAVAILABLE_FOR_THIS_REGION: number;
+  ERROR_PARTNER_APP_SIGNATURE_MISMATCH: number;
+  ERROR_PARTNER_APP_VERSION_NOT_SUPPORTED: number;
+  ERROR_PARTNER_APP_BLOCKED: number;
+  ERROR_USER_NOT_REGISTERED_FOR_DEBUG: number;
+  ERROR_SERVICE_NOT_APPROVED_FOR_RELEASE: number;
+  ERROR_PARTNER_NOT_APPROVED: number;
+  ERROR_UNAUTHORIZED_REQUEST_TYPE: number;
+  ERROR_EXPIRED_OR_INVALID_DEBUG_KEY: number;
+  ERROR_SERVER_INTERNAL: number;
+  ERROR_DEVICE_NOT_SAMSUNG: number;
+  ERROR_SPAY_PKG_NOT_FOUND: number;
+  ERROR_SPAY_SDK_SERVICE_NOT_AVAILABLE: number;
+  ERROR_DEVICE_INTEGRITY_CHECK_FAIL: number;
+  ERROR_SPAY_APP_INTEGRITY_CHECK_FAIL: number;
+  ERROR_ANDROID_PLATFORM_CHECK_FAIL: number;
+  ERROR_MISSING_INFORMATION: number;
+  ERROR_SPAY_SETUP_NOT_COMPLETED: number;
+  ERROR_SPAY_APP_NEED_TO_UPDATE: number;
+  ERROR_PARTNER_SDK_VERSION_NOT_ALLOWED: number;
+  ERROR_UNABLE_TO_VERIFY_CALLER: number;
+  ERROR_SPAY_FMM_LOCK: number;
+  ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY: number;
 }
 
 // Samsung Pay - Interface do Módulo (baseado nos métodos do SamsungWalletModule)
@@ -206,6 +165,7 @@ export interface SamsungWalletSpec {
     payload: string,
     issuerId: string,
     tokenizationProvider: string,
+    cardType: string,
     progress: (currentCount: number, totalCount: number) => void
   ): Promise<SamsungCard>;
 
