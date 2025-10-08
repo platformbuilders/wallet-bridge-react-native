@@ -84,30 +84,6 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     samsungWalletImplementation.checkWalletAvailability(promise)
   }
 
-  @ReactMethod
-  fun getSecureWalletInfo(promise: Promise) {
-    samsungWalletImplementation.getSecureWalletInfo(promise)
-  }
-
-  @ReactMethod
-  fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
-    samsungWalletImplementation.addCardToWallet(cardData, promise)
-  }
-
-  @ReactMethod
-  fun getCardStatusBySuffix(lastDigits: String, promise: Promise) {
-    samsungWalletImplementation.getCardStatusBySuffix(lastDigits, promise)
-  }
-
-  @ReactMethod
-  fun getCardStatusByIdentifier(identifier: String, tsp: String, promise: Promise) {
-    samsungWalletImplementation.getCardStatusByIdentifier(identifier, tsp, promise)
-  }
-
-  @ReactMethod
-  fun createWalletIfNeeded(promise: Promise) {
-    samsungWalletImplementation.createWalletIfNeeded(promise)
-  }
 
   override fun getConstants(): MutableMap<String, Any> {
     val constants = samsungWalletImplementation.getConstants().toMutableMap()

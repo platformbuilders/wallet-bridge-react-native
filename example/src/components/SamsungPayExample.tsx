@@ -200,9 +200,6 @@ export function SamsungPayExample(): React.JSX.Element {
   const [tokenizationProvider, setTokenizationProvider] =
     useState<string>('VI'); // Usar código real do provider
   const [cardType, setCardType] = useState<string>('CREDIT');
-  const [lastDigits, setLastDigits] = useState<string>('1234');
-  const [identifier, setIdentifier] = useState<string>('IDENTIFIER_EXEMPLO');
-  const [tsp, setTsp] = useState<string>('VI');
 
   // Instanciar o SamsungWalletClient e obter constantes
   const samsungWalletClient = SamsungWalletClient;
@@ -318,7 +315,7 @@ export function SamsungPayExample(): React.JSX.Element {
 
   const handleGetWalletInfo = async (): Promise<void> => {
     try {
-      const info = await SamsungWalletClient.getSecureWalletInfo();
+      const info = await SamsungWalletClient.getWalletInfo();
       Alert.alert(
         'Wallet Info',
         `walletDMId: ${info.walletDMId}\ndeviceId: ${info.deviceId}\nwalletUserId: ${info.walletUserId}`
@@ -375,26 +372,6 @@ export function SamsungPayExample(): React.JSX.Element {
     }
   };
 
-  const handleAddCardToWallet = async (): Promise<void> => {
-    try {
-      const card = await SamsungWalletClient.addCardToWallet({
-        payload,
-        issuerId,
-        tokenizationProvider,
-        cardType, // Adicionar cardType no objeto
-      });
-      Alert.alert(
-        'Cartão Adicionado (Compatibilidade)',
-        `ID: ${card.cardId}\nBrand: ${card.cardBrand}\nStatus: ${card.cardStatus}`
-      );
-    } catch (err) {
-      Alert.alert(
-        'Erro',
-        `Falha ao adicionar (compatibilidade): ${String(err)}`
-      );
-    }
-  };
-
   const handleCheckAvailability = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando verificação de disponibilidade...');
@@ -409,40 +386,6 @@ export function SamsungPayExample(): React.JSX.Element {
       console.log('❌ [JS] Erro ao verificar disponibilidade:', err);
       const errorMessage = handleSamsungPayError(err, constants);
       Alert.alert('Erro', errorMessage);
-    }
-  };
-
-  const handleGetCardStatusBySuffix = async (): Promise<void> => {
-    try {
-      const status =
-        await SamsungWalletClient.getCardStatusBySuffix(lastDigits);
-      Alert.alert('Status por Sufixo', `Status: ${status}`);
-    } catch (err) {
-      Alert.alert('Erro', `Falha ao obter status: ${String(err)}`);
-    }
-  };
-
-  const handleGetCardStatusByIdentifier = async (): Promise<void> => {
-    try {
-      const status = await SamsungWalletClient.getCardStatusByIdentifier(
-        identifier,
-        tsp
-      );
-      Alert.alert('Status por Identificador', `Status: ${status}`);
-    } catch (err) {
-      Alert.alert('Erro', `Falha ao obter status: ${String(err)}`);
-    }
-  };
-
-  const handleCreateWalletIfNeeded = async (): Promise<void> => {
-    try {
-      const created = await SamsungWalletClient.createWalletIfNeeded();
-      Alert.alert(
-        'Criar Wallet',
-        created ? 'Criada' : 'Já existia / Não criada'
-      );
-    } catch (err) {
-      Alert.alert('Erro', `Falha ao criar wallet: ${String(err)}`);
     }
   };
 
@@ -567,10 +510,7 @@ export function SamsungPayExample(): React.JSX.Element {
           placeholder={`Tipo (ex: ${constants.CARD_TYPE_CREDIT}/${constants.CARD_TYPE_DEBIT}/${constants.CARD_TYPE_CREDIT_DEBIT})`}
         />
         <TouchableOpacity style={styles.button} onPress={handleAddCard}>
-          <Text style={styles.buttonText}>Adicionar (SDK)</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleAddCardToWallet}>
-          <Text style={styles.buttonText}>Adicionar (Compatibilidade)</Text>
+          <Text style={styles.buttonText}>Adicionar Cartão</Text>
         </TouchableOpacity>
       </View>
 
@@ -608,51 +548,6 @@ export function SamsungPayExample(): React.JSX.Element {
           onPress={handleActivateSamsungPay}
         >
           <Text style={styles.buttonText}>Ativar Samsung Pay</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleCreateWalletIfNeeded}
-        >
-          <Text style={styles.buttonText}>Criar Wallet (se necessário)</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Seção status por identificadores */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Status de Cartão</Text>
-        <Text style={styles.inputLabel}>Últimos dígitos (FPAN/DPAN):</Text>
-        <TextInput
-          style={styles.input}
-          value={lastDigits}
-          onChangeText={setLastDigits}
-          placeholder="Ex: 1234"
-          keyboardType="numeric"
-        />
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleGetCardStatusBySuffix}
-        >
-          <Text style={styles.buttonText}>Status por Sufixo</Text>
-        </TouchableOpacity>
-        <Text style={styles.inputLabel}>Identifier:</Text>
-        <TextInput
-          style={styles.input}
-          value={identifier}
-          onChangeText={setIdentifier}
-          placeholder="Identifier"
-        />
-        <Text style={styles.inputLabel}>TSP (ex: VISA):</Text>
-        <TextInput
-          style={styles.input}
-          value={tsp}
-          onChangeText={setTsp}
-          placeholder="TSP"
-        />
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleGetCardStatusByIdentifier}
-        >
-          <Text style={styles.buttonText}>Status por Identificador</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

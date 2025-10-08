@@ -20,10 +20,5 @@ interface SamsungWalletContract {
         promise: Promise
     )
     fun checkWalletAvailability(promise: Promise)
-    fun getSecureWalletInfo(promise: Promise)
-    fun addCardToWallet(cardData: ReadableMap, promise: Promise)
-    fun getCardStatusBySuffix(lastDigits: String, promise: Promise)
-    fun getCardStatusByIdentifier(identifier: String, tsp: String, promise: Promise)
-    fun createWalletIfNeeded(promise: Promise)
     fun getConstants(): MutableMap<String, Any>
 }

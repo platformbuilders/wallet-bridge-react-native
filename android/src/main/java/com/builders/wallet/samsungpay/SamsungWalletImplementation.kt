@@ -394,42 +394,6 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     call(samsungPay, "getSamsungPayStatus", listener)
   }
 
-  override fun getSecureWalletInfo(promise: Promise) {
-    getWalletInfo(promise)
-  }
-
-  override fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
-    // Implementação simplificada para compatibilidade
-    val payload = cardData.getString("payload") ?: ""
-    val issuerId = cardData.getString("issuerId") ?: ""
-    val PROVIDER_VISA = getStaticString("com.samsung.android.sdk.samsungpay.v2.card.AddCardInfo", "PROVIDER_VISA")
-    val tokenizationProvider = cardData.getString("tokenizationProvider") ?: PROVIDER_VISA
-    val cardType = cardData.getString("cardType") ?: "CREDIT" // Default para CREDIT se não especificado
-    
-    addCard(payload, issuerId, tokenizationProvider, cardType, object : Callback {
-      override fun invoke(vararg args: Any?) {
-        // Progress callback vazio para compatibilidade
-      }
-    }, promise)
-  }
-
-  override fun getCardStatusBySuffix(lastDigits: String, promise: Promise) {
-    Log.d(TAG, "🔍 [SAMSUNG] getCardStatusBySuffix chamado com lastDigits: $lastDigits")
-    // Implementação simplificada - retorna status mockado
-    promise.resolve("not found")
-  }
-
-  override fun getCardStatusByIdentifier(identifier: String, tsp: String, promise: Promise) {
-    Log.d(TAG, "🔍 [SAMSUNG] getCardStatusByIdentifier chamado com identifier: $identifier, tsp: $tsp")
-    // Implementação simplificada - retorna status mockado
-    promise.resolve("not found")
-  }
-
-  override fun createWalletIfNeeded(promise: Promise) {
-    Log.d(TAG, "🔍 [SAMSUNG] createWalletIfNeeded chamado")
-    // Implementação simplificada - sempre retorna false
-    promise.resolve(false)
-  }
 
   override fun getConstants(): MutableMap<String, Any> {
     val constants = hashMapOf<String, Any>()

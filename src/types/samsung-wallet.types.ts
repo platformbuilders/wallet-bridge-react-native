@@ -50,14 +50,6 @@ export interface SamsungAddCardInfo {
   tokenizationProvider: string;
 }
 
-// Samsung Pay - CardData para addCardToWallet (compatibilidade)
-export interface SamsungCardData {
-  payload: string;
-  issuerId: string;
-  tokenizationProvider: string;
-  cardType?: string; // Opcional para compatibilidade
-}
-
 // Samsung Pay - Constants (apenas tipos, valores vêm da bridge)
 export interface SamsungWalletConstants {
   SDK_NAME: string;
@@ -171,11 +163,6 @@ export interface SamsungWalletSpec {
 
   // Métodos de compatibilidade
   checkWalletAvailability(): Promise<boolean>;
-  getSecureWalletInfo(): Promise<SamsungWalletInfo>;
-  addCardToWallet(cardData: SamsungCardData): Promise<SamsungCard>;
-  getCardStatusBySuffix(lastDigits: string): Promise<string>;
-  getCardStatusByIdentifier(identifier: string, tsp: string): Promise<string>;
-  createWalletIfNeeded(): Promise<boolean>;
 
   // Constantes
   getConstants(): Promise<SamsungWalletConstants>;
