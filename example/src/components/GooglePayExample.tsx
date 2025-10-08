@@ -1245,6 +1245,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 16,
     fontFamily: 'monospace',
+    color: '#333',
   },
   googleWalletButton: {
     alignItems: 'center',

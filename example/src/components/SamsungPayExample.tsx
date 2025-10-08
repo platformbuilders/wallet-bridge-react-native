@@ -7,6 +7,8 @@ import {
   Alert,
   StyleSheet,
   TextInput,
+  Modal,
+  FlatList,
 } from 'react-native';
 import {
   SamsungWalletModule as SamsungWalletClient,
@@ -194,18 +196,55 @@ const handleSamsungPayError = (
 };
 
 export function SamsungPayExample(): React.JSX.Element {
-  const [serviceId, setServiceId] = useState<string>('SERVICE_ID_DE_EXEMPLO');
-  const [payload, setPayload] = useState<string>('PAYLOAD_BASE64_AQUI');
-  const [issuerId, setIssuerId] = useState<string>('ISSUER_ID_EXEMPLO');
-  const [tokenizationProvider, setTokenizationProvider] =
-    useState<string>('VI'); // Usar código real do provider
-  const [cardType, setCardType] = useState<string>('CREDIT');
-
   // Instanciar o SamsungWalletClient e obter constantes
   const samsungWalletClient = SamsungWalletClient;
   const constants: SamsungWalletConstants = (
     samsungWalletClient as any
   ).getConstants() as SamsungWalletConstants;
+
+  const [serviceId, setServiceId] = useState<string>('SERVICE_ID_DE_EXEMPLO');
+  const [payload, setPayload] = useState<string>('PAYLOAD_BASE64_AQUI');
+  const [issuerId, setIssuerId] = useState<string>('ISSUER_ID_EXEMPLO');
+  const [tokenizationProvider, setTokenizationProvider] = useState<string>(
+    constants.PROVIDER_ELO
+  ); // Usar código real do provider
+  const [cardType, setCardType] = useState<string>(
+    constants.CARD_TYPE_CREDIT_DEBIT
+  );
+
+  // Estados para controlar os modais
+  const [showProviderModal, setShowProviderModal] = useState<boolean>(false);
+  const [showCardTypeModal, setShowCardTypeModal] = useState<boolean>(false);
+
+  // Opções de providers baseadas nas constantes do Samsung Wallet
+  const providerOptions = [
+    { value: constants.PROVIDER_VISA, label: 'Visa' },
+    { value: constants.PROVIDER_MASTERCARD, label: 'Mastercard' },
+    { value: constants.PROVIDER_AMEX, label: 'American Express' },
+    { value: constants.PROVIDER_DISCOVER, label: 'Discover' },
+    { value: constants.PROVIDER_ELO, label: 'Elo' },
+    { value: constants.PROVIDER_PLCC, label: 'Private Label Credit Card' },
+    { value: constants.PROVIDER_GIFT, label: 'Gift Card' },
+    { value: constants.PROVIDER_LOYALTY, label: 'Loyalty Card' },
+    { value: constants.PROVIDER_PAYPAL, label: 'PayPal' },
+    { value: constants.PROVIDER_GEMALTO, label: 'Gemalto' },
+    { value: constants.PROVIDER_NAPAS, label: 'NAPAS' },
+    { value: constants.PROVIDER_MIR, label: 'MIR' },
+    { value: constants.PROVIDER_PAGOBANCOMAT, label: 'PagoBANCOMAT' },
+    { value: constants.PROVIDER_VACCINE_PASS, label: 'Vaccine Pass' },
+    { value: constants.PROVIDER_MADA, label: 'MADA' },
+  ];
+
+  // Opções de tipos de cartão baseadas nas constantes
+  const cardTypeOptions = [
+    { value: constants.CARD_TYPE_CREDIT, label: 'Crédito' },
+    { value: constants.CARD_TYPE_DEBIT, label: 'Débito' },
+    { value: constants.CARD_TYPE_CREDIT_DEBIT, label: 'Crédito/Débito' },
+    { value: constants.CARD_TYPE_GIFT, label: 'Cartão Presente' },
+    { value: constants.CARD_TYPE_LOYALTY, label: 'Fidelidade' },
+    { value: constants.CARD_TYPE_TRANSIT, label: 'Trânsito' },
+    { value: constants.CARD_TYPE_VACCINE_PASS, label: 'Passe de Vacinação' },
+  ];
 
   const handleInit = async (): Promise<void> => {
     try {
@@ -454,6 +493,104 @@ export function SamsungPayExample(): React.JSX.Element {
     }
   };
 
+  // Componente do Modal de Provider
+  const ProviderModal = () => (
+    <Modal
+      visible={showProviderModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowProviderModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Selecionar Provedor</Text>
+          <FlatList
+            data={providerOptions}
+            keyExtractor={(item) => item.value}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalOption,
+                  tokenizationProvider === item.value &&
+                    styles.modalOptionSelected,
+                ]}
+                onPress={() => {
+                  setTokenizationProvider(item.value);
+                  setShowProviderModal(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    tokenizationProvider === item.value &&
+                      styles.modalOptionTextSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+                <Text style={styles.modalOptionValue}>{item.value}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity
+            style={styles.modalCloseButton}
+            onPress={() => setShowProviderModal(false)}
+          >
+            <Text style={styles.modalCloseButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Componente do Modal de Card Type
+  const CardTypeModal = () => (
+    <Modal
+      visible={showCardTypeModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowCardTypeModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Selecionar Tipo de Cartão</Text>
+          <FlatList
+            data={cardTypeOptions}
+            keyExtractor={(item) => item.value}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalOption,
+                  cardType === item.value && styles.modalOptionSelected,
+                ]}
+                onPress={() => {
+                  setCardType(item.value);
+                  setShowCardTypeModal(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    cardType === item.value && styles.modalOptionTextSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+                <Text style={styles.modalOptionValue}>{item.value}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity
+            style={styles.modalCloseButton}
+            onPress={() => setShowCardTypeModal(false)}
+          >
+            <Text style={styles.modalCloseButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <ScrollView
       style={styles.container}
@@ -496,19 +633,28 @@ export function SamsungPayExample(): React.JSX.Element {
           placeholder="Issuer ID"
         />
         <Text style={styles.inputLabel}>Tokenization Provider:</Text>
-        <TextInput
-          style={styles.input}
-          value={tokenizationProvider}
-          onChangeText={setTokenizationProvider}
-          placeholder={`Provedor (ex: ${constants.PROVIDER_VISA}/${constants.PROVIDER_MASTERCARD})`}
-        />
+        <TouchableOpacity
+          style={styles.selectorButton}
+          onPress={() => setShowProviderModal(true)}
+        >
+          <Text style={styles.selectorButtonText}>
+            {providerOptions.find((p) => p.value === tokenizationProvider)
+              ?.label || 'Selecionar Provedor'}
+          </Text>
+          <Text style={styles.selectorButtonValue}>{tokenizationProvider}</Text>
+        </TouchableOpacity>
+
         <Text style={styles.inputLabel}>Card Type:</Text>
-        <TextInput
-          style={styles.input}
-          value={cardType}
-          onChangeText={setCardType}
-          placeholder={`Tipo (ex: ${constants.CARD_TYPE_CREDIT}/${constants.CARD_TYPE_DEBIT}/${constants.CARD_TYPE_CREDIT_DEBIT})`}
-        />
+        <TouchableOpacity
+          style={styles.selectorButton}
+          onPress={() => setShowCardTypeModal(true)}
+        >
+          <Text style={styles.selectorButtonText}>
+            {cardTypeOptions.find((c) => c.value === cardType)?.label ||
+              'Selecionar Tipo'}
+          </Text>
+          <Text style={styles.selectorButtonValue}>{cardType}</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={handleAddCard}>
           <Text style={styles.buttonText}>Adicionar Cartão</Text>
         </TouchableOpacity>
@@ -550,6 +696,10 @@ export function SamsungPayExample(): React.JSX.Element {
           <Text style={styles.buttonText}>Ativar Samsung Pay</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modais */}
+      <ProviderModal />
+      <CardTypeModal />
     </ScrollView>
   );
 }
@@ -624,5 +774,96 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  // Estilos para botões seletores
+  selectorButton: {
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  selectorButtonText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  selectorButtonValue: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'monospace',
+  },
+  // Estilos para modais
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    margin: 20,
+    maxHeight: '80%',
+    width: '90%',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalOptionSelected: {
+    backgroundColor: '#e3f2fd',
+    borderRadius: 8,
+    marginVertical: 2,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  modalOptionTextSelected: {
+    color: '#1976d2',
+    fontWeight: 'bold',
+  },
+  modalOptionValue: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'monospace',
+  },
+  modalCloseButton: {
+    backgroundColor: '#6c757d',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 16,
+    alignSelf: 'center',
+  },
+  modalCloseButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

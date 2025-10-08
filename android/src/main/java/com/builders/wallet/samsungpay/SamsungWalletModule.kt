@@ -32,7 +32,8 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
       Log.d(TAG, "🔧 [MODULE] Usando implementação MOCK")
       SamsungWalletMock(reactContext)
     } else {
-      Log.d(TAG, "🔧 [MODULE] Usando implementação REAL")
+      // A implementação correta (Real ou Stub) será selecionada pelo source set do Gradle
+      Log.d(TAG, "🔧 [MODULE] Usando implementação ${if (BuildConfig.SAMSUNG_WALLET_ENABLED) "REAL" else "STUB"}")
       SamsungWalletImplementation(reactContext)
     }
   }

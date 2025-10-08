@@ -30,7 +30,8 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
       Log.d(TAG, "🔧 [MODULE] Usando implementação MOCK")
       GoogleWalletMock(reactContext)
     } else {
-      Log.d(TAG, "🔧 [MODULE] Usando implementação REAL")
+      // A implementação correta (Real ou Stub) será selecionada pelo source set do Gradle
+      Log.d(TAG, "🔧 [MODULE] Usando implementação ${if (BuildConfig.GOOGLE_WALLET_ENABLED) "REAL" else "STUB"}")
       GoogleWalletImplementation(reactContext)
     }
   }
@@ -149,7 +150,8 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
           Log.d(TAG, "🔧 [STATIC] Processando intent com MOCK")
           GoogleWalletMock.processIntent(activity, intent)
         } else {
-          Log.d(TAG, "🔧 [STATIC] Processando intent com IMPLEMENTATION")
+          // Usa Real ou Stub dependendo da configuração (selecionado pelo source set do Gradle)
+          Log.d(TAG, "🔧 [STATIC] Processando intent com ${if (BuildConfig.GOOGLE_WALLET_ENABLED) "REAL" else "STUB"}")
           GoogleWalletImplementation.processIntent(activity, intent)
         }
       } catch (e: Exception) {
