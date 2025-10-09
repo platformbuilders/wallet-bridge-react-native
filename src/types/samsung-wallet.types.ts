@@ -212,7 +212,7 @@ export interface SamsungWalletSpec {
   checkWalletAvailability(): Promise<boolean>;
 
   // Constantes
-  getConstants(): Promise<SamsungWalletConstants>;
+  getConstants(): SamsungWalletConstants;
 
   // Métodos de listener de intent
   setIntentListener(): Promise<boolean>;
