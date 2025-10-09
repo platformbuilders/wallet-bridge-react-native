@@ -176,7 +176,7 @@ export interface SamsungWalletIntentEvent {
   error?: string;
   extras?: Record<string, any>;
   // Campos específicos do Samsung (Mastercard/Visa)
-  cardType?: 'MASTERCARD' | 'VISA' | 'UNKNOWN' | 'ENCRYPTED_OR_BINARY';
+  cardType?: string;
   // Campos específicos do Mastercard
   paymentAppProviderId?: string;
   paymentAppInstanceId?: string;
