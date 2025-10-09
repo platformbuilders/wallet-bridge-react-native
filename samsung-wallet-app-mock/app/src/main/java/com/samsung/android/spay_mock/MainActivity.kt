@@ -194,30 +194,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun generateSamsungSimulatedData(): String {
-        val timestamp = System.currentTimeMillis()
 
         val mastercardData = """
         {
-            "paymentAppProviderId": "MASTERCARD_PROVIDER_${timestamp}",
-            "paymentAppInstanceId": "INSTANCE_${timestamp}",
-            "tokenUniqueReference": "TOKEN_REF_${timestamp}",
+            "paymentAppProviderId": "MASTERCARD_PROVIDER_123465",
+            "paymentAppInstanceId": "INSTANCE_1234",
+            "tokenUniqueReference": "TOKEN_1758556574675_98397",
             "accountPanSuffix": "1234",
             "accountExpiry": "12/25"
         }
         """.trimIndent()
 
-        val visaData = """
-        {
-            "panId": "PAN_ID_${timestamp}",
-            "trId": "TR_ID_${timestamp}",
-            "tokenReferenceId": "TOKEN_REF_${timestamp}",
-            "last4Digits": "5678",
-            "deviceId": "DEVICE_${timestamp}",
-            "walletAccountId": "WALLET_${timestamp}"
-        }
-        """.trimIndent()
-
-        return if (timestamp % 2 == 0L) mastercardData else visaData
+        return mastercardData
     }
 
     private fun clearResults() {
