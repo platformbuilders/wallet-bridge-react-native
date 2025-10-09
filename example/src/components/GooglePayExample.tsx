@@ -27,164 +27,11 @@ import { useState, useEffect } from 'react';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Funções para mapear valores numéricos para descrições legíveis
-const getTokenProviderDescription = (
-  provider: number,
-  constants: GoogleWalletConstants
-): string => {
-  // Mapear baseado nas constantes disponíveis
-  if (provider === constants.TOKEN_PROVIDER_ELO) {
-    return 'Elo';
-  }
-
-  return `Provedor Desconhecido (${provider})`;
-};
-
-const getCardNetworkDescription = (
-  network: number,
-  constants: GoogleWalletConstants
-): string => {
-  // Mapear baseado nas constantes disponíveis
-  if (network === constants.CARD_NETWORK_ELO) {
-    return 'Elo';
-  }
-
-  return `Rede Desconhecida (${network})`;
-};
-
-const getTokenStateDescription = (
-  state: number,
-  constants: GoogleWalletConstants
-): string => {
-  const TOKEN_STATE_DESCRIPTIONS = {
-    [constants.TOKEN_STATE_ACTIVE]: 'Ativo',
-    [constants.TOKEN_STATE_PENDING]: 'Pendente',
-    [constants.TOKEN_STATE_SUSPENDED]: 'Suspenso',
-    [constants.TOKEN_STATE_UNTOKENIZED]: 'Não Tokenizado',
-    [constants.TOKEN_STATE_NEEDS_IDENTITY_VERIFICATION]:
-      'Requer Verificação de Identidade',
-    [constants.TOKEN_STATE_FELICA_PENDING_PROVISIONING]:
-      'Aguardando Provisionamento Felica',
-  } as const;
-
-  return TOKEN_STATE_DESCRIPTIONS[state] ?? `Estado Desconhecido (${state})`;
-};
-
-const getTapAndPayStatusDescription = (
-  status: string,
-  constants: GoogleWalletConstants
-): string => {
-  // Mapeamento de códigos de erro para descrições em português usando constants
-  const ERROR_DESCRIPTIONS: Record<string, string> = {
-    // Common Status Codes
-    [constants.SUCCESS]: 'Operação cancelada pelo usuário', //Na doc do Google Wallet é - Operação realizada com sucesso
-    [constants.SUCCESS_CACHE]:
-      'Operação realizada com sucesso (usando cache do dispositivo)',
-    [constants.SERVICE_VERSION_UPDATE_REQUIRED]:
-      'A versão instalada do Google Play Services está desatualizada. Atualize o aplicativo.',
-    [constants.SERVICE_DISABLED]:
-      'O Google Play Services foi desabilitado neste dispositivo',
-    [constants.SIGN_IN_REQUIRED]:
-      'É necessário fazer login no Google para usar esta funcionalidade',
-    [constants.INVALID_ACCOUNT]:
-      'Conta inválida especificada. Verifique sua conta do Google',
-    [constants.RESOLUTION_REQUIRED]:
-      'É necessária uma resolução adicional para completar a operação',
-    [constants.NETWORK_ERROR]:
-      'Erro de rede. Verifique sua conexão com a internet e tente novamente',
-    [constants.INTERNAL_ERROR]:
-      'Erro interno do sistema. Tente novamente em alguns instantes',
-    [constants.DEVELOPER_ERROR]:
-      'Aplicativo mal configurado. Entre em contato com o suporte',
-    [constants.ERROR]:
-      'Operação falhou sem informações detalhadas. Tente novamente',
-    [constants.INTERRUPTED]: 'Operação foi interrompida. Tente novamente',
-    [constants.TIMEOUT]:
-      'Tempo limite excedido. Verifique sua conexão e tente novamente',
-    [constants.CANCELED]: 'Operação foi cancelada pelo usuário',
-    [constants.API_NOT_CONNECTED]:
-      'API não conectada. Verifique se o Google Play Services está funcionando',
-    [constants.REMOTE_EXCEPTION]:
-      'Erro de comunicação com o serviço. Tente novamente',
-    [constants.CONNECTION_SUSPENDED_DURING_CALL]:
-      'Conexão suspensa durante a chamada. Tente novamente',
-    [constants.RECONNECTION_TIMED_OUT_DURING_UPDATE]:
-      'Conexão expirou durante atualização. Tente novamente',
-    [constants.RECONNECTION_TIMED_OUT]:
-      'Conexão expirou ao tentar reconectar. Tente novamente',
-
-    // Google Wallet Specific Status Codes
-    [constants.TAP_AND_PAY_NO_ACTIVE_WALLET]:
-      'Não há carteira ativa. Crie uma carteira primeiro',
-    [constants.TAP_AND_PAY_TOKEN_NOT_FOUND]:
-      'Token não encontrado na carteira ativa',
-    [constants.TAP_AND_PAY_INVALID_TOKEN_STATE]:
-      'Token encontrado mas em estado inválido',
-    [constants.TAP_AND_PAY_ATTESTATION_ERROR]:
-      'Falha na verificação de compatibilidade do dispositivo',
-    [constants.TAP_AND_PAY_UNAVAILABLE]:
-      'API TapAndPay não disponível para este aplicativo',
-  };
-
-  return ERROR_DESCRIPTIONS[status] ?? `Status Desconhecido (${status})`;
-};
-
-// Função para tratar erros do Google Wallet
-const handleGoogleWalletError = (
-  error: unknown,
-  constants: GoogleWalletConstants
-): string => {
-  console.log('🔍 [JS] Analisando erro:', error);
-
+// Função simples para mostrar erros da wallet
+const handleGoogleWalletError = (error: unknown): string => {
+  console.log('🔍 [JS] Erro Google Wallet:', error);
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.log('🔍 [JS] Mensagem de erro:', errorMessage);
-
-  // Procurar por padrão result_code:{error_code} na string de erro
-  const resultCodeMatch = errorMessage.match(/result_code:(\d+)/);
-
-  if (resultCodeMatch && resultCodeMatch[1]) {
-    const errorCode = resultCodeMatch[1];
-    console.log('🎯 [JS] Código de erro encontrado:', errorCode);
-
-    const description = getTapAndPayStatusDescription(errorCode, constants);
-    if (description) {
-      console.log('✅ [JS] Descrição encontrada:', description);
-      return `Erro ${errorCode}: ${description}`;
-    } else {
-      console.log('⚠️ [JS] Código de erro não mapeado:', errorCode);
-      return `Erro ${errorCode}: Código de erro não reconhecido`;
-    }
-  }
-
-  // Se não encontrar o padrão result_code, procurar por outros padrões comuns
-  const statusCodeMatch = errorMessage.match(/status[_\s]*code[:\s]*(\d+)/i);
-  if (statusCodeMatch && statusCodeMatch[1]) {
-    const errorCode = statusCodeMatch[1];
-    console.log('🎯 [JS] Status code encontrado:', errorCode);
-
-    const description = getTapAndPayStatusDescription(errorCode, constants);
-    if (description) {
-      console.log('✅ [JS] Descrição encontrada:', description);
-      return `Erro ${errorCode}: ${description}`;
-    }
-  }
-
-  // Procurar por códigos numéricos no final da mensagem
-  const numericCodeMatch = errorMessage.match(/(\d{4,5})$/);
-  if (numericCodeMatch && numericCodeMatch[1]) {
-    const errorCode = numericCodeMatch[1];
-    console.log('🎯 [JS] Código numérico encontrado:', errorCode);
-
-    const description = getTapAndPayStatusDescription(errorCode, constants);
-    if (description) {
-      console.log('✅ [JS] Descrição encontrada:', description);
-      return `Erro ${errorCode}: ${description}`;
-    }
-  }
-
-  // Se não encontrar nenhum código específico, retornar a mensagem original
-  console.log('⚠️ [JS] Nenhum código de erro específico encontrado');
-  return `Erro ao adicionar cartão: ${errorMessage}`;
+  return errorMessage;
 };
 
 export function GooglePayExample(): React.JSX.Element {
@@ -519,7 +366,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao verificar disponibilidade: ${errorMessage}`);
     }
   };
@@ -540,7 +387,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao obter informações: ${errorMessage}`);
     }
   };
@@ -562,7 +409,7 @@ export function GooglePayExample(): React.JSX.Element {
 
       Alert.alert(
         'Status do Token',
-        `Estado: ${getTokenStateDescription(tokenStatus.tokenState, constants)} (${tokenStatus.tokenState})\nSelecionado: ${tokenStatus.isSelected ? 'Sim' : 'Não'}`
+        `Estado: ${tokenStatus.tokenState}\nSelecionado: ${tokenStatus.isSelected ? 'Sim' : 'Não'}`
       );
     } catch (err) {
       console.log('❌ [JS] Erro ao obter status do token:', err);
@@ -570,7 +417,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao obter status do token: ${errorMessage}`);
     }
   };
@@ -587,7 +434,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao obter environment: ${errorMessage}`);
     }
   };
@@ -618,7 +465,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao verificar tokenização: ${errorMessage}`);
     }
   };
@@ -644,9 +491,9 @@ export function GooglePayExample(): React.JSX.Element {
           `Emissor: ${tokenData.issuerName}\n` +
           `FPAN: ${tokenData.fpanLastFour}\n` +
           `DPAN: ${tokenData.dpanLastFour}\n` +
-          `TSP: ${getTokenProviderDescription(tokenData.tokenServiceProvider, constants)}\n` +
-          `Rede: ${getCardNetworkDescription(tokenData.network, constants)}\n` +
-          `Estado: ${getTokenStateDescription(tokenData.tokenState, constants)} (${tokenData.tokenState})\n` +
+          `TSP: ${tokenData.tokenServiceProvider}\n` +
+          `Rede: ${tokenData.network}\n` +
+          `Estado: ${tokenData.tokenState}\n` +
           `Padrão: ${tokenData.isDefaultToken ? 'Sim' : 'Não'}\n` +
           `Portfólio: ${tokenData.portfolioName}`;
 
@@ -663,7 +510,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao visualizar token: ${errorMessage}`);
     }
   };
@@ -723,7 +570,7 @@ export function GooglePayExample(): React.JSX.Element {
       });
 
       // Usar a função de tratamento de erro personalizada
-      const errorMessage = handleGoogleWalletError(err, constants);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro ao Adicionar Cartão', errorMessage);
     }
   };
@@ -746,7 +593,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao criar carteira: ${errorMessage}`);
     }
   };
@@ -769,9 +616,9 @@ export function GooglePayExample(): React.JSX.Element {
               `   Emissor: ${token.issuerName}\n` +
               `   FPAN: ${token.fpanLastFour}\n` +
               `   DPAN: ${token.dpanLastFour}\n` +
-              `   TSP: ${getTokenProviderDescription(token.tokenServiceProvider, constants)}\n` +
-              `   Rede: ${getCardNetworkDescription(token.network, constants)}\n` +
-              `   Estado: ${getTokenStateDescription(token.tokenState, constants)} (${token.tokenState})\n` +
+              `   TSP: ${token.tokenServiceProvider}\n` +
+              `   Rede: ${token.network}\n` +
+              `   Estado: ${token.tokenState}\n` +
               `   Padrão: ${token.isDefaultToken ? 'Sim' : 'Não'}\n` +
               `   Portfólio: ${token.portfolioName}`
           )
@@ -793,7 +640,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao listar tokens: ${errorMessage}`);
     }
   };
@@ -822,7 +669,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert(
         'Erro',
         `Erro ao definir resultado de ativação: ${errorMessage}`
@@ -847,7 +694,7 @@ export function GooglePayExample(): React.JSX.Element {
         '❌ [JS] Stack trace:',
         err instanceof Error ? err.stack : 'N/A'
       );
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = handleGoogleWalletError(err);
       Alert.alert('Erro', `Erro ao finalizar atividade: ${errorMessage}`);
     }
   };

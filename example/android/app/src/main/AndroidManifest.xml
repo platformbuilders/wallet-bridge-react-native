@@ -21,9 +21,15 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
-        <!-- This activity handles App To App ACTIVATE_TOKEN action -->
+        <!-- This activity handles App To App ACTIVATE_TOKEN action Google Pay -->
         <intent-filter>
           <action android:name="com.example.wallet.action.ACTIVATE_TOKEN"/>
+          <category android:name="android.intent.category.DEFAULT"/>
+        </intent-filter>
+
+        <!-- This activity handles App To App LAUNCH_A2A_IDV action Samsung Pay -->
+        <intent-filter>
+          <action android:name="com.example.wallet.action.LAUNCH_A2A_IDV"/>
           <category android:name="android.intent.category.DEFAULT"/>
         </intent-filter>
       </activity>

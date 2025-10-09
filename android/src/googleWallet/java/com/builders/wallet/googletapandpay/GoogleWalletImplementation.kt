@@ -8,6 +8,7 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.BaseActivityEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.tapandpay.TapAndPay
 import com.google.android.gms.tapandpay.TapAndPayClient
@@ -19,6 +20,7 @@ import com.google.android.gms.tapandpay.issuer.TokenStatus
 import com.google.android.gms.tapandpay.issuer.ViewTokenRequest
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
+import com.builders.wallet.googletapandpay.util.ErrorCode
 
 /**
  * Implementação LIMPA do Google Wallet - USA DIRETAMENTE O SDK (SEM REFLEXÃO)
@@ -54,16 +56,27 @@ class GoogleWalletImplementation(
                                     Activity.RESULT_OK -> {
                                         val tokenId = data?.getStringExtra("com.google.android.gms.tapandpay.EXTRA_ISSUER_TOKEN_ID")
                                         if (tokenId.isNullOrEmpty()) {
-                                            Log.w(TAG, "Token ID é null ou vazio")
-                                            reject("PUSH_TOKENIZE_ERROR", "Falha ao tokenizar por push - Token ID é null ou vazio")
+                                            Log.w(TAG, "PUSH_TOKENIZE_ERROR: Falha ao tokenizar por push - Token ID é null ou vazio - result_code:null")
+                                            reject("PUSH_TOKENIZE_ERROR", "Falha ao tokenizar por push - Token ID é null ou vazio - result_code:null")
                                         } else {
                                             Log.i(TAG, "Push tokenize OK - Token ID: $tokenId")
                                             resolve(tokenId)
                                         }
                                     }
+                                    Activity.RESULT_CANCELED -> {
+                                        val errorCodeName = ErrorCode.getErrorCodeName(TapAndPayStatusCodes.TAP_AND_PAY_USER_CANCELED_FLOW)
+                                        val errorMessage = ErrorCode.getErrorMessage(TapAndPayStatusCodes.TAP_AND_PAY_USER_CANCELED_FLOW)
+                                        Log.w(TAG, "PUSH_TOKENIZE_ERROR: $errorMessage ($errorCodeName) - result_code:$resultCode")
+                                        reject("PUSH_TOKENIZE_ERROR", "$errorMessage ($errorCodeName) - result_code:$resultCode")
+                                    }
                                     else -> {
-                                        Log.w(TAG, "Push tokenize falhou - código: $resultCode")
-                                        reject("PUSH_TOKENIZE_ERROR", "Falha ao tokenizar por push - result_code:$resultCode")
+                                        // Usar resultCode diretamente para obter código de erro
+                                        val errorCodeName = ErrorCode.getErrorCodeName(resultCode)
+                                        val message = ErrorCode.getErrorMessage(resultCode)
+                                        val errorMessage = "$message ($errorCodeName) - result_code:$resultCode"
+                                        
+                                        Log.w(TAG, "PUSH_TOKENIZE_ERROR: $errorMessage")
+                                        reject("PUSH_TOKENIZE_ERROR", errorMessage)
                                     }
                                 }
                             }
@@ -71,9 +84,19 @@ class GoogleWalletImplementation(
                                 if (resultCode == Activity.RESULT_OK) {
                                     Log.i(TAG, "Carteira criada com sucesso")
                                     resolve(true)
+                                } else if (resultCode == Activity.RESULT_CANCELED) {
+                                    val errorCodeName = ErrorCode.getErrorCodeName(TapAndPayStatusCodes.TAP_AND_PAY_USER_CANCELED_FLOW)
+                                    val errorMessage = ErrorCode.getErrorMessage(TapAndPayStatusCodes.TAP_AND_PAY_USER_CANCELED_FLOW)
+                                    Log.w(TAG, "CREATE_WALLET_ERROR: $errorMessage ($errorCodeName) - result_code:$resultCode")
+                                    reject("CREATE_WALLET_ERROR", "$errorMessage ($errorCodeName) - result_code:$resultCode")
                                 } else {
-                                    Log.w(TAG, "Falha ao criar carteira - código: $resultCode")
-                                    reject("CREATE_WALLET_ERROR", "Falha ao criar carteira - result_code:$resultCode")
+                                    // Usar resultCode diretamente para obter código de erro
+                                    val errorCodeName = ErrorCode.getErrorCodeName(resultCode)
+                                    val message = ErrorCode.getErrorMessage(resultCode)
+                                    val errorMessage = "$message ($errorCodeName) - result_code:$resultCode"
+                                    
+                                    Log.w(TAG, "CREATE_WALLET_ERROR: $errorMessage")
+                                    reject("CREATE_WALLET_ERROR", errorMessage)
                                 }
                             }
                             else -> {}
@@ -99,7 +122,7 @@ class GoogleWalletImplementation(
                 promise.resolve(false)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em checkWalletAvailability: ${e.message}", e)
+            Log.e(TAG, "CHECK_WALLET_AVAILABILITY_ERROR: ${e.message}", e)
             promise.reject("CHECK_WALLET_AVAILABILITY_ERROR", e.message, e)
         }
     }
@@ -109,7 +132,8 @@ class GoogleWalletImplementation(
         Log.d(TAG, "🔍 [GOOGLE] getSecureWalletInfo chamado")
         try {
             if (tapAndPayClient == null) {
-                Log.w(TAG, "Cliente TapAndPay não foi inicializado")
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
@@ -125,16 +149,17 @@ class GoogleWalletImplementation(
                         result.putString("walletAccountID", walletId)
                         promise.resolve(result)
                     } else {
-                        Log.w(TAG, "❌ [GOOGLE] Wallet ID é null ou vazio")
-                        promise.reject("GET_WALLET_INFO_ERROR", "Wallet ID é null ou vazio")
+                        Log.w(TAG, "GET_WALLET_INFO_ERROR: Wallet ID é null ou vazio - result_code:null")
+                        promise.reject("GET_WALLET_INFO_ERROR", "Wallet ID é null ou vazio - result_code:null")
                     }
                 } else {
-                    Log.w(TAG, "❌ [GOOGLE] Falha ao obter informações da carteira: ${task.exception?.message}")
-                    promise.reject("GET_WALLET_INFO_ERROR", "Falha ao obter informações da carteira: ${task.exception?.message}")
+                    val errorMessage = getTaskErrorMessage(task)
+                    Log.w(TAG, "GET_WALLET_INFO_ERROR: $errorMessage")
+                    promise.reject("GET_WALLET_INFO_ERROR", errorMessage)
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em getSecureWalletInfo: ${e.message}", e)
+            Log.e(TAG, "GET_SECURE_WALLET_INFO_ERROR: ${e.message}", e)
             promise.reject("GET_SECURE_WALLET_INFO_ERROR", e.message, e)
         }
     }
@@ -145,6 +170,7 @@ class GoogleWalletImplementation(
         Log.i(TAG, "> getTokenStatus started")
         try {
             if (tapAndPayClient == null) {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
@@ -161,16 +187,17 @@ class GoogleWalletImplementation(
                         Log.i(TAG, "- getTokenStatus = ${tokenStatus.tokenState}")
                         promise.resolve(result)
                     } else {
-                        promise.reject("GET_TOKEN_STATUS_ERROR", "TokenStatus é null")
+                        Log.w(TAG, "GET_TOKEN_STATUS_ERROR: TokenStatus é null - result_code:null")
+                        promise.reject("GET_TOKEN_STATUS_ERROR", "TokenStatus é null - result_code:null")
                     }
                 } else {
-                    val exception = task.exception
-                    Log.w(TAG, "❌ [GOOGLE] Erro ao obter status do token: ${exception?.message}")
-                    promise.reject("GET_TOKEN_STATUS_ERROR", "Erro ao obter status do token: ${exception?.message}")
+                    val errorMessage = getTaskErrorMessage(task)
+                    Log.w(TAG, "GET_TOKEN_STATUS_ERROR: $errorMessage")
+                    promise.reject("GET_TOKEN_STATUS_ERROR", errorMessage)
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em getTokenStatus: ${e.message}", e)
+            Log.e(TAG, "GET_TOKEN_STATUS_ERROR: ${e.message}", e)
             promise.reject("GET_TOKEN_STATUS_ERROR", e.message, e)
         }
     }
@@ -181,6 +208,7 @@ class GoogleWalletImplementation(
         Log.i(TAG, "> getEnvironment started")
         try {
             if (tapAndPayClient == null) {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
@@ -193,14 +221,17 @@ class GoogleWalletImplementation(
                         Log.i(TAG, "- getEnvironment = $environment")
                         promise.resolve(environment)
                     } else {
-                        promise.reject("GET_ENVIRONMENT_ERROR", "Environment é null")
+                        Log.w(TAG, "GET_ENVIRONMENT_ERROR: Environment é null - result_code:null")
+                        promise.reject("GET_ENVIRONMENT_ERROR", "Environment é null - result_code:null")
                     }
                 } else {
-                    promise.reject("GET_ENVIRONMENT_ERROR", "Erro ao obter environment: ${task.exception?.message}")
+                    val errorMessage = getTaskErrorMessage(task)
+                    Log.w(TAG, "GET_ENVIRONMENT_ERROR: $errorMessage")
+                    promise.reject("GET_ENVIRONMENT_ERROR", errorMessage)
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em getEnvironment: ${e.message}", e)
+            Log.e(TAG, "GET_ENVIRONMENT_ERROR: ${e.message}", e)
             promise.reject("GET_ENVIRONMENT_ERROR", e.message, e)
         }
     }
@@ -216,6 +247,7 @@ class GoogleWalletImplementation(
         Log.i(TAG, "> isTokenized started")
         try {
             if (tapAndPayClient == null) {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
@@ -236,11 +268,13 @@ class GoogleWalletImplementation(
                     Log.i(TAG, "- isTokenized = $isTokenized")
                     promise.resolve(isTokenized)
                 } else {
-                    promise.reject("IS_TOKENIZED_ERROR", "Erro ao verificar se está tokenizado: ${task.exception?.message}")
+                    val errorMessage = getTaskErrorMessage(task)
+                    Log.w(TAG, "IS_TOKENIZED_ERROR: $errorMessage")
+                    promise.reject("IS_TOKENIZED_ERROR", errorMessage)
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em isTokenized: ${e.message}", e)
+            Log.e(TAG, "IS_TOKENIZED_ERROR: ${e.message}", e)
             promise.reject("IS_TOKENIZED_ERROR", e.message, e)
         }
     }
@@ -255,12 +289,14 @@ class GoogleWalletImplementation(
         Log.i(TAG, "> viewToken started - Provider: $tokenServiceProvider, TokenId: $issuerTokenId")
         try {
             if (tapAndPayClient == null) {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
 
             activity = reactContext.currentActivity
             if (activity == null) {
+                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
@@ -301,24 +337,30 @@ class GoogleWalletImplementation(
                                         Log.d(TAG, "✅ [GOOGLE] PendingIntent enviado com sucesso")
                                         promise.resolve(tokenData)
                                     } catch (e: Exception) {
-                                        promise.reject("VIEW_TOKEN_ERROR", "Erro ao enviar PendingIntent: ${e.message}")
+                                        Log.w(TAG, "VIEW_TOKEN_ERROR: Erro ao enviar PendingIntent: ${e.message} - result_code:unknown")
+                                        promise.reject("VIEW_TOKEN_ERROR", "Erro ao enviar PendingIntent: ${e.message} - result_code:unknown")
                                     }
                                 } else {
-                                    promise.reject("VIEW_TOKEN_ERROR", "Falha ao visualizar token")
+                                    val errorMessage = getTaskErrorMessage(viewTask)
+                                    Log.w(TAG, "VIEW_TOKEN_ERROR: $errorMessage")
+                                    promise.reject("VIEW_TOKEN_ERROR", errorMessage)
                                 }
                             }
                         } else {
                             promise.resolve(null)
                         }
                     } else {
-                        promise.reject("VIEW_TOKEN_ERROR", "Lista de tokens é null")
+                        Log.w(TAG, "VIEW_TOKEN_ERROR: Lista de tokens é null - result_code:null")
+                        promise.reject("VIEW_TOKEN_ERROR", "Lista de tokens é null - result_code:null")
                     }
                 } else {
-                    promise.reject("VIEW_TOKEN_ERROR", "Falha ao listar tokens")
+                    val errorMessage = getTaskErrorMessage(task)
+                    Log.w(TAG, "VIEW_TOKEN_ERROR: $errorMessage")
+                    promise.reject("VIEW_TOKEN_ERROR", errorMessage)
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em viewToken: ${e.message}", e)
+            Log.e(TAG, "VIEW_TOKEN_ERROR: ${e.message}", e)
             promise.reject("VIEW_TOKEN_ERROR", e.message, e)
         }
     }
@@ -328,12 +370,14 @@ class GoogleWalletImplementation(
         Log.d(TAG, "🔍 [GOOGLE] addCardToWallet chamado")
         try {
             if (tapAndPayClient == null) {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
 
             activity = reactContext.currentActivity
             if (activity == null) {
+                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
@@ -342,6 +386,7 @@ class GoogleWalletImplementation(
 
             val validationError = validateCardData(cardData)
             if (validationError != null) {
+                Log.w(TAG, "INVALID_CARD_DATA: $validationError")
                 promise.reject("INVALID_CARD_DATA", validationError)
                 return
             }
@@ -373,7 +418,7 @@ class GoogleWalletImplementation(
             tapAndPayClient!!.pushTokenize(activity!!, pushTokenizeRequest, PUSH_TOKENIZE_REQUEST)
             Log.d(TAG, "✅ [GOOGLE] pushTokenize chamado com sucesso")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em addCardToWallet: ${e.message}", e)
+            Log.e(TAG, "ADD_CARD_TO_WALLET_ERROR: ${e.message}", e)
             promise.reject("ADD_CARD_TO_WALLET_ERROR", e.message, e)
         }
     }
@@ -383,12 +428,14 @@ class GoogleWalletImplementation(
         Log.d(TAG, "🔍 [GOOGLE] createWalletIfNeeded chamado")
         try {
             if (tapAndPayClient == null) {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
 
             activity = reactContext.currentActivity
             if (activity == null) {
+                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
@@ -397,7 +444,7 @@ class GoogleWalletImplementation(
             tapAndPayClient!!.createWallet(activity!!, CREATE_WALLET_REQUEST)
             Log.d(TAG, "✅ [GOOGLE] createWalletIfNeeded executado com sucesso")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em createWalletIfNeeded: ${e.message}", e)
+            Log.e(TAG, "CREATE_WALLET_IF_NEEDED_ERROR: ${e.message}", e)
             promise.reject("CREATE_WALLET_IF_NEEDED_ERROR", e.message, e)
         }
     }
@@ -408,6 +455,7 @@ class GoogleWalletImplementation(
         Log.i(TAG, "> listTokens started")
         try {
             if (tapAndPayClient == null) {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
@@ -433,14 +481,17 @@ class GoogleWalletImplementation(
                         Log.i(TAG, "- listTokens = ${tokenList.size}")
                         promise.resolve(writableArray)
                     } else {
-                        promise.reject("LIST_TOKENS_ERROR", "Lista de tokens é null")
+                        Log.w(TAG, "LIST_TOKENS_ERROR: Lista de tokens é null - result_code:null")
+                        promise.reject("LIST_TOKENS_ERROR", "Lista de tokens é null - result_code:null")
                     }
                 } else {
-                    promise.reject("LIST_TOKENS_ERROR", "Erro ao listar tokens: ${task.exception?.message}")
+                    val errorMessage = getTaskErrorMessage(task)
+                    Log.w(TAG, "LIST_TOKENS_ERROR: $errorMessage")
+                    promise.reject("LIST_TOKENS_ERROR", errorMessage)
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro em listTokens: ${e.message}", e)
+            Log.e(TAG, "LIST_TOKENS_ERROR: ${e.message}", e)
             promise.reject("LIST_TOKENS_ERROR", e.message, e)
         }
     }
@@ -453,6 +504,7 @@ class GoogleWalletImplementation(
             checkPendingDataFromMainActivity()
             promise.resolve(true)
         } catch (e: Exception) {
+            Log.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
             promise.reject("SET_INTENT_LISTENER_ERROR", e.message, e)
         }
     }
@@ -463,6 +515,7 @@ class GoogleWalletImplementation(
             intentListenerActive = false
             promise.resolve(true)
         } catch (e: Exception) {
+            Log.e(TAG, "REMOVE_INTENT_LISTENER_ERROR: ${e.message}", e)
             promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
         }
     }
@@ -473,12 +526,14 @@ class GoogleWalletImplementation(
         try {
             activity = reactContext.currentActivity
             if (activity == null) {
+                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
 
             val validStatuses = listOf("approved", "declined", "failure")
             if (!validStatuses.contains(status)) {
+                Log.w(TAG, "INVALID_STATUS: Status deve ser: approved, declined ou failure")
                 promise.reject("INVALID_STATUS", "Status deve ser: approved, declined ou failure")
                 return
             }
@@ -493,6 +548,7 @@ class GoogleWalletImplementation(
             activity?.setResult(Activity.RESULT_OK, resultIntent)
             promise.resolve(true)
         } catch (e: Exception) {
+            Log.e(TAG, "SET_ACTIVATION_RESULT_ERROR: ${e.message}", e)
             promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
         }
     }
@@ -502,12 +558,14 @@ class GoogleWalletImplementation(
         try {
             activity = reactContext.currentActivity
             if (activity == null) {
+                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
             activity?.finish()
             promise.resolve(true)
         } catch (e: Exception) {
+            Log.e(TAG, "FINISH_ACTIVITY_ERROR: ${e.message}", e)
             promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
         }
     }
@@ -582,7 +640,127 @@ class GoogleWalletImplementation(
     }
 
     private fun checkPendingDataFromMainActivity() {
-        // Implementação similar à versão com reflexão
+        Log.d(TAG, "🔍 [GOOGLE] Verificando dados pendentes...")
+        try {
+            // Verificar se há dados pendentes
+            val hasData = hasPendingData()
+            
+            if (hasData) {
+                Log.d(TAG, "✅ [GOOGLE] Dados pendentes encontrados")
+                
+                // Obter os dados pendentes sem limpar
+                val data = getPendingIntentDataWithoutClearing()
+                val action = getPendingIntentAction()
+                val callingPackage = getPendingCallingPackage()
+                
+                if (data != null && data.isNotEmpty()) {
+                    Log.d(TAG, "📋 [GOOGLE] Processando dados pendentes: ${data.length} caracteres")
+                    Log.d(TAG, "📋 [GOOGLE] Action: $action, CallingPackage: $callingPackage")
+                    
+                    // Verificar se action e callingPackage estão disponíveis
+                    if (action == null) {
+                        Log.e(TAG, "❌ [GOOGLE] Action é null - não é possível processar intent")
+                        return
+                    }
+                    
+                    if (callingPackage == null) {
+                        Log.e(TAG, "❌ [GOOGLE] CallingPackage é null - não é possível processar intent")
+                        return
+                    }
+                    
+                    // Processar os dados como um intent usando os valores reais
+                    processWalletIntentData(data, action, callingPackage)
+                    
+                    // Limpar dados após processamento bem-sucedido
+                    clearPendingData()
+                } else {
+                    Log.w(TAG, "⚠️ [GOOGLE] Dados pendentes são null ou vazios")
+                }
+            } else {
+                Log.d(TAG, "🔍 [GOOGLE] Nenhum dado pendente")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [GOOGLE] Erro ao verificar dados pendentes: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Processa dados de intent e envia evento para React Native
+     */
+    private fun processWalletIntentData(data: String, action: String, callingPackage: String) {
+        Log.d(TAG, "🔍 [GOOGLE] processWalletIntentData chamado")
+        try {
+            Log.d(TAG, "✅ [GOOGLE] Intent processado: $action")
+            
+            // Determinar o tipo de intent baseado na action
+            val intentType = if (action.endsWith(".action.ACTIVATE_TOKEN")) {
+                "ACTIVATE_TOKEN"
+            } else {
+                "WALLET_INTENT"
+            }
+            
+            // Decodificar dados de base64 para string normal
+            var decodedData = data
+            var dataFormat = "raw"
+            
+            try {
+                // Tentar decodificar como base64
+                val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
+                decodedData = String(decodedBytes, Charsets.UTF_8)
+                dataFormat = "base64_decoded"
+                Log.d(TAG, "🔍 [GOOGLE] Dados decodificados com sucesso: ${decodedData.length} caracteres")
+            } catch (e: Exception) {
+                // Se falhar ao decodificar, usar dados originais
+                Log.w(TAG, "⚠️ [GOOGLE] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
+                dataFormat = "raw"
+            }
+            
+            val eventData = Arguments.createMap()
+            eventData.putString("action", action)
+            eventData.putString("type", intentType)
+            eventData.putString("data", decodedData)
+            eventData.putString("dataFormat", dataFormat)
+            eventData.putString("callingPackage", callingPackage)
+            
+            // Adicionar dados originais em base64 para referência
+            eventData.putString("originalData", data)
+            
+            Log.d(TAG, "🔍 [GOOGLE] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
+            
+            // Enviar evento para React Native
+            sendEventToReactNative("GoogleWalletIntentReceived", eventData)
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [GOOGLE] Erro ao processar dados da intent: ${e.message}", e)
+        }
+    }
+
+    private fun sendEventToReactNative(eventName: String, eventData: WritableMap) {
+        try {
+            Log.d(TAG, "🔍 [GOOGLE] Enviando evento para React Native: $eventName")
+            reactContext
+                .getJSModule(com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                .emit(eventName, eventData)
+            Log.d(TAG, "✅ [GOOGLE] Evento enviado com sucesso")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [GOOGLE] Erro ao enviar evento para React Native: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Processa erro de Task do Google e retorna mensagem formatada
+     */
+    private fun getTaskErrorMessage(task: Task<*>): String {
+        val exception = task.exception
+        return if (exception is com.google.android.gms.common.api.ApiException) {
+            val statusCode = exception.statusCode
+            val errorCodeName = ErrorCode.getErrorCodeName(statusCode)
+            val errorMessage = ErrorCode.getErrorMessage(statusCode)
+            "$errorMessage ($errorCodeName) - result_code:$statusCode"
+        } else {
+            val message = exception?.message ?: "Erro desconhecido"
+            "$message - result_code:unknown"
+        }
     }
 
     private fun validateCardData(cardData: ReadableMap): String? {
@@ -602,12 +780,113 @@ class GoogleWalletImplementation(
         private const val TAG = "GoogleWallet"
         private const val PUSH_TOKENIZE_REQUEST = 2
         private const val CREATE_WALLET_REQUEST = 6
+        
+        // Variáveis estáticas para armazenar dados da intent
+        @Volatile
+        private var pendingIntentData: String? = null
+        @Volatile
+        private var pendingIntentAction: String? = null
+        @Volatile
+        private var pendingCallingPackage: String? = null
+        
+        // Flag para indicar se há dados pendentes
+        @Volatile
+        private var hasPendingIntentData: Boolean = false
+        
+        @JvmStatic
+        fun getPendingIntentData(): String? {
+            val data = pendingIntentData
+            if (data != null) {
+                // Limpar dados após leitura
+                pendingIntentData = null
+                pendingIntentAction = null
+                pendingCallingPackage = null
+                hasPendingIntentData = false
+            }
+            return data
+        }
+        
+        @JvmStatic
+        fun getPendingIntentAction(): String? = pendingIntentAction
+        
+        @JvmStatic
+        fun getPendingCallingPackage(): String? = pendingCallingPackage
+        
+        @JvmStatic
+        fun getPendingIntentDataWithoutClearing(): String? = pendingIntentData
+        
+        @JvmStatic
+        fun clearPendingData() {
+            pendingIntentData = null
+            pendingIntentAction = null
+            pendingCallingPackage = null
+            hasPendingIntentData = false
+        }
+        
+        @JvmStatic
+        fun hasPendingData(): Boolean = hasPendingIntentData
 
         @JvmStatic
         fun processIntent(activity: Activity, intent: Intent) {
             Log.d(TAG, "🔍 [GOOGLE] processIntent chamado")
-            // Implementação de processIntent para Google Wallet
-            // TODO: Implementar lógica de processamento de intent se necessário
+            
+            Log.d(TAG, "🔍 [GOOGLE] Intent encontrada: ${intent.action}")
+            
+            // Verificar se é um intent do Google Pay/Wallet
+            if (isGooglePayIntent(intent)) {
+                Log.d(TAG, "✅ [GOOGLE] Intent do Google Pay detectada")
+                
+                // Extrair dados da intent
+                val extraText = intent.getStringExtra(Intent.EXTRA_TEXT)
+                if (!extraText.isNullOrEmpty()) {
+                    Log.d(TAG, "🔍 [GOOGLE] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
+                    
+                    // Armazenar dados para processamento posterior
+                    pendingIntentData = extraText
+                    pendingIntentAction = intent.action
+                    pendingCallingPackage = activity.callingPackage
+                    hasPendingIntentData = true
+                    
+                    Log.d(TAG, "✅ [GOOGLE] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
+                    
+                    // Limpar intent para evitar reprocessamento
+                    activity.intent = Intent()
+                } else {
+                    Log.w(TAG, "⚠️ [GOOGLE] Nenhum dado EXTRA_TEXT encontrado")
+                }
+            } else {
+                Log.d(TAG, "🔍 [GOOGLE] Intent não relacionada ao Google Pay")
+            }
+        }
+        
+        /**
+         * Verifica se uma intent é relacionada ao Google Pay/Wallet
+         */
+        private fun isGooglePayIntent(intent: Intent): Boolean {
+            val action = intent.action
+
+            Log.d(TAG, "🔍 [GOOGLE] Verificando intent - Action: $action")
+            
+            // Verificar action
+            val isValidAction = action != null && (
+                action.endsWith(".action.ACTIVATE_TOKEN")
+            )
+            
+            return isValidAction
+        }
+
+        /**
+         * Verifica se o chamador é válido (Google Play Services)
+         */
+        @JvmStatic
+        fun isValidCallingPackage(activity: Activity): Boolean {
+            val callingPackage = activity.callingPackage
+            Log.d(TAG, "🔍 [GOOGLE] Chamador: $callingPackage")
+            
+            return callingPackage != null && (
+                callingPackage == "com.google.android.gms" ||
+                callingPackage == "com.google.android.gms_mock"
+            )
         }
     }
 }

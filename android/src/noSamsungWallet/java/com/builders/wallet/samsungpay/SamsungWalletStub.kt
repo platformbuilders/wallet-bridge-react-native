@@ -55,7 +55,6 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     issuerId: String,
     tokenizationProvider: String,
     cardType: String,
-    progress: Callback,
     promise: Promise
   ) {
     promise.reject(

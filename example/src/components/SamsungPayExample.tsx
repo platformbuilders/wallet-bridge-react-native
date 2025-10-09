@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Text,
   TouchableOpacity,
@@ -9,195 +9,30 @@ import {
   TextInput,
   Modal,
   FlatList,
+  Clipboard,
 } from 'react-native';
 import {
   SamsungWalletModule as SamsungWalletClient,
+  SamsungWalletEventEmitter,
+  SamsungActivationStatus,
+  SamsungWalletDataFormat,
+  SamsungWalletIntentType,
   type SamsungWalletConstants,
   type SamsungCard,
+  type SamsungWalletIntentEvent,
 } from '@platformbuilders/wallet-bridge-react-native';
 
-// Funções para mapear valores para descrições legíveis
-const getSamsungPayStatusDescription = (
-  status: number,
-  constants: SamsungWalletConstants
-): string => {
-  const STATUS_DESCRIPTIONS = {
-    [constants.SPAY_READY]: 'Pronto para uso',
-    [constants.SPAY_NOT_READY]: 'Não está pronto',
-    [constants.SPAY_NOT_SUPPORTED]: 'Não suportado',
-    [constants.SPAY_NOT_ALLOWED_TEMPORALLY]: 'Não permitido temporariamente',
-    [constants.SPAY_HAS_TRANSIT_CARD]: 'Tem cartão de trânsito',
-    [constants.SPAY_HAS_NO_TRANSIT_CARD]: 'Não tem cartão de trânsito',
-  } as const;
-
-  return STATUS_DESCRIPTIONS[status] ?? `Status Desconhecido (${status})`;
-};
-
-const getSamsungCardTypeDescription = (
-  cardType: string,
-  constants: SamsungWalletConstants
-): string => {
-  const CARD_TYPE_DESCRIPTIONS = {
-    [constants.CARD_TYPE_CREDIT_DEBIT]: 'Pagamento (Crédito/Débito)',
-    [constants.CARD_TYPE_GIFT]: 'Cartão Presente',
-    [constants.CARD_TYPE_LOYALTY]: 'Fidelidade',
-    [constants.CARD_TYPE_CREDIT]: 'Crédito',
-    [constants.CARD_TYPE_DEBIT]: 'Débito',
-    [constants.CARD_TYPE_TRANSIT]: 'Trânsito',
-    [constants.CARD_TYPE_VACCINE_PASS]: 'Passe de Vacinação',
-  } as const;
-
-  return CARD_TYPE_DESCRIPTIONS[cardType] ?? `Tipo Desconhecido (${cardType})`;
-};
-
-const getSamsungProviderDescription = (
-  provider: string,
-  constants: SamsungWalletConstants
-): string => {
-  const PROVIDER_DESCRIPTIONS = {
-    [constants.PROVIDER_VISA]: 'Visa',
-    [constants.PROVIDER_MASTERCARD]: 'Mastercard',
-    [constants.PROVIDER_AMEX]: 'American Express',
-    [constants.PROVIDER_DISCOVER]: 'Discover',
-    [constants.PROVIDER_ELO]: 'Elo',
-    [constants.PROVIDER_MADA]: 'Mada',
-    [constants.PROVIDER_PAGOBANCOMAT]: 'PagoBancomat',
-    [constants.PROVIDER_PAYPAL]: 'PayPal',
-    [constants.PROVIDER_GEMALTO]: 'Gemalto',
-    [constants.PROVIDER_NAPAS]: 'Napas',
-    [constants.PROVIDER_MIR]: 'Mir',
-    [constants.PROVIDER_VACCINE_PASS]: 'Passe de Vacinação',
-    [constants.PROVIDER_PLCC]: 'PLCC',
-    [constants.PROVIDER_GIFT]: 'Gift',
-    [constants.PROVIDER_LOYALTY]: 'Loyalty',
-  } as const;
-
-  return (
-    PROVIDER_DESCRIPTIONS[provider] ?? `Provedor Desconhecido (${provider})`
-  );
-};
-
-const getSamsungCardStateDescription = (
-  cardState: string,
-  constants: SamsungWalletConstants
-): string => {
-  const CARD_STATE_DESCRIPTIONS = {
-    [constants.ACTIVE]: 'Ativo',
-    [constants.DISPOSED]: 'Descartado',
-    [constants.EXPIRED]: 'Expirado',
-    [constants.PENDING_ENROLLED]: 'Inscrito Pendente',
-    [constants.PENDING_PROVISION]: 'Provisionamento Pendente',
-    [constants.SUSPENDED]: 'Suspenso',
-    [constants.PENDING_ACTIVATION]: 'Ativação Pendente',
-  } as const;
-
-  return (
-    CARD_STATE_DESCRIPTIONS[cardState] ?? `Estado Desconhecido (${cardState})`
-  );
-};
-
-const getSamsungErrorDescription = (
-  errorCode: number,
-  constants: SamsungWalletConstants
-): string => {
-  const ERROR_DESCRIPTIONS = {
-    [constants.ERROR_NONE]: 'Nenhum erro',
-    [constants.ERROR_SPAY_INTERNAL]: 'Erro interno do Samsung Pay',
-    [constants.ERROR_INVALID_INPUT]: 'Entrada inválida',
-    [constants.ERROR_NOT_SUPPORTED]: 'Não suportado',
-    [constants.ERROR_NOT_FOUND]: 'Não encontrado',
-    [constants.ERROR_ALREADY_DONE]: 'Já foi feito',
-    [constants.ERROR_NOT_ALLOWED]: 'Não permitido',
-    [constants.ERROR_USER_CANCELED]: 'Cancelado pelo usuário',
-    [constants.ERROR_PARTNER_SDK_API_LEVEL]:
-      'Nível de API do parceiro inválido',
-    [constants.ERROR_PARTNER_SERVICE_TYPE]:
-      'Tipo de serviço do parceiro inválido',
-    [constants.ERROR_INVALID_PARAMETER]: 'Parâmetro inválido',
-    [constants.ERROR_NO_NETWORK]: 'Sem conexão de rede',
-    [constants.ERROR_SERVER_NO_RESPONSE]: 'Servidor sem resposta',
-    [constants.ERROR_PARTNER_INFO_INVALID]: 'Informações do parceiro inválidas',
-    [constants.ERROR_INITIATION_FAIL]: 'Falha na inicialização',
-    [constants.ERROR_REGISTRATION_FAIL]: 'Falha no registro',
-    [constants.ERROR_DUPLICATED_SDK_API_CALLED]: 'API do SDK chamada duplicada',
-    [constants.ERROR_SDK_NOT_SUPPORTED_FOR_THIS_REGION]:
-      'SDK não suportado para esta região',
-    [constants.ERROR_SERVICE_ID_INVALID]: 'ID do serviço inválido',
-    [constants.ERROR_SERVICE_UNAVAILABLE_FOR_THIS_REGION]:
-      'Serviço indisponível para esta região',
-    [constants.ERROR_PARTNER_APP_SIGNATURE_MISMATCH]:
-      'Assinatura do app do parceiro não confere',
-    [constants.ERROR_PARTNER_APP_VERSION_NOT_SUPPORTED]:
-      'Versão do app do parceiro não suportada',
-    [constants.ERROR_PARTNER_APP_BLOCKED]: 'App do parceiro bloqueado',
-    [constants.ERROR_USER_NOT_REGISTERED_FOR_DEBUG]:
-      'Usuário não registrado para debug',
-    [constants.ERROR_SERVICE_NOT_APPROVED_FOR_RELEASE]:
-      'Serviço não aprovado para release',
-    [constants.ERROR_PARTNER_NOT_APPROVED]: 'Parceiro não aprovado',
-    [constants.ERROR_UNAUTHORIZED_REQUEST_TYPE]:
-      'Tipo de requisição não autorizado',
-    [constants.ERROR_EXPIRED_OR_INVALID_DEBUG_KEY]:
-      'Chave de debug expirada ou inválida',
-    [constants.ERROR_SERVER_INTERNAL]: 'Erro interno do servidor',
-    [constants.ERROR_DEVICE_NOT_SAMSUNG]: 'Dispositivo não é Samsung',
-    [constants.ERROR_SPAY_PKG_NOT_FOUND]: 'Pacote Samsung Pay não encontrado',
-    [constants.ERROR_SPAY_SDK_SERVICE_NOT_AVAILABLE]:
-      'Serviço SDK Samsung Pay não disponível',
-    [constants.ERROR_DEVICE_INTEGRITY_CHECK_FAIL]:
-      'Falha na verificação de integridade do dispositivo',
-    [constants.ERROR_SPAY_APP_INTEGRITY_CHECK_FAIL]:
-      'Falha na verificação de integridade do app Samsung Pay',
-    [constants.ERROR_ANDROID_PLATFORM_CHECK_FAIL]:
-      'Falha na verificação da plataforma Android',
-    [constants.ERROR_MISSING_INFORMATION]: 'Informações em falta',
-    [constants.ERROR_SPAY_SETUP_NOT_COMPLETED]:
-      'Configuração do Samsung Pay não concluída',
-    [constants.ERROR_SPAY_APP_NEED_TO_UPDATE]:
-      'App Samsung Pay precisa ser atualizado',
-    [constants.ERROR_PARTNER_SDK_VERSION_NOT_ALLOWED]:
-      'Versão do SDK do parceiro não permitida',
-    [constants.ERROR_UNABLE_TO_VERIFY_CALLER]:
-      'Não foi possível verificar o chamador',
-    [constants.ERROR_SPAY_FMM_LOCK]: 'Samsung Pay bloqueado pelo FMM',
-    [constants.ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY]:
-      'Samsung Pay conectado com display externo',
-  } as const;
-
-  return ERROR_DESCRIPTIONS[errorCode] ?? `Erro Desconhecido (${errorCode})`;
-};
-
-// Função para tratar erros do Samsung Pay
-const handleSamsungPayError = (
-  error: unknown,
-  constants: SamsungWalletConstants
-): string => {
-  console.log('🔍 [JS] Analisando erro Samsung Pay:', error);
-
+// Função simples para mostrar erros da wallet
+const handleSamsungPayError = (error: unknown): string => {
+  console.log('🔍 [JS] Erro Samsung Pay:', error);
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.log('🔍 [JS] Mensagem de erro:', errorMessage);
-
-  // Procurar por códigos de erro numéricos na string de erro
-  const errorCodeMatch = errorMessage.match(/(\d+)/);
-  if (errorCodeMatch && errorCodeMatch[1]) {
-    const errorCode = parseInt(errorCodeMatch[1]);
-    console.log('🎯 [JS] Código de erro encontrado:', errorCode);
-
-    const description = getSamsungErrorDescription(errorCode, constants);
-    if (description) {
-      console.log('✅ [JS] Descrição encontrada:', description);
-      return `Erro ${errorCode}: ${description}`;
-    }
-  }
-
-  // Se não encontrar código específico, retornar a mensagem original
-  console.log('⚠️ [JS] Nenhum código de erro específico encontrado');
-  return `Erro Samsung Pay: ${errorMessage}`;
+  return errorMessage;
 };
 
 export function SamsungPayExample(): React.JSX.Element {
-  // Instanciar o SamsungWalletClient e obter constantes
+  // Instanciar o SamsungWalletClient e EventEmitter
   const samsungWalletClient = SamsungWalletClient;
+  const eventEmitter = new SamsungWalletEventEmitter();
   const constants: SamsungWalletConstants = (
     samsungWalletClient as any
   ).getConstants() as SamsungWalletConstants;
@@ -215,6 +50,14 @@ export function SamsungPayExample(): React.JSX.Element {
   // Estados para controlar os modais
   const [showProviderModal, setShowProviderModal] = useState<boolean>(false);
   const [showCardTypeModal, setShowCardTypeModal] = useState<boolean>(false);
+
+  // Estados para controlar os dados da intent
+  const [intentResult, setIntentResult] =
+    useState<SamsungWalletIntentEvent | null>(null);
+  const [decodedData, setDecodedData] = useState<
+    Record<string, any> | string | null
+  >(null);
+  const [isCheckingPendingData, setIsCheckingPendingData] = useState(false);
 
   // Opções de providers baseadas nas constantes do Samsung Wallet
   const providerOptions = [
@@ -246,6 +89,294 @@ export function SamsungPayExample(): React.JSX.Element {
     { value: constants.CARD_TYPE_VACCINE_PASS, label: 'Passe de Vacinação' },
   ];
 
+  // Função para mostrar dados já decodificados
+  const showDecodedData = (
+    data: string,
+    eventType: string,
+    action: string
+  ): Record<string, any> | string | null => {
+    try {
+      console.log('🔍 [JS] Mostrando dados já decodificados...');
+      console.log('🔍 [JS] Dados decodificados (string):', data);
+
+      // Tentar fazer parse como JSON
+      let parsedData: Record<string, any> | string;
+      try {
+        parsedData = JSON.parse(data);
+        console.log('✅ [JS] Dados parseados como JSON:', parsedData);
+      } catch (jsonError) {
+        console.log('⚠️ [JS] Dados não são JSON válido, mostrando como string');
+        parsedData = data;
+      }
+
+      // Armazenar dados decodificados no estado
+      setDecodedData(parsedData);
+
+      // Criar mensagem formatada
+      let message = `🎯 ${eventType} Recebido!\n\n`;
+      message += `📱 Ação: ${action}\n\n`;
+      message += `📋 Dados Decodificados (Automático):\n`;
+
+      if (typeof parsedData === 'object' && parsedData !== null) {
+        message += JSON.stringify(parsedData, null, 2);
+      } else {
+        message += parsedData;
+      }
+
+      // Mostrar alert com dados decodificados
+      Alert.alert(`✅ ${eventType}`, message, [
+        { text: 'OK' },
+        {
+          text: '📋 Copiar Dados',
+          onPress: () => {
+            const dataToCopy =
+              typeof parsedData === 'object'
+                ? JSON.stringify(parsedData, null, 2)
+                : String(parsedData);
+            Clipboard.setString(dataToCopy);
+            Alert.alert(
+              'Sucesso',
+              'Dados copiados para a área de transferência!'
+            );
+          },
+        },
+      ]);
+
+      return parsedData;
+    } catch (error) {
+      console.error('❌ [JS] Erro ao processar dados decodificados:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      // Limpar dados decodificados em caso de erro
+      setDecodedData(null);
+
+      Alert.alert(
+        `❌ ${eventType} (Erro de Processamento)`,
+        `Intent recebido mas houve erro ao processar os dados!\n\nAção: ${action}\nErro: ${errorMessage}\n\nDados originais:\n${data.substring(0, 200)}...`,
+        [{ text: 'OK' }]
+      );
+
+      return null;
+    }
+  };
+
+  // Função para decodificar dados base64 e mostrar resultado
+  const decodeAndShowData = (
+    data: string,
+    eventType: string,
+    action: string
+  ): Record<string, any> | string | null => {
+    try {
+      console.log('🔍 [JS] Decodificando dados base64...');
+      console.log(
+        '🔍 [JS] Dados originais (base64):',
+        data.substring(0, 100) + '...'
+      );
+
+      // Decodificar dados base64
+      const decodedData = atob(data);
+      console.log('🔍 [JS] Dados decodificados (string):', decodedData);
+
+      // Tentar fazer parse como JSON
+      let parsedData: Record<string, any> | string;
+      try {
+        parsedData = JSON.parse(decodedData);
+        console.log('✅ [JS] Dados parseados como JSON:', parsedData);
+      } catch (jsonError) {
+        console.log('⚠️ [JS] Dados não são JSON válido, mostrando como string');
+        parsedData = decodedData;
+      }
+
+      // Armazenar dados decodificados no estado
+      setDecodedData(parsedData);
+
+      // Criar mensagem formatada
+      let message = `🎯 ${eventType} Recebido!\n\n`;
+      message += `📱 Ação: ${action}\n\n`;
+      message += `📋 Dados Decodificados:\n`;
+
+      if (typeof parsedData === 'object' && parsedData !== null) {
+        message += JSON.stringify(parsedData, null, 2);
+      } else {
+        message += parsedData;
+      }
+
+      // Mostrar alert com dados decodificados
+      Alert.alert(`✅ ${eventType}`, message, [
+        { text: 'OK' },
+        {
+          text: '📋 Copiar Dados',
+          onPress: () => {
+            const dataToCopy =
+              typeof parsedData === 'object'
+                ? JSON.stringify(parsedData, null, 2)
+                : String(parsedData);
+            Clipboard.setString(dataToCopy);
+            Alert.alert(
+              'Sucesso',
+              'Dados copiados para a área de transferência!'
+            );
+          },
+        },
+      ]);
+
+      return parsedData;
+    } catch (error) {
+      console.error('❌ [JS] Erro ao decodificar dados base64:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      // Limpar dados decodificados em caso de erro
+      setDecodedData(null);
+
+      Alert.alert(
+        `❌ ${eventType} (Erro de Decodificação)`,
+        `Intent recebido mas houve erro ao decodificar os dados!\n\nAção: ${action}\nErro: ${errorMessage}\n\nDados originais (base64):\n${data.substring(0, 200)}...`,
+        [{ text: 'OK' }]
+      );
+
+      return null;
+    }
+  };
+
+  // Função para processar eventos de intent da carteira Samsung (reutilizável)
+  const processSamsungWalletIntent = (
+    walletEvent: SamsungWalletIntentEvent
+  ): void => {
+    console.log('🎯 Processando intent da carteira Samsung:', walletEvent);
+
+    // Atualizar estado com o resultado do intent
+    setIntentResult(walletEvent);
+
+    // Processar diferentes tipos de intent e mostrar alert
+    switch (walletEvent.type) {
+      case SamsungWalletIntentType.LAUNCH_A2A_IDV:
+        if (
+          walletEvent.data &&
+          walletEvent.dataFormat === SamsungWalletDataFormat.BASE64_DECODED
+        ) {
+          // Dados já decodificados automaticamente pelo nativo
+          console.log('✅ Dados já decodificados automaticamente');
+          showDecodedData(
+            walletEvent.data,
+            'A2A IDV Samsung',
+            walletEvent.action
+          );
+        } else if (
+          walletEvent.data &&
+          walletEvent.dataFormat === SamsungWalletDataFormat.RAW
+        ) {
+          // Dados em formato raw, tentar decodificar manualmente
+          decodeAndShowData(
+            walletEvent.data,
+            'A2A IDV Samsung',
+            walletEvent.action
+          );
+        } else {
+          Alert.alert(
+            'A2A IDV Samsung',
+            `Intent de ativação Samsung recebido!\nAção: ${walletEvent.action}\nFormato: ${walletEvent.dataFormat || 'N/A'}`,
+            [{ text: 'OK' }]
+          );
+        }
+        break;
+
+      case SamsungWalletIntentType.WALLET_INTENT:
+        if (
+          walletEvent.data &&
+          walletEvent.dataFormat === SamsungWalletDataFormat.BASE64_DECODED
+        ) {
+          // Dados já decodificados automaticamente pelo nativo
+          console.log('✅ Dados já decodificados automaticamente');
+          showDecodedData(
+            walletEvent.data,
+            'Intent da Carteira Samsung',
+            walletEvent.action
+          );
+        } else if (
+          walletEvent.data &&
+          walletEvent.dataFormat === SamsungWalletDataFormat.RAW
+        ) {
+          // Dados em formato raw, tentar decodificar manualmente
+          decodeAndShowData(
+            walletEvent.data,
+            'Intent da Carteira Samsung',
+            walletEvent.action
+          );
+        } else {
+          Alert.alert(
+            'Intent da Carteira Samsung',
+            `Intent relacionado à carteira Samsung recebido!\nAção: ${walletEvent.action}\nFormato: ${walletEvent.dataFormat || 'N/A'}`,
+            [{ text: 'OK' }]
+          );
+        }
+        break;
+
+      case SamsungWalletIntentType.INVALID_CALLER:
+        Alert.alert(
+          '⚠️ Chamador Inválido',
+          `Tentativa de acesso não autorizada!\nAção: ${walletEvent.action}\nPackage: ${walletEvent.callingPackage}\nErro: ${walletEvent.error}`,
+          [{ text: 'OK' }]
+        );
+        console.warn('🚨 Tentativa de acesso não autorizada:', walletEvent);
+        break;
+
+      default:
+        console.log('Intent não reconhecido:', walletEvent);
+    }
+  };
+
+  // Configurar listener de intent automaticamente
+  useEffect(() => {
+    let isMounted = true;
+
+    // Ativar listener automaticamente
+    const activateListener = async () => {
+      try {
+        setIsCheckingPendingData(true);
+        await samsungWalletClient.setIntentListener();
+        console.log(
+          '✅ [JS] Listener de intent Samsung ativado automaticamente'
+        );
+      } catch (error) {
+        console.error('❌ [JS] Erro ao ativar listener Samsung:', error);
+      } finally {
+        if (isMounted) {
+          setIsCheckingPendingData(false);
+        }
+      }
+    };
+
+    activateListener();
+
+    // Registrar listener para eventos de intent da carteira Samsung usando a biblioteca
+    const removeListener = eventEmitter.addIntentListener(
+      (walletEvent: SamsungWalletIntentEvent) => {
+        console.log('🎯 Intent recebido da carteira Samsung:', walletEvent);
+
+        // Usar a função reutilizável para processar o evento
+        processSamsungWalletIntent(walletEvent);
+      }
+    );
+
+    // Cleanup do listener quando o componente for desmontado
+    return () => {
+      isMounted = false;
+
+      // Remover listener do EventEmitter
+      removeListener();
+
+      // Desativar listener nativo
+      samsungWalletClient.removeIntentListener().catch((error) => {
+        console.error(
+          '❌ [JS] Erro ao remover listener nativo Samsung:',
+          error
+        );
+      });
+    };
+  }, []);
+
   const handleInit = async (): Promise<void> => {
     try {
       console.log('🔍 [JS] Iniciando inicialização do Samsung Pay...');
@@ -257,7 +388,7 @@ export function SamsungPayExample(): React.JSX.Element {
       Alert.alert('Init', `Inicializado: ${initialized ? 'Sim' : 'Não'}`);
     } catch (err) {
       console.log('❌ [JS] Erro ao inicializar:', err);
-      const errorMessage = handleSamsungPayError(err, constants);
+      const errorMessage = handleSamsungPayError(err);
       Alert.alert('Erro', errorMessage);
     }
   };
@@ -268,17 +399,10 @@ export function SamsungPayExample(): React.JSX.Element {
       const status = await samsungWalletClient.getSamsungPayStatus();
       console.log('✅ [JS] Status obtido:', status);
 
-      const statusDescription = getSamsungPayStatusDescription(
-        status,
-        constants
-      );
-      Alert.alert(
-        'Status do Samsung Pay',
-        `Código: ${status}\nDescrição: ${statusDescription}`
-      );
+      Alert.alert('Status do Samsung Pay', `Status: ${status}`);
     } catch (err) {
       console.log('❌ [JS] Erro ao obter status:', err);
-      const errorMessage = handleSamsungPayError(err, constants);
+      const errorMessage = handleSamsungPayError(err);
       Alert.alert('Erro', errorMessage);
     }
   };
@@ -311,26 +435,13 @@ export function SamsungPayExample(): React.JSX.Element {
       if (cards.length > 0) {
         const cardInfo = cards
           .map((card: SamsungCard, index: number) => {
-            const cardTypeDesc = card.cardType
-              ? getSamsungCardTypeDescription(card.cardType, constants)
-              : 'Desconhecido';
-            const providerDesc = card.tokenizationProvider
-              ? getSamsungProviderDescription(
-                  String(card.tokenizationProvider),
-                  constants
-                )
-              : 'Desconhecido';
-            const cardStateDesc = card.cardStatus
-              ? getSamsungCardStateDescription(card.cardStatus, constants)
-              : 'Desconhecido';
-
             return (
               `${index + 1}. ${card.displayName ?? 'Sem nome'}\n` +
               `   ••••${card.last4 ?? card.last4FPan ?? ''}\n` +
               `   Brand: ${card.cardBrand}\n` +
-              `   Tipo: ${cardTypeDesc}\n` +
-              `   Provedor: ${providerDesc}\n` +
-              `   Status: ${cardStateDesc} (${card.cardStatus})`
+              `   Tipo: ${card.cardType}\n` +
+              `   Provedor: ${card.tokenizationProvider}\n` +
+              `   Status: ${card.cardStatus}`
             );
           })
           .join('\n\n');
@@ -347,7 +458,7 @@ export function SamsungPayExample(): React.JSX.Element {
       }
     } catch (err) {
       console.log('❌ [JS] Erro ao listar cartões:', err);
-      const errorMessage = handleSamsungPayError(err, constants);
+      const errorMessage = handleSamsungPayError(err);
       Alert.alert('Erro', errorMessage);
     }
   };
@@ -378,35 +489,22 @@ export function SamsungPayExample(): React.JSX.Element {
         payload,
         issuerId,
         tokenizationProvider,
-        cardType,
-        // Progresso opcional
-        (current: number, total: number) => {
-          console.log(`[SamsungPay] Progresso: ${current}/${total}`);
-        }
+        cardType
       );
 
       console.log('✅ [JS] Cartão adicionado com sucesso:', card);
-
-      const cardTypeDesc = getSamsungCardTypeDescription(
-        card.cardType || cardType,
-        constants
-      );
-      const providerDesc = getSamsungProviderDescription(
-        tokenizationProvider,
-        constants
-      );
 
       Alert.alert(
         'Cartão Adicionado',
         `ID: ${card.cardId}\n` +
           `Brand: ${card.cardBrand}\n` +
           `Status: ${card.cardStatus}\n` +
-          `Tipo: ${cardTypeDesc}\n` +
-          `Provedor: ${providerDesc}`
+          `Tipo: ${card.cardType || cardType}\n` +
+          `Provedor: ${tokenizationProvider}`
       );
     } catch (err) {
       console.log('❌ [JS] Erro ao adicionar cartão:', err);
-      const errorMessage = handleSamsungPayError(err, constants);
+      const errorMessage = handleSamsungPayError(err);
       Alert.alert('Erro', errorMessage);
     }
   };
@@ -423,7 +521,7 @@ export function SamsungPayExample(): React.JSX.Element {
       );
     } catch (err) {
       console.log('❌ [JS] Erro ao verificar disponibilidade:', err);
-      const errorMessage = handleSamsungPayError(err, constants);
+      const errorMessage = handleSamsungPayError(err);
       Alert.alert('Erro', errorMessage);
     }
   };
@@ -433,63 +531,77 @@ export function SamsungPayExample(): React.JSX.Element {
       console.log('🔍 [JS] Obtendo constantes do Samsung Pay...');
       console.log('✅ [JS] Constantes obtidas:', constants);
 
-      // Organizar constantes por categoria
-      const organizedConstants = {
-        'Status Codes': {
-          SPAY_READY: constants.SPAY_READY,
-          SPAY_NOT_READY: constants.SPAY_NOT_READY,
-          SPAY_NOT_SUPPORTED: constants.SPAY_NOT_SUPPORTED,
-          SPAY_NOT_ALLOWED_TEMPORALLY: constants.SPAY_NOT_ALLOWED_TEMPORALLY,
-          SPAY_HAS_TRANSIT_CARD: constants.SPAY_HAS_TRANSIT_CARD,
-          SPAY_HAS_NO_TRANSIT_CARD: constants.SPAY_HAS_NO_TRANSIT_CARD,
-        },
-        'Card Types': {
-          CARD_TYPE_CREDIT_DEBIT: constants.CARD_TYPE_CREDIT_DEBIT,
-          CARD_TYPE_GIFT: constants.CARD_TYPE_GIFT,
-          CARD_TYPE_LOYALTY: constants.CARD_TYPE_LOYALTY,
-          CARD_TYPE_CREDIT: constants.CARD_TYPE_CREDIT,
-          CARD_TYPE_DEBIT: constants.CARD_TYPE_DEBIT,
-          CARD_TYPE_TRANSIT: constants.CARD_TYPE_TRANSIT,
-          CARD_TYPE_VACCINE_PASS: constants.CARD_TYPE_VACCINE_PASS,
-        },
-        'Card States': {
-          ACTIVE: constants.ACTIVE,
-          DISPOSED: constants.DISPOSED,
-          EXPIRED: constants.EXPIRED,
-          PENDING_ENROLLED: constants.PENDING_ENROLLED,
-          PENDING_PROVISION: constants.PENDING_PROVISION,
-          SUSPENDED: constants.SUSPENDED,
-          PENDING_ACTIVATION: constants.PENDING_ACTIVATION,
-        },
-        'Tokenization Providers': {
-          PROVIDER_VISA: constants.PROVIDER_VISA,
-          PROVIDER_MASTERCARD: constants.PROVIDER_MASTERCARD,
-          PROVIDER_AMEX: constants.PROVIDER_AMEX,
-          PROVIDER_DISCOVER: constants.PROVIDER_DISCOVER,
-          PROVIDER_ELO: constants.PROVIDER_ELO,
-          PROVIDER_MADA: constants.PROVIDER_MADA,
-          PROVIDER_PAGOBANCOMAT: constants.PROVIDER_PAGOBANCOMAT,
-          PROVIDER_PAYPAL: constants.PROVIDER_PAYPAL,
-        },
-        'Error Codes (Sample)': {
-          ERROR_NONE: constants.ERROR_NONE,
-          ERROR_SPAY_INTERNAL: constants.ERROR_SPAY_INTERNAL,
-          ERROR_INVALID_INPUT: constants.ERROR_INVALID_INPUT,
-          ERROR_NOT_SUPPORTED: constants.ERROR_NOT_SUPPORTED,
-          ERROR_USER_CANCELED: constants.ERROR_USER_CANCELED,
-          ERROR_DEVICE_NOT_SAMSUNG: constants.ERROR_DEVICE_NOT_SAMSUNG,
-        },
-      };
-
       Alert.alert(
         'Constantes Samsung Pay',
-        `SDK: ${constants.SDK_NAME}\nMock: ${constants.useMock ? 'Sim' : 'Não'}\n\n` +
-          `📊 Constantes organizadas por categoria:\n\n` +
-          JSON.stringify(organizedConstants, null, 2)
+        `SDK: ${constants.SDK_NAME}\n\n` +
+          `📊 Constantes disponíveis:\n\n` +
+          JSON.stringify(constants, null, 2)
       );
     } catch (err) {
       console.log('❌ [JS] Erro ao obter constantes:', err);
       Alert.alert('Erro', `Falha ao obter constantes: ${String(err)}`);
+    }
+  };
+
+  const handleSetActivationResult = async (
+    status: SamsungActivationStatus,
+    activationCode?: string
+  ): Promise<void> => {
+    try {
+      console.log(
+        '🔍 [JS] Iniciando definição de resultado de ativação Samsung...'
+      );
+      console.log('🔍 [JS] Status:', status, 'ActivationCode:', activationCode);
+
+      const result = await samsungWalletClient.setActivationResult(
+        status,
+        activationCode
+      );
+      console.log('✅ [JS] Resultado de ativação Samsung definido:', result);
+
+      Alert.alert(
+        'Resultado de Ativação Samsung Definido',
+        `Status: ${status}\n${activationCode ? `ActivationCode: ${activationCode}` : 'Sem ActivationCode'}`
+      );
+    } catch (err) {
+      console.log(
+        '❌ [JS] Erro ao definir resultado de ativação Samsung:',
+        err
+      );
+      console.log(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = handleSamsungPayError(err);
+      Alert.alert(
+        'Erro',
+        `Erro ao definir resultado de ativação Samsung: ${errorMessage}`
+      );
+    }
+  };
+
+  const handleFinishActivity = async (): Promise<void> => {
+    try {
+      console.log('🔍 [JS] Iniciando finalização da atividade Samsung...');
+
+      const result = await samsungWalletClient.finishActivity();
+      console.log('✅ [JS] Atividade Samsung finalizada:', result);
+
+      Alert.alert(
+        'Atividade Samsung Finalizada',
+        'A atividade foi finalizada e você voltará para o Samsung Pay.'
+      );
+    } catch (err) {
+      console.log('❌ [JS] Erro ao finalizar atividade Samsung:', err);
+      console.log(
+        '❌ [JS] Stack trace:',
+        err instanceof Error ? err.stack : 'N/A'
+      );
+      const errorMessage = handleSamsungPayError(err);
+      Alert.alert(
+        'Erro',
+        `Erro ao finalizar atividade Samsung: ${errorMessage}`
+      );
     }
   };
 
@@ -597,6 +709,216 @@ export function SamsungPayExample(): React.JSX.Element {
       contentContainerStyle={{ paddingBottom: 40 }}
     >
       <Text style={styles.title}>Samsung Pay - Exemplo</Text>
+
+      {/* Componente unificado de status e resultado do intent */}
+      <View style={styles.intentStatusSection}>
+        <Text style={styles.intentStatusTitle}>Samsung Pay - App 2 App</Text>
+        <View
+          style={[
+            styles.intentStatusIndicator,
+            intentResult
+              ? styles.intentStatusActive
+              : isCheckingPendingData
+                ? styles.intentStatusChecking
+                : styles.intentStatusInactive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.intentStatusText,
+              intentResult
+                ? styles.intentStatusTextActive
+                : isCheckingPendingData
+                  ? styles.intentStatusTextChecking
+                  : styles.intentStatusTextInactive,
+            ]}
+          >
+            {intentResult
+              ? '🎯 Intent Recebido'
+              : isCheckingPendingData
+                ? '🔍 Verificando Dados...'
+                : '⏳ Aguardando Intent'}
+          </Text>
+        </View>
+        <Text style={styles.intentStatusDescription}>
+          {intentResult
+            ? `Último intent recebido em ${new Date().toLocaleTimeString()}`
+            : isCheckingPendingData
+              ? 'Verificando se há dados pendentes da MainActivity...'
+              : 'O app está escutando por intents do Samsung Pay'}
+        </Text>
+
+        {/* Seção de detalhes do intent quando disponível */}
+        {intentResult && (
+          <View style={styles.intentResultContent}>
+            <Text style={styles.intentResultText}>
+              <Text style={styles.intentResultLabel}>Tipo:</Text>{' '}
+              {intentResult.type}
+            </Text>
+            <Text style={styles.intentResultText}>
+              <Text style={styles.intentResultLabel}>Ação:</Text>{' '}
+              {intentResult.action}
+            </Text>
+            {intentResult.callingPackage && (
+              <Text style={styles.intentResultText}>
+                <Text style={styles.intentResultLabel}>Package:</Text>{' '}
+                {intentResult.callingPackage}
+              </Text>
+            )}
+            {intentResult.data && (
+              <Text style={styles.intentResultText}>
+                <Text style={styles.intentResultLabel}>Dados:</Text>{' '}
+                {intentResult.data.substring(0, 50)}...
+              </Text>
+            )}
+            {intentResult.dataFormat && (
+              <Text style={styles.intentResultText}>
+                <Text style={styles.intentResultLabel}>Formato:</Text>{' '}
+                {intentResult.dataFormat}
+              </Text>
+            )}
+            {intentResult.originalData && (
+              <Text style={styles.intentResultText}>
+                <Text style={styles.intentResultLabel}>
+                  Dados Originais (Base64):
+                </Text>{' '}
+                {intentResult.originalData.substring(0, 50)}...
+              </Text>
+            )}
+            {intentResult.error && (
+              <Text style={[styles.intentResultText, styles.intentResultError]}>
+                <Text style={styles.intentResultLabel}>Erro:</Text>{' '}
+                {intentResult.error}
+              </Text>
+            )}
+            <Text style={styles.intentResultText}>
+              <Text style={styles.intentResultLabel}>Timestamp:</Text>{' '}
+              {new Date().toLocaleString()}
+            </Text>
+
+            {/* Dados decodificados integrados */}
+            {decodedData && (
+              <>
+                <View style={styles.decodedDataDivider} />
+                <Text style={styles.decodedDataTitle}>
+                  📋 Dados Decodificados
+                  {intentResult.dataFormat ===
+                    SamsungWalletDataFormat.BASE64_DECODED && ' (Automático)'}
+                  {intentResult.dataFormat === SamsungWalletDataFormat.RAW &&
+                    ' (Manual)'}
+                </Text>
+                <View style={styles.decodedDataContent}>
+                  <Text style={styles.decodedDataText}>
+                    {typeof decodedData === 'object' && decodedData !== null
+                      ? JSON.stringify(decodedData, null, 2)
+                      : String(decodedData)}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={() => {
+                    const dataToCopy =
+                      typeof decodedData === 'object'
+                        ? JSON.stringify(decodedData, null, 2)
+                        : String(decodedData);
+                    Clipboard.setString(dataToCopy);
+                    Alert.alert(
+                      'Sucesso',
+                      'Dados decodificados copiados para a área de transferência!'
+                    );
+                  }}
+                >
+                  <Text style={styles.copyButtonText}>
+                    📋 Copiar Dados Decodificados
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {/* Seção para testar resultado de ativação Samsung - só aparece quando há intent result */}
+            <View style={styles.activationResultSection}>
+              <View style={styles.decodedDataDivider} />
+              <Text style={styles.activationResultTitle}>
+                🎯 Definir Resultado de Ativação Samsung
+              </Text>
+              <Text style={styles.activationResultDescription}>
+                Use os botões abaixo para definir o resultado da ativação do
+                token para o Samsung Pay:
+              </Text>
+
+              <View style={styles.opcButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.clearButton, { backgroundColor: '#4caf50' }]}
+                  onPress={() =>
+                    handleSetActivationResult(SamsungActivationStatus.ACCEPTED)
+                  }
+                >
+                  <Text style={styles.clearButtonText}>✅ Aceitar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.pasteButton, { backgroundColor: '#ff9800' }]}
+                  onPress={() =>
+                    handleSetActivationResult(SamsungActivationStatus.DECLINED)
+                  }
+                >
+                  <Text style={styles.pasteButtonText}>❌ Recusar</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.opcButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.clearButton, { backgroundColor: '#f44336' }]}
+                  onPress={() =>
+                    handleSetActivationResult(SamsungActivationStatus.FAILURE)
+                  }
+                >
+                  <Text style={styles.clearButtonText}>💥 Falha</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.pasteButton, { backgroundColor: '#2196f3' }]}
+                  onPress={() =>
+                    handleSetActivationResult(
+                      SamsungActivationStatus.ACCEPTED,
+                      'ACTIVATION_CODE_12345'
+                    )
+                  }
+                >
+                  <Text style={styles.pasteButtonText}>
+                    ✅ Aceitar + Código
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.opcButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.clearButton, { backgroundColor: '#9e9e9e' }]}
+                  onPress={() =>
+                    handleSetActivationResult(
+                      SamsungActivationStatus.APP_NOT_READY
+                    )
+                  }
+                >
+                  <Text style={styles.clearButtonText}>⚠️ App Não Pronto</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Botões para finalizar atividade */}
+              <View style={styles.finishButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.finishButton, { backgroundColor: '#9c27b0' }]}
+                  onPress={handleFinishActivity}
+                >
+                  <Text style={styles.finishButtonText}>
+                    🚪 Finalizar e Voltar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* Seção inicialização */}
       <View style={styles.card}>
@@ -865,5 +1187,219 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // Estilos para seção de status da intent
+  intentStatusSection: {
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    alignItems: 'center',
+  },
+  intentStatusTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  intentStatusIndicator: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginBottom: 8,
+    borderWidth: 2,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  intentStatusActive: {
+    backgroundColor: '#e8f5e8',
+    borderColor: '#4caf50',
+  },
+  intentStatusInactive: {
+    backgroundColor: '#fff3e0',
+    borderColor: '#ff9800',
+  },
+  intentStatusChecking: {
+    backgroundColor: '#e3f2fd',
+    borderColor: '#2196f3',
+  },
+  intentStatusText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  intentStatusTextActive: {
+    color: '#2e7d32',
+  },
+  intentStatusTextInactive: {
+    color: '#f57c00',
+  },
+  intentStatusTextChecking: {
+    color: '#1976d2',
+  },
+  intentStatusDescription: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  intentResultContent: {
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c8e6c9',
+    marginTop: 16,
+  },
+  intentResultText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 6,
+    lineHeight: 20,
+  },
+  intentResultLabel: {
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  intentResultError: {
+    color: '#d32f2f',
+  },
+  decodedDataDivider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 12,
+  },
+  decodedDataTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 8,
+    textAlign: 'left',
+  },
+  decodedDataContent: {
+    backgroundColor: '#f8f9fa',
+    padding: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginBottom: 10,
+  },
+  decodedDataText: {
+    fontSize: 12,
+    color: '#333',
+    fontFamily: 'monospace',
+    lineHeight: 18,
+  },
+  copyButton: {
+    backgroundColor: '#2196f3',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+  },
+  copyButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  activationResultSection: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  activationResultTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  activationResultDescription: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  opcButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 12,
+  },
+  clearButton: {
+    flex: 1,
+    backgroundColor: '#ff6b6b',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    justifyContent: 'center',
+  },
+  clearButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pasteButton: {
+    flex: 1,
+    backgroundColor: '#4ecdc4',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    justifyContent: 'center',
+  },
+  pasteButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  finishButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    gap: 12,
+  },
+  finishButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  finishButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

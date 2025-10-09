@@ -16,9 +16,12 @@ interface SamsungWalletContract {
         issuerId: String,
         tokenizationProvider: String,
         cardType: String,
-        progress: Callback,
         promise: Promise
     )
     fun checkWalletAvailability(promise: Promise)
     fun getConstants(): MutableMap<String, Any>
+    fun setIntentListener(promise: Promise)
+    fun removeIntentListener(promise: Promise)
+    fun setActivationResult(status: String, activationCode: String?, promise: Promise)
+    fun finishActivity(promise: Promise)
 }

@@ -18,10 +18,119 @@ import org.json.JSONObject
 
 class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.ReactApplicationContext) : SamsungWalletContract {
 
+    private var activity: android.app.Activity? = null
+    private var intentListenerActive: Boolean = false
+
     companion object {
         private const val TAG = "SamsungWalletMock"
         private const val DEFAULT_API_BASE_URL = "http://localhost:3000"
         private const val REQUEST_TIMEOUT = 5000 // 5 segundos
+        
+        // Variáveis estáticas para armazenar dados da intent
+        @Volatile
+        private var pendingIntentData: String? = null
+        @Volatile
+        private var pendingIntentAction: String? = null
+        @Volatile
+        private var pendingCallingPackage: String? = null
+        
+        // Flag para indicar se há dados pendentes
+        @Volatile
+        private var hasPendingIntentData: Boolean = false
+        
+        @JvmStatic
+        fun getPendingIntentData(): String? {
+            val data = pendingIntentData
+            if (data != null) {
+                // Limpar dados após leitura
+                pendingIntentData = null
+                pendingIntentAction = null
+                pendingCallingPackage = null
+                hasPendingIntentData = false
+            }
+            return data
+        }
+        
+        @JvmStatic
+        fun getPendingIntentAction(): String? = pendingIntentAction
+        
+        @JvmStatic
+        fun getPendingCallingPackage(): String? = pendingCallingPackage
+        
+        @JvmStatic
+        fun getPendingIntentDataWithoutClearing(): String? = pendingIntentData
+        
+        @JvmStatic
+        fun clearPendingData() {
+            pendingIntentData = null
+            pendingIntentAction = null
+            pendingCallingPackage = null
+            hasPendingIntentData = false
+        }
+        
+        @JvmStatic
+        fun hasPendingData(): Boolean = hasPendingIntentData
+        
+        @JvmStatic
+        fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
+            Log.d(TAG, "🔍 [SAMSUNG MOCK] processIntent chamado")
+            
+            Log.d(TAG, "🔍 [SAMSUNG MOCK] Intent encontrada: ${intent.action}")
+            
+            // Verificar se é um intent do Samsung Pay/Wallet
+            if (isSamsungPayIntent(intent)) {
+                Log.d(TAG, "✅ [SAMSUNG MOCK] Intent do Samsung Pay detectada")
+                
+                // Extrair dados da intent
+                val extraText = intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
+                if (!extraText.isNullOrEmpty()) {
+                    Log.d(TAG, "🔍 [SAMSUNG MOCK] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
+                    
+                    // Armazenar dados para processamento posterior
+                    pendingIntentData = extraText
+                    pendingIntentAction = intent.action
+                    pendingCallingPackage = activity.callingPackage
+                    hasPendingIntentData = true
+                    
+                    Log.d(TAG, "✅ [SAMSUNG MOCK] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
+                    
+                    // Limpar intent para evitar reprocessamento
+                    activity.intent = android.content.Intent()
+                } else {
+                    Log.w(TAG, "⚠️ [SAMSUNG MOCK] Nenhum dado EXTRA_TEXT encontrado")
+                }
+            } else {
+                Log.d(TAG, "🔍 [SAMSUNG MOCK] Intent não relacionada ao Samsung Pay")
+            }
+        }
+        
+        /**
+         * Verifica se uma intent é relacionada ao Samsung Pay/Wallet
+         */
+        private fun isSamsungPayIntent(intent: android.content.Intent): Boolean {
+            val action = intent.action
+            Log.d(TAG, "🔍 [SAMSUNG] Verificando intent - Action: $action")
+            
+            // Verificar action
+            val isValidAction = action != null && (
+            action.endsWith(".action.LAUNCH_A2A_IDV")
+            )
+            
+            return isValidAction
+        }
+
+        /**
+         * Verifica se o chamador é válido (Samsung Pay)
+         */
+        private fun isValidCallingPackage(activity: android.app.Activity): Boolean {
+            val callingPackage = activity.callingPackage
+            Log.d(TAG, "🔍 [SAMSUNG MOCK] Chamador: $callingPackage")
+            
+            return callingPackage != null && (
+                callingPackage == "com.samsung.android.spay" ||
+                callingPackage == "com.samsung.android.spay_mock"
+            )
+        }
         
         // Obter URL da API do BuildConfig
         private val API_BASE_URL: String by lazy {
@@ -438,10 +547,10 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         issuerId: String,
         tokenizationProvider: String,
         cardType: String,
-        progress: Callback,
         promise: Promise
     ) {
         Log.d(TAG, "🔍 [MOCK] addCard chamado - Provider: $tokenizationProvider, IssuerId: $issuerId, CardType: $cardType")
+        Log.d(TAG, "🔍 [MOCK] Payload length: ${payload.length}")
         
         val bodyJson = JSONObject().apply {
             put("payload", payload)
@@ -639,6 +748,308 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         )
     }
 
+    /**
+     * Processa dados de intent e envia evento para React Native
+     */
+    private fun processWalletIntentData(data: String, action: String, callingPackage: String) {
+        Log.d(TAG, "🔍 [SAMSUNG] processWalletIntentData chamado")
+        try {
+            Log.d(TAG, "✅ [SAMSUNG] Intent processado: $action")
+
+            // Determinar o tipo de intent baseado na action
+            val intentType = if (action.endsWith(".action.LAUNCH_A2A_IDV")) {
+                "LAUNCH_A2A_IDV"
+            } else {
+                "WALLET_INTENT"
+            }
+            
+            // Processar dados específicos da Samsung Wallet
+            val processedData = processSamsungWalletData(data)
+            
+            val eventData = Arguments.createMap()
+            eventData.putString("action", action)
+            eventData.putString("type", intentType)
+            eventData.putString("callingPackage", callingPackage)
+            
+            // Adicionar dados originais
+            eventData.putString("originalData", data)
+            
+            // Adicionar dados processados
+            processedData.forEach { (key, value) ->
+                when (value) {
+                    is String -> eventData.putString(key, value)
+                    is Int -> eventData.putInt(key, value)
+                    is Boolean -> eventData.putBoolean(key, value)
+                    is Double -> eventData.putDouble(key, value)
+                    else -> eventData.putString(key, value.toString())
+                }
+            }
+            
+            Log.d(TAG, "🔍 [SAMSUNG] Evento preparado - Action: $action, Type: $intentType, CardType: ${processedData["cardType"]}")
+            
+            // Enviar evento para React Native
+            sendEventToReactNative("SamsungWalletIntentReceived", eventData)
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [SAMSUNG] Erro ao processar dados da intent: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Processa dados específicos da Samsung Wallet (Mastercard/Visa)
+     */
+    private fun processSamsungWalletData(data: String): Map<String, Any> {
+        val result = mutableMapOf<String, Any>()
+        
+        try {
+            Log.d(TAG, "🔍 [SAMSUNG] Processando dados Samsung Wallet: ${data.length} caracteres")
+            
+            // Tentar decodificar como base64 primeiro (Mastercard)
+            var decodedData = data
+            var dataFormat = "raw"
+            var cardType = "UNKNOWN"
+            
+            try {
+                val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
+                decodedData = String(decodedBytes, Charsets.UTF_8)
+                dataFormat = "base64_decoded"
+                Log.d(TAG, "🔍 [SAMSUNG] Dados decodificados como base64: ${decodedData.length} caracteres")
+            } catch (e: Exception) {
+                Log.d(TAG, "🔍 [SAMSUNG] Dados não são base64, usando formato original")
+                dataFormat = "raw"
+            }
+            
+            result["dataFormat"] = dataFormat
+            result["decodedData"] = decodedData
+            
+            // Tentar identificar o tipo de cartão baseado nos dados
+            try {
+                val jsonData = JSONObject(decodedData)
+                
+                // Verificar se é Mastercard (campos específicos)
+                if (jsonData.has("paymentAppProviderId") || 
+                    jsonData.has("paymentAppInstanceId") || 
+                    jsonData.has("tokenUniqueReference")) {
+                    cardType = "MASTERCARD"
+                    Log.d(TAG, "✅ [SAMSUNG] Detectado Mastercard")
+                    
+                    // Extrair campos específicos do Mastercard
+                    if (jsonData.has("paymentAppProviderId")) {
+                        result["paymentAppProviderId"] = jsonData.getString("paymentAppProviderId")
+                    }
+                    if (jsonData.has("paymentAppInstanceId")) {
+                        result["paymentAppInstanceId"] = jsonData.getString("paymentAppInstanceId")
+                    }
+                    if (jsonData.has("tokenUniqueReference")) {
+                        result["tokenUniqueReference"] = jsonData.getString("tokenUniqueReference")
+                    }
+                    if (jsonData.has("accountPanSuffix")) {
+                        result["accountPanSuffix"] = jsonData.getString("accountPanSuffix")
+                    }
+                    if (jsonData.has("accountExpiry")) {
+                        result["accountExpiry"] = jsonData.getString("accountExpiry")
+                    }
+                }
+                // Verificar se é Visa (campos específicos)
+                else if (jsonData.has("panId") || 
+                        jsonData.has("trId") || 
+                        jsonData.has("tokenReferenceId")) {
+                    cardType = "VISA"
+                    Log.d(TAG, "✅ [SAMSUNG] Detectado Visa")
+                    
+                    // Extrair campos específicos do Visa
+                    if (jsonData.has("panId")) {
+                        result["panId"] = jsonData.getString("panId")
+                    }
+                    if (jsonData.has("trId")) {
+                        result["trId"] = jsonData.getString("trId")
+                    }
+                    if (jsonData.has("tokenReferenceId")) {
+                        result["tokenReferenceId"] = jsonData.getString("tokenReferenceId")
+                    }
+                    if (jsonData.has("last4Digits")) {
+                        result["last4Digits"] = jsonData.getString("last4Digits")
+                    }
+                    if (jsonData.has("deviceId")) {
+                        result["deviceId"] = jsonData.getString("deviceId")
+                    }
+                    if (jsonData.has("walletAccountId")) {
+                        result["walletAccountId"] = jsonData.getString("walletAccountId")
+                    }
+                }
+                // Se não conseguir identificar, tentar campos genéricos
+                else {
+                    Log.d(TAG, "🔍 [SAMSUNG] Tipo de cartão não identificado, usando campos genéricos")
+                    
+                    // Adicionar todos os campos disponíveis
+                    val keys = jsonData.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val value = jsonData.get(key)
+                        result[key] = value.toString()
+                    }
+                }
+                
+                Log.d(TAG, "✅ [SAMSUNG] Dados JSON processados com sucesso")
+                
+            } catch (e: Exception) {
+                Log.w(TAG, "⚠️ [SAMSUNG] Dados não são JSON válido: ${e.message}")
+                cardType = "ENCRYPTED_OR_BINARY"
+            }
+            
+            result["cardType"] = cardType
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
+            result["error"] = e.message ?: "Erro desconhecido"
+            result["cardType"] = "ERROR"
+        }
+        
+        return result
+    }
+
+    private fun sendEventToReactNative(eventName: String, eventData: WritableMap) {
+        try {
+            Log.d(TAG, "🔍 [SAMSUNG] Enviando evento para React Native: $eventName")
+            reactContext
+                .getJSModule(com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                .emit(eventName, eventData)
+            Log.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento para React Native: ${e.message}", e)
+        }
+    }
+
+    private fun checkPendingDataFromMainActivity() {
+        Log.d(TAG, "🔍 [SAMSUNG] Verificando dados pendentes...")
+        try {
+            // Verificar se há dados pendentes
+            val hasData = hasPendingData()
+            
+            if (hasData) {
+                Log.d(TAG, "✅ [SAMSUNG] Dados pendentes encontrados")
+                
+                // Obter os dados pendentes sem limpar
+                val data = getPendingIntentDataWithoutClearing()
+                val action = getPendingIntentAction()
+                val callingPackage = getPendingCallingPackage()
+                
+                if (data != null && data.isNotEmpty()) {
+                    Log.d(TAG, "📋 [SAMSUNG] Processando dados pendentes: ${data.length} caracteres")
+                    Log.d(TAG, "📋 [SAMSUNG] Action: $action, CallingPackage: $callingPackage")
+                    
+                    // Verificar se action e callingPackage estão disponíveis
+                    if (action == null) {
+                        Log.e(TAG, "❌ [SAMSUNG] Action é null - não é possível processar intent")
+                        return
+                    }
+                    
+                    if (callingPackage == null) {
+                        Log.e(TAG, "❌ [SAMSUNG] CallingPackage é null - não é possível processar intent")
+                        return
+                    }
+                    
+                    // Processar os dados como um intent usando os valores reais
+                    processWalletIntentData(data, action, callingPackage)
+                    
+                    // Limpar dados após processamento bem-sucedido
+                    clearPendingData()
+                } else {
+                    Log.w(TAG, "⚠️ [SAMSUNG] Dados pendentes são null ou vazios")
+                }
+            } else {
+                Log.d(TAG, "🔍 [SAMSUNG] Nenhum dado pendente")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [SAMSUNG] Erro ao verificar dados pendentes: ${e.message}", e)
+        }
+    }
+
+    override fun setIntentListener(promise: Promise) {
+        Log.d(TAG, "🔍 [SAMSUNG] setIntentListener chamado")
+        try {
+            intentListenerActive = true
+            Log.d(TAG, "✅ [SAMSUNG] Listener de intent ativado")
+            
+            // Verificar dados pendentes da MainActivity automaticamente
+            checkPendingDataFromMainActivity()
+            
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [SAMSUNG] Erro ao ativar listener de intent: ${e.message}", e)
+            promise.reject("SET_INTENT_LISTENER_ERROR", e.message, e)
+        }
+    }
+
+    override fun removeIntentListener(promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] removeIntentListener chamado")
+        try {
+            intentListenerActive = false
+            Log.d(TAG, "✅ [MOCK] Listener de intent desativado")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro ao desativar listener de intent: ${e.message}", e)
+            promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
+        }
+    }
+
+    override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
+        try {
+            activity = reactContext.currentActivity
+            if (activity == null) {
+                Log.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para definir resultado")
+                promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
+                return
+            }
+
+            val validStatuses = listOf("accepted", "declined", "failure", "appNotReady")
+            if (!validStatuses.contains(status)) {
+                Log.w(TAG, "❌ [MOCK] Status inválido: $status. Deve ser: accepted, declined, failure ou appNotReady")
+                promise.reject("INVALID_STATUS", "Status deve ser: accepted, declined, failure ou appNotReady")
+                return
+            }
+
+            val resultIntent = android.content.Intent()
+            resultIntent.putExtra("STEP_UP_RESPONSE", status)
+
+            if (activationCode != null && activationCode.isNotEmpty() && status == "accepted") {
+                Log.d(TAG, "🔍 [MOCK] Adicionando activationCode: $activationCode")
+                resultIntent.putExtra("ACTIVATION_CODE", activationCode)
+            }
+
+            activity?.setResult(android.app.Activity.RESULT_OK, resultIntent)
+
+            Log.d(TAG, "✅ [MOCK] Resultado de ativação definido - Status: $status")
+            if (activationCode != null && activationCode.isNotEmpty() && status == "accepted") {
+                Log.d(TAG, "✅ [MOCK] ActivationCode incluído: $activationCode")
+            }
+
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro ao definir resultado de ativação: ${e.message}", e)
+            promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
+        }
+    }
+
+    override fun finishActivity(promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] finishActivity chamado")
+        try {
+            activity = reactContext.currentActivity
+            if (activity == null) {
+                Log.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para finalizar")
+                promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
+                return
+            }
+
+            activity?.finish()
+            Log.d(TAG, "✅ [MOCK] Atividade finalizada com sucesso")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MOCK] Erro ao finalizar atividade: ${e.message}", e)
+            promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
+        }
+    }
 
     override fun getConstants(): MutableMap<String, Any> {
         Log.d(TAG, "🔍 [MOCK] getConstants chamado")

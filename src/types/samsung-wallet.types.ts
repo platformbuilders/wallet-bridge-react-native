@@ -144,6 +144,54 @@ export interface SamsungWalletConstants {
   ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY: number;
 }
 
+// Samsung Wallet - Intent Types
+export enum SamsungWalletIntentType {
+  LAUNCH_A2A_IDV = 'LAUNCH_A2A_IDV',
+  WALLET_INTENT = 'WALLET_INTENT',
+  INVALID_CALLER = 'INVALID_CALLER',
+}
+
+// Samsung Wallet - DataFormat
+export enum SamsungWalletDataFormat {
+  BASE64_DECODED = 'base64_decoded',
+  RAW = 'raw',
+}
+
+// Samsung Wallet - Activation Status
+export enum SamsungActivationStatus {
+  ACCEPTED = 'accepted',
+  DECLINED = 'declined',
+  FAILURE = 'failure',
+  APP_NOT_READY = 'appNotReady',
+}
+
+// Samsung Wallet - Evento de Intent
+export interface SamsungWalletIntentEvent {
+  action: string;
+  type: SamsungWalletIntentType;
+  data?: string; // Dados decodificados (string normal)
+  dataFormat?: SamsungWalletDataFormat;
+  callingPackage?: string;
+  originalData?: string; // Dados originais em base64
+  error?: string;
+  extras?: Record<string, any>;
+  // Campos específicos do Samsung (Mastercard/Visa)
+  cardType?: 'MASTERCARD' | 'VISA' | 'UNKNOWN' | 'ENCRYPTED_OR_BINARY';
+  // Campos específicos do Mastercard
+  paymentAppProviderId?: string;
+  paymentAppInstanceId?: string;
+  tokenUniqueReference?: string;
+  accountPanSuffix?: string;
+  accountExpiry?: string;
+  // Campos específicos do Visa
+  panId?: string;
+  trId?: string;
+  tokenReferenceId?: string;
+  last4Digits?: string;
+  deviceId?: string;
+  walletAccountId?: string;
+}
+
 // Samsung Pay - Interface do Módulo (baseado nos métodos do SamsungWalletModule)
 export interface SamsungWalletSpec {
   // Métodos principais do Samsung Pay
@@ -157,8 +205,7 @@ export interface SamsungWalletSpec {
     payload: string,
     issuerId: string,
     tokenizationProvider: string,
-    cardType: string,
-    progress: (currentCount: number, totalCount: number) => void
+    cardType: string
   ): Promise<SamsungCard>;
 
   // Métodos de compatibilidade
@@ -166,4 +213,126 @@ export interface SamsungWalletSpec {
 
   // Constantes
   getConstants(): Promise<SamsungWalletConstants>;
+
+  // Métodos de listener de intent
+  setIntentListener(): Promise<boolean>;
+  removeIntentListener(): Promise<boolean>;
+
+  // Método de resultado de ativação
+  setActivationResult(
+    status: SamsungActivationStatus,
+    activationCode?: string
+  ): Promise<boolean>;
+
+  // Método para finalizar atividade
+  finishActivity(): Promise<boolean>;
+}
+
+// ============================================================================
+// SAMSUNG WALLET EVENT EMITTER
+// ============================================================================
+
+import { NativeEventEmitter, NativeModules } from 'react-native';
+
+export class SamsungWalletEventEmitter {
+  private eventEmitter: NativeEventEmitter | null = null;
+  private listeners: Map<string, (event: SamsungWalletIntentEvent) => void> =
+    new Map();
+
+  constructor() {
+    try {
+      // Verificar se o módulo está disponível
+      const SamsungWalletModule = NativeModules.SamsungWallet;
+      if (SamsungWalletModule) {
+        this.eventEmitter = new NativeEventEmitter(SamsungWalletModule);
+        console.log(
+          '✅ [SamsungWalletEventEmitter] EventEmitter inicializado com sucesso'
+        );
+      } else {
+        console.warn(
+          '⚠️ [SamsungWalletEventEmitter] Módulo SamsungWallet não está disponível'
+        );
+      }
+    } catch (error) {
+      console.error(
+        '❌ [SamsungWalletEventEmitter] Erro ao inicializar EventEmitter:',
+        error
+      );
+    }
+  }
+
+  /**
+   * Adiciona um listener para eventos de intent do Samsung Wallet
+   * @param callback Função que será chamada quando um evento for recebido
+   * @returns Função para remover o listener
+   */
+  addIntentListener(
+    callback: (event: SamsungWalletIntentEvent) => void
+  ): () => void {
+    const listenerId = `listener_${Date.now()}_${Math.random()}`;
+
+    // Verificar se o EventEmitter está disponível
+    if (!this.eventEmitter) {
+      console.error(
+        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível'
+      );
+      return () => {}; // Retornar função vazia para evitar erros
+    }
+
+    // Armazenar o callback
+    this.listeners.set(listenerId, callback);
+
+    // Criar o listener do NativeEventEmitter
+    const subscription = this.eventEmitter.addListener(
+      'SamsungWalletIntentReceived',
+      (event: any) => {
+        const walletEvent = event as SamsungWalletIntentEvent;
+        console.log(
+          '🎯 [SamsungWalletEventEmitter] Intent recebido:',
+          walletEvent
+        );
+        callback(walletEvent);
+      }
+    );
+
+    console.log(
+      `✅ [SamsungWalletEventEmitter] Listener adicionado: ${listenerId}`
+    );
+
+    // Retornar função de cleanup
+    return () => {
+      this.listeners.delete(listenerId);
+      subscription.remove();
+      console.log(
+        `🧹 [SamsungWalletEventEmitter] Listener removido: ${listenerId}`
+      );
+    };
+  }
+
+  /**
+   * Remove todos os listeners ativos
+   */
+  removeAllListeners(): void {
+    this.listeners.clear();
+    if (this.eventEmitter) {
+      this.eventEmitter.removeAllListeners('SamsungWalletIntentReceived');
+      console.log(
+        '🧹 [SamsungWalletEventEmitter] Todos os listeners foram removidos'
+      );
+    }
+  }
+
+  /**
+   * Obtém o número de listeners ativos
+   */
+  getListenerCount(): number {
+    return this.listeners.size;
+  }
+
+  /**
+   * Verifica se o EventEmitter está disponível
+   */
+  isAvailable(): boolean {
+    return this.eventEmitter !== null;
+  }
 }

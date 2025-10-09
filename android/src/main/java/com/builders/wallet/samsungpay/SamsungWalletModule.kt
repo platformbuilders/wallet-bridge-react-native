@@ -74,10 +74,9 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     issuerId: String,
     tokenizationProvider: String,
     cardType: String,
-    progress: Callback,
     promise: Promise
   ) {
-    samsungWalletImplementation.addCard(payload, issuerId, tokenizationProvider, cardType, progress, promise)
+    samsungWalletImplementation.addCard(payload, issuerId, tokenizationProvider, cardType, promise)
   }
 
   @ReactMethod
@@ -85,6 +84,25 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     samsungWalletImplementation.checkWalletAvailability(promise)
   }
 
+  @ReactMethod
+  fun setIntentListener(promise: Promise) {
+    samsungWalletImplementation.setIntentListener(promise)
+  }
+
+  @ReactMethod
+  fun removeIntentListener(promise: Promise) {
+    samsungWalletImplementation.removeIntentListener(promise)
+  }
+
+  @ReactMethod
+  fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
+    samsungWalletImplementation.setActivationResult(status, activationCode, promise)
+  }
+
+  @ReactMethod
+  fun finishActivity(promise: Promise) {
+    samsungWalletImplementation.finishActivity(promise)
+  }
 
   override fun getConstants(): MutableMap<String, Any> {
     val constants = samsungWalletImplementation.getConstants().toMutableMap()
@@ -103,5 +121,33 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "SamsungWallet"
     private const val TAG = "SamsungWallet"
+
+    @JvmStatic
+    fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
+      try {
+        // Determinar se deve usar mock baseado na configuração
+        val useMock = try {
+          val mockValue = BuildConfig.SAMSUNG_WALLET_USE_MOCK
+          Log.d(TAG, "🔧 [STATIC] SAMSUNG_WALLET_USE_MOCK = $mockValue")
+          mockValue
+        } catch (e: Exception) {
+          Log.w(TAG, "🔧 [STATIC] SAMSUNG_WALLET_USE_MOCK não definido, usando padrão: false")
+          false
+        }
+
+        Log.d(TAG, "🔍 [STATIC] processIntent chamado - Action: ${intent.action}")
+        
+        if (useMock) {
+          Log.d(TAG, "🔧 [STATIC] Processando intent com MOCK")
+          SamsungWalletMock.processIntent(activity, intent)
+        } else {
+          // Usa Real ou Stub dependendo da configuração (selecionado pelo source set do Gradle)
+          Log.d(TAG, "🔧 [STATIC] Processando intent com ${if (BuildConfig.SAMSUNG_WALLET_ENABLED) "REAL" else "STUB"}")
+          SamsungWalletImplementation.processIntent(activity, intent)
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "❌ [STATIC] Erro ao processar intent: ${e.message}", e)
+      }
+    }
   }
 }
