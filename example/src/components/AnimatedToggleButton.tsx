@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Text,
   StyleSheet,
@@ -26,6 +26,17 @@ export function AnimatedToggleButton({
   const containerPadding = 40; // 20px de cada lado
   const buttonWidth = screenWidth - containerPadding;
   const indicatorWidth = buttonWidth / 2;
+
+  // Sincronizar animação com a prop isGooglePay quando ela muda externamente
+  useEffect(() => {
+    console.log('🔄 [Toggle] Prop isGooglePay mudou para:', isGooglePay);
+    Animated.timing(slideAnimation, {
+      toValue: isGooglePay ? 0 : 1,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [isGooglePay, slideAnimation]);
 
   const toggleAnimation = (): void => {
     // Animação de escala (pressionar)

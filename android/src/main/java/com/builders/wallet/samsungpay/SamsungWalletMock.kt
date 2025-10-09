@@ -749,12 +749,12 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     }
 
     /**
-     * Processa dados de intent e envia evento para React Native
+     * Processa dados específicos da Samsung Wallet
      */
-    private fun processWalletIntentData(data: String, action: String, callingPackage: String) {
-        Log.d(TAG, "🔍 [SAMSUNG] processWalletIntentData chamado")
+    private fun processSamsungWalletIntentData(data: String, action: String, callingPackage: String) {
+        Log.d(TAG, "🔍 [SAMSUNG] processSamsungWalletIntentData chamado")
         try {
-            Log.d(TAG, "✅ [SAMSUNG] Intent processado: $action")
+            Log.d(TAG, "✅ [SAMSUNG] Processando dados Samsung Wallet: ${data.length} caracteres")
 
             // Determinar o tipo de intent baseado na action
             val intentType = if (action.endsWith(".action.LAUNCH_A2A_IDV")) {
@@ -762,36 +762,47 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             } else {
                 "WALLET_INTENT"
             }
-            
-            // Processar dados específicos da Samsung Wallet
+
+            // Processar dados específicos (Mastercard/Visa)
             val processedData = processSamsungWalletData(data)
-            
+
+            Log.d(TAG, "🔍 [SAMSUNG] Dados processados - CardType: ${processedData["cardType"]}, Format: ${processedData["dataFormat"]}")
+
+            // Decodificar dados de base64 para string normal
+            var decodedData = data
+            var dataFormat = "raw"
+
+            try {
+                // Tentar decodificar como base64
+                val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
+                decodedData = String(decodedBytes, Charsets.UTF_8)
+                dataFormat = "base64_decoded"
+                Log.d(TAG, "🔍 [SAMSUNG] Dados decodificados com sucesso: ${decodedData.length} caracteres")
+            } catch (e: Exception) {
+                // Se falhar ao decodificar, usar dados originais
+                Log.w(TAG, "⚠️ [SAMSUNG] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
+                dataFormat = "raw"
+            }
+
             val eventData = Arguments.createMap()
             eventData.putString("action", action)
             eventData.putString("type", intentType)
+            eventData.putString("data", decodedData)
+            eventData.putString("dataFormat", dataFormat)
             eventData.putString("callingPackage", callingPackage)
-            
-            // Adicionar dados originais
+
+            // Adicionar dados originais em base64 para referência
             eventData.putString("originalData", data)
-            
-            // Adicionar dados processados
-            processedData.forEach { (key, value) ->
-                when (value) {
-                    is String -> eventData.putString(key, value)
-                    is Int -> eventData.putInt(key, value)
-                    is Boolean -> eventData.putBoolean(key, value)
-                    is Double -> eventData.putDouble(key, value)
-                    else -> eventData.putString(key, value.toString())
-                }
-            }
-            
-            Log.d(TAG, "🔍 [SAMSUNG] Evento preparado - Action: $action, Type: $intentType, CardType: ${processedData["cardType"]}")
-            
+
+            Log.d(TAG, "🔍 [SAMSUNG] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
+
             // Enviar evento para React Native
             sendEventToReactNative("SamsungWalletIntentReceived", eventData)
-            
+
+            Log.d(TAG, "✅ [SAMSUNG] Dados Samsung Wallet processados com sucesso")
+
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [SAMSUNG] Erro ao processar dados da intent: ${e.message}", e)
+            Log.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
         }
     }
 
@@ -950,7 +961,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                     }
                     
                     // Processar os dados como um intent usando os valores reais
-                    processWalletIntentData(data, action, callingPackage)
+                    processSamsungWalletIntentData(data, action, callingPackage)
                     
                     // Limpar dados após processamento bem-sucedido
                     clearPendingData()
@@ -969,43 +980,38 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         Log.d(TAG, "🔍 [SAMSUNG] setIntentListener chamado")
         try {
             intentListenerActive = true
-            Log.d(TAG, "✅ [SAMSUNG] Listener de intent ativado")
-            
-            // Verificar dados pendentes da MainActivity automaticamente
             checkPendingDataFromMainActivity()
-            
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [SAMSUNG] Erro ao ativar listener de intent: ${e.message}", e)
+            Log.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
             promise.reject("SET_INTENT_LISTENER_ERROR", e.message, e)
         }
     }
 
     override fun removeIntentListener(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] removeIntentListener chamado")
+        Log.d(TAG, "🔍 [SAMSUNG] removeIntentListener chamado")
         try {
             intentListenerActive = false
-            Log.d(TAG, "✅ [MOCK] Listener de intent desativado")
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro ao desativar listener de intent: ${e.message}", e)
+            Log.e(TAG, "REMOVE_INTENT_LISTENER_ERROR: ${e.message}", e)
             promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
         }
     }
 
     override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
+        Log.d(TAG, "🔍 [SAMSUNG] setActivationResult chamado - Status: $status")
         try {
             activity = reactContext.currentActivity
             if (activity == null) {
-                Log.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para definir resultado")
+                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
 
             val validStatuses = listOf("accepted", "declined", "failure", "appNotReady")
             if (!validStatuses.contains(status)) {
-                Log.w(TAG, "❌ [MOCK] Status inválido: $status. Deve ser: accepted, declined, failure ou appNotReady")
+                Log.w(TAG, "INVALID_STATUS: Status deve ser: accepted, declined, failure ou appNotReady")
                 promise.reject("INVALID_STATUS", "Status deve ser: accepted, declined, failure ou appNotReady")
                 return
             }
@@ -1014,39 +1020,30 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             resultIntent.putExtra("STEP_UP_RESPONSE", status)
 
             if (activationCode != null && activationCode.isNotEmpty() && status == "accepted") {
-                Log.d(TAG, "🔍 [MOCK] Adicionando activationCode: $activationCode")
                 resultIntent.putExtra("ACTIVATION_CODE", activationCode)
             }
 
             activity?.setResult(android.app.Activity.RESULT_OK, resultIntent)
-
-            Log.d(TAG, "✅ [MOCK] Resultado de ativação definido - Status: $status")
-            if (activationCode != null && activationCode.isNotEmpty() && status == "accepted") {
-                Log.d(TAG, "✅ [MOCK] ActivationCode incluído: $activationCode")
-            }
-
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro ao definir resultado de ativação: ${e.message}", e)
+            Log.e(TAG, "SET_ACTIVATION_RESULT_ERROR: ${e.message}", e)
             promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
         }
     }
 
     override fun finishActivity(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] finishActivity chamado")
+        Log.d(TAG, "🔍 [SAMSUNG] finishActivity chamado")
         try {
             activity = reactContext.currentActivity
             if (activity == null) {
-                Log.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para finalizar")
+                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
-
             activity?.finish()
-            Log.d(TAG, "✅ [MOCK] Atividade finalizada com sucesso")
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro ao finalizar atividade: ${e.message}", e)
+            Log.e(TAG, "FINISH_ACTIVITY_ERROR: ${e.message}", e)
             promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
         }
     }
