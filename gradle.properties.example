@@ -1,0 +1,103 @@
+# ===============================================
+# BUILDERS WALLET - CONFIGURAÇÃO DE SDKs
+# ===============================================
+# 
+# Este arquivo mostra as configurações disponíveis para habilitar/desabilitar
+# os SDKs de Wallets na compilação.
+#
+# COPIE ESTE ARQUIVO PARA gradle.properties E CONFIGURE CONFORME NECESSÁRIO
+#
+
+# ===============================================
+# GOOGLE WALLET SDK
+# ===============================================
+
+# Habilitar Google Wallet SDK na compilação (default: false)
+# - true: Compila código otimizado SEM reflexão (requer SDK instalado)
+# - false: Compila stub que retorna erros informativos (não requer SDK)
+GOOGLE_WALLET_ENABLED=false
+
+# Usar implementação mock para Google Wallet (default: false)
+# Útil para desenvolvimento e testes sem o SDK real
+GOOGLE_WALLET_USE_MOCK=false
+
+# URL da API mock do Google Wallet (opcional)
+# Usado apenas quando GOOGLE_WALLET_USE_MOCK=true
+#GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
+
+
+# ===============================================
+# SAMSUNG WALLET SDK  
+# ===============================================
+
+# Habilitar Samsung Wallet SDK na compilação (default: false)
+# - true: Compila código otimizado SEM reflexão (requer SDK instalado)
+# - false: Compila stub que retorna erros informativos (não requer SDK)
+SAMSUNG_WALLET_ENABLED=false
+
+# Usar implementação mock para Samsung Wallet (default: false)
+# Útil para desenvolvimento e testes sem o SDK real
+SAMSUNG_WALLET_USE_MOCK=false
+
+# URL da API mock do Samsung Wallet (opcional)
+# Usado apenas quando SAMSUNG_WALLET_USE_MOCK=true
+#SAMSUNG_WALLET_MOCK_API_URL=http://localhost:3000
+
+
+# ===============================================
+# CENÁRIOS DE USO COMUNS
+# ===============================================
+
+# Cenário 1: Produção - Ambos os SDKs
+# GOOGLE_WALLET_ENABLED=true
+# SAMSUNG_WALLET_ENABLED=true
+# GOOGLE_WALLET_USE_MOCK=false
+# SAMSUNG_WALLET_USE_MOCK=false
+
+# Cenário 2: Produção - Apenas Google Wallet
+# GOOGLE_WALLET_ENABLED=true
+# SAMSUNG_WALLET_ENABLED=false
+
+# Cenário 3: Produção - Apenas Samsung Wallet
+# GOOGLE_WALLET_ENABLED=false
+# SAMSUNG_WALLET_ENABLED=true
+
+# Cenário 4: Desenvolvimento - Usando Mocks
+# GOOGLE_WALLET_ENABLED=true
+# SAMSUNG_WALLET_ENABLED=true
+# GOOGLE_WALLET_USE_MOCK=true
+# SAMSUNG_WALLET_USE_MOCK=true
+# GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
+# SAMSUNG_WALLET_MOCK_API_URL=http://localhost:3000
+
+# Cenário 5: Build Mínimo (sem SDKs)
+# GOOGLE_WALLET_ENABLED=false
+# SAMSUNG_WALLET_ENABLED=false
+
+
+# ===============================================
+# NOTAS IMPORTANTES
+# ===============================================
+#
+# 1. Quando *_ENABLED=true, você PRECISA ter o SDK instalado:
+#    - Google: gradle incluirá automaticamente play-services-tapandpay
+#    - Samsung: você precisa adicionar samsungpay_*.jar na pasta android/libs/
+#
+# 2. Quando *_ENABLED=false, o SDK NÃO é necessário:
+#    - Um stub será compilado que retorna erros informativos
+#    - Ideal para reduzir tamanho do APK e tempo de build
+#
+# 3. Hierarquia de decisão:
+#    USE_MOCK=true → Mock (para testes)
+#    ENABLED=true → Implementação real limpa (sem reflexão)
+#    ENABLED=false → Stub (retorna erros)
+#
+# 4. Benefícios do código limpo (ENABLED=true):
+#    ✅ Performance melhor (sem reflexão)
+#    ✅ Type-safe (erros em compile-time)
+#    ✅ Autocomplete da IDE funciona
+#    ✅ Mais fácil de debugar e manter
+#
+# 5. Para mais detalhes, veja: docs/WALLET_SDK_CONFIGURATION.md
+#
+

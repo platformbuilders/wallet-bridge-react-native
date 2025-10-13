@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Script para trocar o package name do app de exemplo
+# Suporta Google Wallet e Samsung Wallet
 # Uso: ./change-package-name-app-example.sh --package-name=com.test.new
 
 set -e
@@ -32,6 +33,7 @@ error() {
 # Função para mostrar ajuda
 show_help() {
     echo "Script para trocar o package name do app de exemplo"
+    echo "Suporta Google Wallet e Samsung Wallet"
     echo ""
     echo "Uso:"
     echo "  $0 --package-name=COM.TEST.NEW"
@@ -44,6 +46,10 @@ show_help() {
     echo "Opções:"
     echo "  --package-name=NAME    Novo package name (obrigatório)"
     echo "  --help, -h             Mostrar esta ajuda"
+    echo ""
+    echo "O script atualiza automaticamente:"
+    echo "• Google Wallet: \${PACKAGE_NAME}.action.ACTIVATE_TOKEN"
+    echo "• Samsung Wallet: \${PACKAGE_NAME}.action.LAUNCH_A2A_IDV"
     echo ""
 }
 
@@ -262,21 +268,46 @@ find "$EXAMPLE_DIR" -type f \( -name "*.xml" -o -name "*.gradle" -o -name "*.pro
     fi
 done
 
-# 10. Atualizar variáveis do google-wallet-app-mock
-MOCK_GRADLE_PROPERTIES="google-wallet-app-mock/gradle.properties"
-if [ -f "$MOCK_GRADLE_PROPERTIES" ]; then
-    log "Atualizando variáveis do google-wallet-app-mock"
-    TARGET_ACTION="${PACKAGE_NAME}.action.ACTIVATE_TOKEN"
+# 10. Atualizar variáveis do google-wallet-app-mock (Google Wallet)
+GOOGLE_MOCK_GRADLE_PROPERTIES="google-wallet-app-mock/gradle.properties"
+if [ -f "$GOOGLE_MOCK_GRADLE_PROPERTIES" ]; then
+    log "Atualizando variáveis do google-wallet-app-mock (Google)"
     
-    # Atualizar targetAppPackage
-    sed -i.bak "s/targetAppPackage=.*/targetAppPackage=$PACKAGE_NAME/" "$MOCK_GRADLE_PROPERTIES"
-    # Atualizar targetAppAction
-    sed -i.bak "s/targetAppAction=.*/targetAppAction=$TARGET_ACTION/" "$MOCK_GRADLE_PROPERTIES"
-    rm -f "$MOCK_GRADLE_PROPERTIES.bak"
+    # Configurações Google Wallet
+    GOOGLE_TARGET_ACTION="${PACKAGE_NAME}.action.ACTIVATE_TOKEN"
     
-    success "google-wallet-app-mock atualizado para target: $PACKAGE_NAME"
+    # Atualizar targetAppPackage (Google Wallet)
+    sed -i.bak "s/targetAppPackage=.*/targetAppPackage=$PACKAGE_NAME/" "$GOOGLE_MOCK_GRADLE_PROPERTIES"
+    # Atualizar targetAppAction (Google Wallet)
+    sed -i.bak "s/targetAppAction=.*/targetAppAction=$GOOGLE_TARGET_ACTION/" "$GOOGLE_MOCK_GRADLE_PROPERTIES"
+    
+    rm -f "$GOOGLE_MOCK_GRADLE_PROPERTIES.bak"
+    
+    success "google-wallet-app-mock atualizado (Google) para target: $PACKAGE_NAME"
+    success "Google Wallet Action: $GOOGLE_TARGET_ACTION"
 else
-    warning "Arquivo gradle.properties do mock não encontrado: $MOCK_GRADLE_PROPERTIES"
+    warning "Arquivo gradle.properties do mock Google não encontrado: $GOOGLE_MOCK_GRADLE_PROPERTIES"
+fi
+
+# 10.1. Atualizar variáveis do samsung-wallet-app-mock (Samsung Wallet)
+SAMSUNG_MOCK_GRADLE_PROPERTIES="samsung-wallet-app-mock/gradle.properties"
+if [ -f "$SAMSUNG_MOCK_GRADLE_PROPERTIES" ]; then
+    log "Atualizando variáveis do samsung-wallet-app-mock (Samsung)"
+    
+    # Configurações Samsung Wallet
+    SAMSUNG_TARGET_ACTION="${PACKAGE_NAME}.action.LAUNCH_A2A_IDV"
+    
+    # Atualizar samsungTargetAppPackage (Samsung Wallet)
+    sed -i.bak "s/samsungTargetAppPackage=.*/samsungTargetAppPackage=$PACKAGE_NAME/" "$SAMSUNG_MOCK_GRADLE_PROPERTIES"
+    # Atualizar samsungTargetAppAction (Samsung Wallet)
+    sed -i.bak "s/samsungTargetAppAction=.*/samsungTargetAppAction=$SAMSUNG_TARGET_ACTION/" "$SAMSUNG_MOCK_GRADLE_PROPERTIES"
+    
+    rm -f "$SAMSUNG_MOCK_GRADLE_PROPERTIES.bak"
+    
+    success "samsung-wallet-app-mock atualizado (Samsung) para target: $PACKAGE_NAME"
+    success "Samsung Wallet Action: $SAMSUNG_TARGET_ACTION"
+else
+    warning "Arquivo gradle.properties do mock Samsung não encontrado: $SAMSUNG_MOCK_GRADLE_PROPERTIES"
 fi
 
 # 11. Limpar e rebuild
@@ -308,3 +339,14 @@ echo "5. cd ../google-wallet-app-mock"
 echo "6. ./gradlew assembleDebug"
 echo "7. adb install app/build/outputs/apk/debug/app-debug.apk"
 echo "8. Teste o app com o novo package name"
+echo ""
+log "Configurações atualizadas:"
+echo "• Google Wallet Package: $PACKAGE_NAME"
+echo "• Google Wallet Action: $GOOGLE_TARGET_ACTION"
+echo "• Samsung Wallet Package: $PACKAGE_NAME"
+echo "• Samsung Wallet Action: $SAMSUNG_TARGET_ACTION"
+echo ""
+log "Para testar ambas as wallets:"
+echo "• O app mock agora suporta Google Wallet e Samsung Wallet"
+echo "• Use os botões correspondentes no app mock"
+echo "• Verifique se o app example está configurado com as actions corretas"
