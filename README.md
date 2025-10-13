@@ -867,7 +867,7 @@ GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
 |--------|-----------|------------|---------|
 | `checkWalletAvailability` | Verifica se o Samsung Pay está disponível | Nenhum | `Promise<boolean>` |
 | `getSecureWalletInfo` | Retorna informações do Samsung Pay | Nenhum | `Promise<SamsungWalletData>` |
-| `addCardToWallet` | Adiciona cartão ao Samsung Pay | `cardData: SamsungCardData` | `Promise<string>` |
+| `addCard` | Adiciona cartão ao Samsung Pay | `payload: string, issuerId: string, tokenizationProvider: string, cardType: string` | `Promise<SamsungCard>` |
 | `listTokens` | Lista tokens existentes no Samsung Pay | Nenhum | `Promise<SamsungTokenInfoSimple[]>` |
 | `getTokenStatus` | Status de um token específico | `tokenServiceProvider: number, tokenReferenceId: string` | `Promise<SamsungTokenStatus>` |
 | `isTokenized` | Verifica se cartão está tokenizado | `fpanLastFour: string, cardNetwork: number, tokenServiceProvider: number` | `Promise<boolean>` |
@@ -969,16 +969,43 @@ interface GoogleWalletIntentEvent {
 #### Samsung Pay
 
 ```typescript
-// Dados do cartão para Samsung Pay
-interface SamsungCardData {
+// Parâmetros para adicionar cartão ao Samsung Pay
+interface SamsungAddCardParams {
+  payload: string;                    // Payload de tokenização do cartão
+  issuerId: string;                   // ID do emissor do cartão
+  tokenizationProvider: string;       // Provedor de tokenização (VISA, MASTERCARD, etc.)
+  cardType: string;                   // Tipo do cartão (CREDIT, DEBIT, etc.)
+}
+
+// Dados do cartão retornado pelo Samsung Pay
+interface SamsungCard {
+  // Campos básicos do Card
   cardId: string;
-  cardBrand: 'VISA' | 'MASTERCARD' | 'AMEX' | 'DISCOVER' | 'JCB' | 'ELO';
-  cardType: 'CREDIT' | 'DEBIT' | 'PREPAID';
-  cardLast4Fpan: string;
-  cardLast4Dpan: string;
-  cardIssuer: string;
-  cardStatus: 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'DEACTIVATED' | 'NOT_FOUND';
-  isSamsungPayCard: boolean;
+  cardStatus: string;
+  cardBrand: string;
+
+  // Campos do cardInfo Bundle (Samsung Pay específicos)
+  last4FPan?: string;
+  last4DPan?: string;
+  app2AppPayload?: string;
+  cardType?: string;
+  issuerName?: string;
+  isDefaultCard?: string;
+  deviceType?: string;
+  memberID?: string;
+  countryCode?: string;
+  cryptogramType?: string;
+  requireCpf?: string;
+  cpfHolderName?: string;
+  cpfNumber?: string;
+  merchantRefId?: string;
+  transactionType?: string;
+
+  // Campos de compatibilidade
+  last4?: string;
+  tokenizationProvider?: string | number;
+  network?: string | number;
+  displayName?: string;
 }
 
 // Informações do wallet
@@ -1431,7 +1458,7 @@ A biblioteca usa módulos específicos para cada wallet:
 
 2. **SamsungWalletModule**: Módulo dedicado para Samsung Pay
    - Interface: `SamsungWalletSpec`
-   - Tipos: `SamsungWalletData`, `SamsungCardData`, etc.
+   - Tipos: `SamsungWalletData`, `SamsungCard`, `SamsungAddCardParams`, etc.
 
 3. **Bridge Nativa**: Ponte direta entre React Native e SDKs nativos
    - Sem abstrações desnecessárias
