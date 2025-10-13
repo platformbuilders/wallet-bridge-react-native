@@ -68,6 +68,38 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     promise.resolve(false)
   }
 
+  override fun setIntentListener(promise: Promise) {
+    Log.w(TAG, "Samsung Wallet não está habilitado - setIntentListener ignorado")
+    promise.reject(
+      "SDK_NOT_ENABLED",
+      "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
+    )
+  }
+
+  override fun removeIntentListener(promise: Promise) {
+    Log.w(TAG, "Samsung Wallet não está habilitado - removeIntentListener ignorado")
+    promise.reject(
+      "SDK_NOT_ENABLED",
+      "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
+    )
+  }
+
+  override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
+    Log.w(TAG, "Samsung Wallet não está habilitado - setActivationResult ignorado")
+    promise.reject(
+      "SDK_NOT_ENABLED",
+      "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
+    )
+  }
+
+  override fun finishActivity(promise: Promise) {
+    Log.w(TAG, "Samsung Wallet não está habilitado - finishActivity ignorado")
+    promise.reject(
+      "SDK_NOT_ENABLED",
+      "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
+    )
+  }
+
   override fun getConstants(): MutableMap<String, Any> {
     return hashMapOf<String, Any>().apply {
       put("SDK_NAME", "SamsungWalletStub")
