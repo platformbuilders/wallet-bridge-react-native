@@ -133,7 +133,6 @@ class GoogleWalletImplementation(
         try {
             if (tapAndPayClient == null) {
                 Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
                 promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
                 return
             }
