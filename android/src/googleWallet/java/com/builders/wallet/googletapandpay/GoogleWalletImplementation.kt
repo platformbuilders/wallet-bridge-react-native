@@ -137,25 +137,30 @@ class GoogleWalletImplementation(
                 return
             }
 
-            // Código LIMPO - usa diretamente o SDK!
-            tapAndPayClient!!.activeWalletId.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val walletId = task.result
-                    if (walletId != null && walletId.isNotEmpty()) {
-                        Log.d(TAG, "✅ [GOOGLE] Wallet ID obtido: $walletId")
-                        val result = Arguments.createMap()
-                        result.putString("deviceID", "google_device_${walletId.hashCode()}")
-                        result.putString("walletAccountID", walletId)
-                        promise.resolve(result)
+            // Código LIMPO - usa diretamente o SDK com segurança nula!
+            tapAndPayClient?.let { client ->
+                client.activeWalletId.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val walletId = task.result
+                        if (walletId != null && walletId.isNotEmpty()) {
+                            Log.d(TAG, "✅ [GOOGLE] Wallet ID obtido: $walletId")
+                            val result = Arguments.createMap()
+                            result.putString("deviceID", "google_device_${walletId.hashCode()}")
+                            result.putString("walletAccountID", walletId)
+                            promise.resolve(result)
+                        } else {
+                            Log.w(TAG, "GET_WALLET_INFO_ERROR: Wallet ID é null ou vazio - result_code:null")
+                            promise.reject("GET_WALLET_INFO_ERROR", "Wallet ID é null ou vazio - result_code:null")
+                        }
                     } else {
-                        Log.w(TAG, "GET_WALLET_INFO_ERROR: Wallet ID é null ou vazio - result_code:null")
-                        promise.reject("GET_WALLET_INFO_ERROR", "Wallet ID é null ou vazio - result_code:null")
+                        val errorMessage = getTaskErrorMessage(task)
+                        Log.w(TAG, "GET_WALLET_INFO_ERROR: $errorMessage")
+                        promise.reject("GET_WALLET_INFO_ERROR", errorMessage)
                     }
-                } else {
-                    val errorMessage = getTaskErrorMessage(task)
-                    Log.w(TAG, "GET_WALLET_INFO_ERROR: $errorMessage")
-                    promise.reject("GET_WALLET_INFO_ERROR", errorMessage)
                 }
+            } ?: run {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
+                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
             }
         } catch (e: Exception) {
             Log.e(TAG, "GET_SECURE_WALLET_INFO_ERROR: ${e.message}", e)
@@ -174,26 +179,31 @@ class GoogleWalletImplementation(
                 return
             }
 
-            // Código LIMPO!
-            tapAndPayClient!!.getTokenStatus(tokenServiceProvider, tokenReferenceId).addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val tokenStatus = task.result
-                    if (tokenStatus != null) {
-                        Log.d(TAG, "✅ [GOOGLE] TokenStatus obtido com sucesso")
-                        val result = Arguments.createMap()
-                        result.putInt("tokenState", tokenStatus.tokenState)
-                        result.putBoolean("isSelected", tokenStatus.isSelected)
-                        Log.i(TAG, "- getTokenStatus = ${tokenStatus.tokenState}")
-                        promise.resolve(result)
+            // Código LIMPO com segurança nula!
+            tapAndPayClient?.let { client ->
+                client.getTokenStatus(tokenServiceProvider, tokenReferenceId).addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val tokenStatus = task.result
+                        if (tokenStatus != null) {
+                            Log.d(TAG, "✅ [GOOGLE] TokenStatus obtido com sucesso")
+                            val result = Arguments.createMap()
+                            result.putInt("tokenState", tokenStatus.tokenState)
+                            result.putBoolean("isSelected", tokenStatus.isSelected)
+                            Log.i(TAG, "- getTokenStatus = ${tokenStatus.tokenState}")
+                            promise.resolve(result)
+                        } else {
+                            Log.w(TAG, "GET_TOKEN_STATUS_ERROR: TokenStatus é null - result_code:null")
+                            promise.reject("GET_TOKEN_STATUS_ERROR", "TokenStatus é null - result_code:null")
+                        }
                     } else {
-                        Log.w(TAG, "GET_TOKEN_STATUS_ERROR: TokenStatus é null - result_code:null")
-                        promise.reject("GET_TOKEN_STATUS_ERROR", "TokenStatus é null - result_code:null")
+                        val errorMessage = getTaskErrorMessage(task)
+                        Log.w(TAG, "GET_TOKEN_STATUS_ERROR: $errorMessage")
+                        promise.reject("GET_TOKEN_STATUS_ERROR", errorMessage)
                     }
-                } else {
-                    val errorMessage = getTaskErrorMessage(task)
-                    Log.w(TAG, "GET_TOKEN_STATUS_ERROR: $errorMessage")
-                    promise.reject("GET_TOKEN_STATUS_ERROR", errorMessage)
                 }
+            } ?: run {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
+                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
             }
         } catch (e: Exception) {
             Log.e(TAG, "GET_TOKEN_STATUS_ERROR: ${e.message}", e)
@@ -212,22 +222,27 @@ class GoogleWalletImplementation(
                 return
             }
 
-            // Código LIMPO!
-            tapAndPayClient!!.environment.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val environment = task.result
-                    if (environment != null) {
-                        Log.i(TAG, "- getEnvironment = $environment")
-                        promise.resolve(environment)
+            // Código LIMPO com segurança nula!
+            tapAndPayClient?.let { client ->
+                client.environment.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val environment = task.result
+                        if (environment != null) {
+                            Log.i(TAG, "- getEnvironment = $environment")
+                            promise.resolve(environment)
+                        } else {
+                            Log.w(TAG, "GET_ENVIRONMENT_ERROR: Environment é null - result_code:null")
+                            promise.reject("GET_ENVIRONMENT_ERROR", "Environment é null - result_code:null")
+                        }
                     } else {
-                        Log.w(TAG, "GET_ENVIRONMENT_ERROR: Environment é null - result_code:null")
-                        promise.reject("GET_ENVIRONMENT_ERROR", "Environment é null - result_code:null")
+                        val errorMessage = getTaskErrorMessage(task)
+                        Log.w(TAG, "GET_ENVIRONMENT_ERROR: $errorMessage")
+                        promise.reject("GET_ENVIRONMENT_ERROR", errorMessage)
                     }
-                } else {
-                    val errorMessage = getTaskErrorMessage(task)
-                    Log.w(TAG, "GET_ENVIRONMENT_ERROR: $errorMessage")
-                    promise.reject("GET_ENVIRONMENT_ERROR", errorMessage)
                 }
+            } ?: run {
+                Log.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
+                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
             }
         } catch (e: Exception) {
             Log.e(TAG, "GET_ENVIRONMENT_ERROR: ${e.message}", e)
