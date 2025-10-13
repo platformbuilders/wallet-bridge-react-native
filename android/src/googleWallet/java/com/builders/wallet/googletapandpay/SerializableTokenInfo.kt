@@ -18,7 +18,7 @@ data class SerializableTokenInfo(
   val network: Int,
   val tokenState: Int,
   val isDefaultToken: Boolean,
-  val portifolioName: String
+  val portfolioName: String
 ) : Serializable {
 
   companion object {
@@ -34,7 +34,7 @@ data class SerializableTokenInfo(
         network = tokenInfo.network,
         tokenState = tokenInfo.tokenState,
         isDefaultToken = tokenInfo.isDefaultToken,
-        portifolioName = tokenInfo.portfolioName
+        portfolioName = tokenInfo.portfolioName
       )
     }
   }
