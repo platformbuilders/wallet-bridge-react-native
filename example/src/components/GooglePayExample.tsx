@@ -14,6 +14,7 @@ import {
   GoogleActivationStatus,
   GoogleWalletDataFormat,
 } from '@platformbuilders/wallet-bridge-react-native';
+
 import type {
   GooglePushTokenizeRequest,
   GoogleWalletData,
@@ -31,6 +32,21 @@ const handleGoogleWalletError = (error: unknown): string => {
   console.log('🔍 [JS] Erro Google Wallet:', error);
   const errorMessage = error instanceof Error ? error.message : String(error);
   return errorMessage;
+};
+
+// Função para mostrar resultado da abertura da wallet
+const showWalletOpenResult = (success: boolean, walletName: string): void => {
+  if (success) {
+    Alert.alert('✅ Sucesso', `${walletName} aberto com sucesso!`, [
+      { text: 'OK' },
+    ]);
+  } else {
+    Alert.alert(
+      '❌ Erro',
+      `Falha ao abrir ${walletName}. Verifique se o app está instalado.`,
+      [{ text: 'OK' }]
+    );
+  }
 };
 
 // Interface para o useImperativeHandle
@@ -715,6 +731,27 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
       }
     };
 
+    const handleOpenWallet = async (): Promise<void> => {
+      try {
+        console.log('🔍 [JS] Iniciando abertura do Google Wallet...');
+
+        // Usar o método nativo openWallet
+        const result = await googleWalletClient.openWallet();
+        console.log('✅ [JS] Resultado da abertura:', result);
+
+        // Exibir resultado
+        showWalletOpenResult(result, 'Google Wallet');
+      } catch (err) {
+        console.log('❌ [JS] Erro ao abrir Google Wallet:', err);
+        console.log(
+          '❌ [JS] Stack trace:',
+          err instanceof Error ? err.stack : 'N/A'
+        );
+        const errorMessage = handleGoogleWalletError(err);
+        Alert.alert('Erro', `Erro ao abrir Google Wallet: ${errorMessage}`);
+      }
+    };
+
     const handleClearOPC = (): void => {
       setOpcValue('');
       console.log('🧹 [JS] OPC limpo');
@@ -1051,6 +1088,10 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
           <TouchableOpacity style={styles.button} onPress={handleListTokens}>
             <Text style={styles.buttonText}>Listar Tokens</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.button} onPress={handleOpenWallet}>
+            <Text style={styles.buttonText}>Abrir Google Wallet</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>

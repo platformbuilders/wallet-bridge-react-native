@@ -53,7 +53,8 @@ export interface SamsungAddCardInfo {
 // Samsung Pay - Constants (apenas tipos, valores vêm da bridge)
 export interface SamsungWalletConstants {
   SDK_NAME: string;
-  useMock: boolean;
+  SAMSUNG_PAY_PACKAGE: string;
+  SAMSUNG_PAY_PLAY_STORE_URL: string;
 
   // Samsung Pay Status Codes
   SPAY_READY: number;
@@ -226,6 +227,9 @@ export interface SamsungWalletSpec {
 
   // Método para finalizar atividade
   finishActivity(): Promise<boolean>;
+
+  // Método para abrir wallet
+  openWallet(): Promise<boolean>;
 }
 
 // ============================================================================

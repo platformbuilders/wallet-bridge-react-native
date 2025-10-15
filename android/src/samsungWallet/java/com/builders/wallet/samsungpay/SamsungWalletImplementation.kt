@@ -10,6 +10,7 @@ import com.facebook.react.bridge.WritableMap
 import com.builders.wallet.samsungpay.util.PartnerInfoHolder
 import com.builders.wallet.samsungpay.util.ErrorCode
 import com.builders.wallet.samsungpay.SerializableCard.toSerializable
+import com.builders.wallet.WalletOpener
 import com.samsung.android.sdk.samsungpay.v2.SamsungPay
 import com.samsung.android.sdk.samsungpay.v2.SpaySdk
 import com.samsung.android.sdk.samsungpay.v2.StatusListener
@@ -32,6 +33,12 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   private var cardManager: CardManager? = null
   private var activity: android.app.Activity? = null
   private var intentListenerActive: Boolean = false
+  private var walletOpener: WalletOpener? = null
+
+  init {
+    // Inicializar WalletOpener
+    walletOpener = WalletOpener(reactContext)
+  }
 
   // https://developer.samsung.com/pay/native/common-api.html
   override fun init(serviceId: String, promise: Promise) {
@@ -464,6 +471,8 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
     // SDK Info
     constants["SDK_NAME"] = "SamsungWallet"
+    constants["SAMSUNG_PAY_PACKAGE"] = SAMSUNG_PAY_PACKAGE
+    constants["SAMSUNG_PAY_PLAY_STORE_URL"] = SAMSUNG_PAY_PLAY_STORE_URL
 
     // Usar diretamente as constantes do SDK!
     constants["SPAY_READY"] = SpaySdk.SPAY_READY
@@ -626,8 +635,11 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
 
-  companion object {
-    private const val TAG = "SamsungWallet"
+    companion object {
+      private const val TAG = "SamsungWallet"
+
+      private const val SAMSUNG_PAY_PACKAGE = "com.samsung.android.spay"
+      private val SAMSUNG_PAY_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$SAMSUNG_PAY_PACKAGE&hl=pt_BR"
     
     // Variáveis estáticas para armazenar dados da intent
     @Volatile
@@ -731,10 +743,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     fun isValidCallingPackage(activity: android.app.Activity): Boolean {
       val callingPackage = activity.callingPackage
       Log.d(TAG, "🔍 [SAMSUNG] Chamador: $callingPackage")
-      return callingPackage != null && (
-        callingPackage == "com.samsung.android.spay" ||
-        callingPackage == "com.samsung.android.spay_mock"
-      )
+      return callingPackage != null && callingPackage == SAMSUNG_PAY_PACKAGE
     }
     /**
      * Processa dados específicos da Samsung Wallet (Mastercard/Visa)
@@ -845,6 +854,35 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       }
 
       return result
+    }
+  }
+
+  override fun openWallet(promise: Promise) {
+    Log.d(TAG, "🔍 [SAMSUNG] openWallet chamado")
+    try {
+      if (walletOpener == null) {
+        Log.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
+        promise.reject("WALLET_OPENER_NOT_AVAILABLE", "WalletOpener não foi inicializado")
+        return
+      }
+
+      val packageName = SAMSUNG_PAY_PACKAGE
+      val appName = "Samsung Pay"
+      val playStoreUrl = "market://details?id=$packageName"
+      val webUrl = SAMSUNG_PAY_PLAY_STORE_URL
+
+      val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
+      
+      if (success) {
+        Log.d(TAG, "✅ [SAMSUNG] Wallet aberto com sucesso")
+        promise.resolve(true)
+      } else {
+        Log.w(TAG, "❌ [SAMSUNG] Falha ao abrir wallet")
+        promise.reject("OPEN_WALLET_ERROR", "Falha ao abrir Samsung Pay")
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
+      promise.reject("OPEN_WALLET_ERROR", e.message, e)
     }
   }
 }

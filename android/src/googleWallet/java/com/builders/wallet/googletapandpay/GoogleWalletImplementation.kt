@@ -21,6 +21,7 @@ import com.google.android.gms.tapandpay.issuer.ViewTokenRequest
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.builders.wallet.googletapandpay.util.ErrorCode
+import com.builders.wallet.WalletOpener
 
 /**
  * Implementação LIMPA do Google Wallet - USA DIRETAMENTE O SDK (SEM REFLEXÃO)
@@ -36,11 +37,15 @@ class GoogleWalletImplementation(
     private var activity: Activity? = null
     private var mPickerPromise: Promise? = null
     private var intentListenerActive: Boolean = false
+    private var walletOpener: WalletOpener? = null
 
     init {
         try {
             // Inicializar TapAndPayClient diretamente (sem reflexão!)
             tapAndPayClient = TapAndPay.getClient(reactContext)
+            
+            // Inicializar WalletOpener
+            walletOpener = WalletOpener(reactContext)
 
             reactContext.addActivityEventListener(object : BaseActivityEventListener() {
                 override fun onActivityResult(
@@ -584,10 +589,42 @@ class GoogleWalletImplementation(
         }
     }
 
+    override fun openWallet(promise: Promise) {
+        Log.d(TAG, "🔍 [GOOGLE] openWallet chamado")
+        try {
+            if (walletOpener == null) {
+                Log.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
+                promise.reject("WALLET_OPENER_NOT_AVAILABLE", "WalletOpener não foi inicializado")
+                return
+            }
+
+            val packageName = GOOGLE_WALLET_APP_PACKAGE
+            val appName = "Google Wallet"
+            val playStoreUrl = "market://details?id=$packageName"
+            val webUrl = GOOGLE_WALLET_PLAY_STORE_URL
+
+            val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
+            
+            if (success) {
+                Log.d(TAG, "✅ [GOOGLE] Wallet aberto com sucesso")
+                promise.resolve(true)
+            } else {
+                Log.w(TAG, "❌ [GOOGLE] Falha ao abrir wallet")
+                promise.reject("OPEN_WALLET_ERROR", "Falha ao abrir Google Wallet")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
+            promise.reject("OPEN_WALLET_ERROR", e.message, e)
+        }
+    }
+
     // https://developers.google.com/pay/issuers/apis/push-provisioning/android/enumerated-values?authuser=1&hl=pt-br#tapandpay_status_codes
     override fun getConstants(): MutableMap<String, Any> {
         return hashMapOf<String, Any>().apply {
             put("SDK_NAME", "GoogleWallet")
+            put("GOOGLE_WALLET_PACKAGE", GOOGLE_WALLET_PACKAGE)
+            put("GOOGLE_WALLET_APP_PACKAGE", GOOGLE_WALLET_APP_PACKAGE)
+            put("GOOGLE_WALLET_PLAY_STORE_URL", GOOGLE_WALLET_PLAY_STORE_URL)
 
             // Google Token Provider - Usar diretamente as constantes do SDK!
             put("TOKEN_PROVIDER_AMEX", TapAndPay.TOKEN_PROVIDER_AMEX)
@@ -794,6 +831,9 @@ class GoogleWalletImplementation(
         private const val TAG = "GoogleWallet"
         private const val PUSH_TOKENIZE_REQUEST = 2
         private const val CREATE_WALLET_REQUEST = 6
+        private const val GOOGLE_WALLET_PACKAGE = "com.google.android.gms"
+        private const val GOOGLE_WALLET_APP_PACKAGE = "com.google.android.apps.walletnfcrel"
+        private val GOOGLE_WALLET_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$GOOGLE_WALLET_APP_PACKAGE&hl=pt_BR"
         
         // Variáveis estáticas para armazenar dados da intent
         @Volatile
@@ -882,9 +922,7 @@ class GoogleWalletImplementation(
             Log.d(TAG, "🔍 [GOOGLE] Verificando intent - Action: $action")
             
             // Verificar action
-            val isValidAction = action != null && (
-                action.endsWith(".action.ACTIVATE_TOKEN")
-            )
+            val isValidAction = action != null &&  action.endsWith(".action.ACTIVATE_TOKEN")
             
             return isValidAction
         }
@@ -897,10 +935,7 @@ class GoogleWalletImplementation(
             val callingPackage = activity.callingPackage
             Log.d(TAG, "🔍 [GOOGLE] Chamador: $callingPackage")
             
-            return callingPackage != null && (
-                callingPackage == "com.google.android.gms" ||
-                callingPackage == "com.google.android.gms_mock"
-            )
+            return callingPackage != null && callingPackage == GOOGLE_WALLET_PACKAGE || callingPackage == GOOGLE_WALLET_APP_PACKAGE
         }
     }
 }

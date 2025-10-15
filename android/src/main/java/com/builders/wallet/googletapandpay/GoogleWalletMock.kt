@@ -19,16 +19,26 @@ import java.net.URL
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import com.builders.wallet.BuildConfig
+import com.builders.wallet.WalletOpener
 
 class GoogleWalletMock(private val reactContext: ReactApplicationContext) : GoogleWalletContract {
 
     private var activity: Activity? = null
     private var intentListenerActive: Boolean = false
+    private var walletOpener: WalletOpener? = null
+
+    init {
+        // Inicializar WalletOpener
+        walletOpener = WalletOpener(reactContext)
+    }
 
     companion object {
         private const val TAG = "GoogleWalletMock"
         private const val DEFAULT_API_BASE_URL = "http://localhost:3000"
         private const val REQUEST_TIMEOUT = 5000 // 5 segundos
+        private const val GOOGLE_WALLET_PACKAGE = "com.google.android.gms"
+        private const val GOOGLE_WALLET_APP_PACKAGE = "com.google.android.apps.walletnfcrel"
+        private val GOOGLE_WALLET_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$GOOGLE_WALLET_APP_PACKAGE&hl=pt_BR"
 
         // Obter URL da API do BuildConfig
         private val API_BASE_URL: String by lazy {
@@ -160,7 +170,8 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             Log.d(TAG, "🔍 [GOOGLE MOCK] Chamador: $callingPackage")
 
             return callingPackage != null && (
-                callingPackage == "com.google.android.gms" ||
+                callingPackage == GOOGLE_WALLET_PACKAGE ||
+                callingPackage == GOOGLE_WALLET_APP_PACKAGE ||
                 callingPackage == "com.google.android.gms_mock"
             )
         }
@@ -1082,6 +1093,9 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         val constants = hashMapOf<String, Any>()
 
         constants["SDK_NAME"] = "GoogleWallet"
+        constants["GOOGLE_WALLET_PACKAGE"] = GOOGLE_WALLET_PACKAGE
+        constants["GOOGLE_WALLET_APP_PACKAGE"] = GOOGLE_WALLET_APP_PACKAGE
+        constants["GOOGLE_WALLET_PLAY_STORE_URL"] = GOOGLE_WALLET_PLAY_STORE_URL
 
         // Google Token Provider - valores simulados
         constants["TOKEN_PROVIDER_AMEX"] = 1
@@ -1147,6 +1161,35 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
         Log.d(TAG, "✅ [MOCK] Constantes obtidas (simuladas)")
         return constants
+    }
+
+    override fun openWallet(promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] openWallet chamado")
+        try {
+            if (walletOpener == null) {
+                Log.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
+                promise.reject("WALLET_OPENER_NOT_AVAILABLE", "WalletOpener não foi inicializado")
+                return
+            }
+
+            val packageName = GOOGLE_WALLET_PACKAGE
+            val appName = "Google Wallet"
+            val playStoreUrl = "market://details?id=$packageName"
+            val webUrl = GOOGLE_WALLET_PLAY_STORE_URL
+
+            val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
+            
+            if (success) {
+                Log.d(TAG, "✅ [MOCK] Wallet aberto com sucesso")
+                promise.resolve(true)
+            } else {
+                Log.w(TAG, "❌ [MOCK] Falha ao abrir wallet")
+                promise.reject("OPEN_WALLET_ERROR", "Falha ao abrir Google Wallet")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
+            promise.reject("OPEN_WALLET_ERROR", e.message, e)
+        }
     }
 
 }

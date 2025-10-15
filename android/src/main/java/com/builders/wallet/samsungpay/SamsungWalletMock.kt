@@ -8,6 +8,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
 import com.builders.wallet.BuildConfig
+import com.builders.wallet.WalletOpener
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -20,11 +21,19 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
 
     private var activity: android.app.Activity? = null
     private var intentListenerActive: Boolean = false
+    private var walletOpener: WalletOpener? = null
+
+    init {
+        // Inicializar WalletOpener
+        walletOpener = WalletOpener(reactContext)
+    }
 
     companion object {
         private const val TAG = "SamsungWalletMock"
         private const val DEFAULT_API_BASE_URL = "http://localhost:3000"
         private const val REQUEST_TIMEOUT = 5000 // 5 segundos
+        private const val SAMSUNG_PAY_PACKAGE = "com.samsung.android.spay"
+        private val SAMSUNG_PAY_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$SAMSUNG_PAY_PACKAGE&hl=pt_BR"
         
         // Variáveis estáticas para armazenar dados da intent
         @Volatile
@@ -127,7 +136,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             Log.d(TAG, "🔍 [SAMSUNG MOCK] Chamador: $callingPackage")
             
             return callingPackage != null && (
-                callingPackage == "com.samsung.android.spay" ||
+                callingPackage == SAMSUNG_PAY_PACKAGE ||
                 callingPackage == "com.samsung.android.spay_mock"
             )
         }
@@ -1048,6 +1057,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         }
     }
 
+
     override fun getConstants(): MutableMap<String, Any> {
         Log.d(TAG, "🔍 [MOCK] getConstants chamado")
         
@@ -1055,6 +1065,8 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         
         // SDK Info
         constants["SDK_NAME"] = "SamsungWalletMock"
+        constants["SAMSUNG_PAY_PACKAGE"] = SAMSUNG_PAY_PACKAGE
+        constants["SAMSUNG_PAY_PLAY_STORE_URL"] = SAMSUNG_PAY_PLAY_STORE_URL
         
         // Samsung Pay Status Codes (valores reais do SpaySdk)
         constants["SPAY_READY"] = 2
@@ -1146,5 +1158,34 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         
         Log.d(TAG, "✅ [MOCK] Constantes obtidas (baseadas na classe Card)")
         return constants
+    }
+
+    override fun openWallet(promise: Promise) {
+        Log.d(TAG, "🔍 [MOCK] openWallet chamado")
+        try {
+            if (walletOpener == null) {
+                Log.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
+                promise.reject("WALLET_OPENER_NOT_AVAILABLE", "WalletOpener não foi inicializado")
+                return
+            }
+
+            val packageName = SAMSUNG_PAY_PACKAGE
+            val appName = "Samsung Pay"
+            val playStoreUrl = "market://details?id=$packageName"
+            val webUrl = SAMSUNG_PAY_PLAY_STORE_URL
+
+            val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
+            
+            if (success) {
+                Log.d(TAG, "✅ [MOCK] Wallet aberto com sucesso")
+                promise.resolve(true)
+            } else {
+                Log.w(TAG, "❌ [MOCK] Falha ao abrir wallet")
+                promise.reject("OPEN_WALLET_ERROR", "Falha ao abrir Samsung Pay")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
+            promise.reject("OPEN_WALLET_ERROR", e.message, e)
+        }
     }
 }

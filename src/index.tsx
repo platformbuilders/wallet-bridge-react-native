@@ -2,4 +2,7 @@
 export * from './types/index';
 
 // Re-exporta os módulos específicos
-export { GoogleWalletModule, SamsungWalletModule } from './NativeBuildersWallet';
+export {
+  GoogleWalletModule,
+  SamsungWalletModule,
+} from './NativeBuildersWallet';

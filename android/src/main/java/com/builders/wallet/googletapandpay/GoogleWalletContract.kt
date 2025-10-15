@@ -27,4 +27,5 @@ interface GoogleWalletContract {
     fun removeIntentListener(promise: Promise)
     fun setActivationResult(status: String, activationCode: String?, promise: Promise)
     fun finishActivity(promise: Promise)
+    fun openWallet(promise: Promise)
 }
