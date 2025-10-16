@@ -33,13 +33,7 @@ class WalletOpener(private val context: Context) {
         log("🔍 Abrindo $appName ($packageName)")
         
         try {
-            val packageManager = context.packageManager
-            val isInstalled = try {
-                packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
-                true
-            } catch (e: PackageManager.NameNotFoundException) {
-                false
-            }
+            val isInstalled = isAppInstalled(packageName)
             
             return if (isInstalled) {
                 log("✅ $appName instalado - abrindo app")
