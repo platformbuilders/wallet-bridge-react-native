@@ -131,7 +131,8 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         /**
          * Verifica se o chamador é válido (Samsung Pay)
          */
-        private fun isValidCallingPackage(activity: android.app.Activity): Boolean {
+        @JvmStatic
+        fun isValidCallingPackage(activity: android.app.Activity): Boolean {
             val callingPackage = activity.callingPackage
             Log.d(TAG, "🔍 [SAMSUNG MOCK] Chamador: $callingPackage")
             
