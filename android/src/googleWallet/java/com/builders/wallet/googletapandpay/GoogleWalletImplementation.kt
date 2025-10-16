@@ -935,7 +935,7 @@ class GoogleWalletImplementation(
             val callingPackage = activity.callingPackage
             Log.d(TAG, "🔍 [GOOGLE] Chamador: $callingPackage")
             
-            return callingPackage != null && callingPackage == GOOGLE_WALLET_PACKAGE || callingPackage == GOOGLE_WALLET_APP_PACKAGE
+            return callingPackage != null && (callingPackage == GOOGLE_WALLET_PACKAGE || callingPackage == GOOGLE_WALLET_APP_PACKAGE)
         }
     }
 }
