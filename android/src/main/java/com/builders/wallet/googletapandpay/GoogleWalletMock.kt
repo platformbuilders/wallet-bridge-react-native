@@ -165,7 +165,8 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         /**
          * Verifica se o chamador é válido (Google Play Services)
         */
-        private fun isValidCallingPackage(activity: android.app.Activity): Boolean {
+        @JvmStatic
+        fun isValidCallingPackage(activity: android.app.Activity): Boolean {
             val callingPackage = activity.callingPackage
             Log.d(TAG, "🔍 [GOOGLE MOCK] Chamador: $callingPackage")
 
