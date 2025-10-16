@@ -1164,7 +1164,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     }
 
     override fun openWallet(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] openWallet chamado")
+        Log.d(TAG, "🔍 [GOOGLE] openWallet chamado")
         try {
             if (walletOpener == null) {
                 Log.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
@@ -1172,7 +1172,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 return
             }
 
-            val packageName = GOOGLE_WALLET_PACKAGE
+            val packageName = GOOGLE_WALLET_APP_PACKAGE
             val appName = "Google Wallet"
             val playStoreUrl = "market://details?id=$packageName"
             val webUrl = GOOGLE_WALLET_PLAY_STORE_URL
@@ -1180,10 +1180,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
             
             if (success) {
-                Log.d(TAG, "✅ [MOCK] Wallet aberto com sucesso")
+                Log.d(TAG, "✅ [GOOGLE] Wallet aberto com sucesso")
                 promise.resolve(true)
             } else {
-                Log.w(TAG, "❌ [MOCK] Falha ao abrir wallet")
+                Log.w(TAG, "❌ [GOOGLE] Falha ao abrir wallet")
                 promise.reject("OPEN_WALLET_ERROR", "Falha ao abrir Google Wallet")
             }
         } catch (e: Exception) {
