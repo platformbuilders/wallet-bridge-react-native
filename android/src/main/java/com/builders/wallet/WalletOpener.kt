@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 
 /**
  * Classe nativa para gerenciar a abertura de apps de carteira
@@ -52,7 +51,6 @@ class WalletOpener(private val context: Context) {
             
         } catch (e: Exception) {
             log("❌ Erro: ${e.message}")
-            showToast("Erro: ${e.message}")
             return false
         }
     }
@@ -70,7 +68,6 @@ class WalletOpener(private val context: Context) {
                 launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 context.startActivity(launch)
                 log("✅ $appName aberto (método 1)")
-                showToast("$appName aberto")
                 return true
             } catch (e: Exception) {
                 log("⚠️ Método 1 falhou: ${e.message}")
@@ -87,7 +84,6 @@ class WalletOpener(private val context: Context) {
             if (explicitIntent.resolveActivity(packageManager) != null) {
                 context.startActivity(explicitIntent)
                 log("✅ $appName aberto (método 2)")
-                showToast("$appName aberto")
                 return true
             }
         } catch (e: Exception) {
@@ -101,7 +97,6 @@ class WalletOpener(private val context: Context) {
                 genericIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 context.startActivity(genericIntent)
                 log("✅ $appName aberto (método 3)")
-                showToast("$appName aberto")
                 return true
             }
         } catch (e: Exception) {
@@ -109,7 +104,6 @@ class WalletOpener(private val context: Context) {
         }
         
         log("❌ Falha ao abrir $appName")
-        showToast("Erro ao abrir $appName")
         return false
     }
 
@@ -124,7 +118,6 @@ class WalletOpener(private val context: Context) {
             if (playStoreIntent.resolveActivity(context.packageManager) != null) {
                 context.startActivity(playStoreIntent)
                 log("✅ Play Store aberta para $appName")
-                showToast("Abrindo Play Store para download...")
                 return true
             } else {
                 log("⚠️ Play Store não disponível - tentando navegador")
@@ -148,17 +141,14 @@ class WalletOpener(private val context: Context) {
             if (browserIntent.resolveActivity(context.packageManager) != null) {
                 context.startActivity(browserIntent)
                 log("✅ Navegador aberto para $appName")
-                showToast("Abrindo navegador para download...")
                 return true
             } else {
                 log("❌ Nenhum navegador disponível")
-                showToast("Erro: Nenhum navegador disponível")
                 return false
             }
             
         } catch (e: Exception) {
             log("❌ Erro no navegador: ${e.message}")
-            showToast("Erro ao abrir $appName")
             return false
         }
     }
@@ -182,14 +172,4 @@ class WalletOpener(private val context: Context) {
         Log.d(TAG, message)
     }
 
-    /**
-     * Toast helper
-     */
-    private fun showToast(message: String) {
-        if (context is android.app.Activity) {
-            context.runOnUiThread {
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 }
