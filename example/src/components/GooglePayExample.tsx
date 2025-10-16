@@ -9,6 +9,7 @@ import {
   View,
   Clipboard,
 } from 'react-native';
+import { showWalletOpenResult } from '../utils/walletUtils';
 import {
   GoogleWalletModule as GoogleWalletClient,
   GoogleActivationStatus,
@@ -32,21 +33,6 @@ const handleGoogleWalletError = (error: unknown): string => {
   console.log('🔍 [JS] Erro Google Wallet:', error);
   const errorMessage = error instanceof Error ? error.message : String(error);
   return errorMessage;
-};
-
-// Função para mostrar resultado da abertura da wallet
-const showWalletOpenResult = (success: boolean, walletName: string): void => {
-  if (success) {
-    Alert.alert('✅ Sucesso', `${walletName} aberto com sucesso!`, [
-      { text: 'OK' },
-    ]);
-  } else {
-    Alert.alert(
-      '❌ Erro',
-      `Falha ao abrir ${walletName}. Verifique se o app está instalado.`,
-      [{ text: 'OK' }]
-    );
-  }
 };
 
 // Interface para o useImperativeHandle

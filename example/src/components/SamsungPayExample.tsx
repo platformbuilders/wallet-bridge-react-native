@@ -16,6 +16,7 @@ import {
   FlatList,
   Clipboard,
 } from 'react-native';
+import { showWalletOpenResult } from '../utils/walletUtils';
 import {
   SamsungWalletModule as SamsungWalletClient,
   SamsungActivationStatus,
@@ -31,21 +32,6 @@ const handleSamsungPayError = (error: unknown): string => {
   console.log('🔍 [JS] Erro Samsung Pay:', error);
   const errorMessage = error instanceof Error ? error.message : String(error);
   return errorMessage;
-};
-
-// Função para mostrar resultado da abertura da wallet
-const showWalletOpenResult = (success: boolean, walletName: string): void => {
-  if (success) {
-    Alert.alert('✅ Sucesso', `${walletName} aberto com sucesso!`, [
-      { text: 'OK' },
-    ]);
-  } else {
-    Alert.alert(
-      '❌ Erro',
-      `Falha ao abrir ${walletName}. Verifique se o app está instalado.`,
-      [{ text: 'OK' }]
-    );
-  }
 };
 
 // Interface para o useImperativeHandle
