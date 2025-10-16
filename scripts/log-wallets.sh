@@ -38,6 +38,7 @@ echo "   - GoogleWallet"
 echo "   - GoogleWalletMock"
 echo "   - MainActivity"
 echo "   - WalletIntentProcessor"
+echo "   - WalletOpener"
 echo ""
 echo "💡 Dica: Use Ctrl+C para parar o log"
 echo ""
@@ -51,6 +52,7 @@ echo ""
 # - GoogleWalletMock: Logs do mock da Google Wallet
 # - MainActivity: Logs da MainActivity (para ver o processamento de intents)
 # - WalletIntentProcessor: Logs do processador centralizado
+# - WalletOpener: Logs da classe nativa para abertura de wallets
 
 adb logcat -c  # Limpa o buffer de logs
 
@@ -60,7 +62,7 @@ echo ""
 
 # Captura logs com filtros específicos usando tags do adb logcat
 # Usando filtros mais específicos para evitar logs desnecessários
-adb logcat -s SamsungWallet:* SamsungWalletMock:* GoogleWallet:* GoogleWalletMock:* MainActivity:* WalletIntentProcessor:*
+adb logcat -s SamsungWallet:* SamsungWalletMock:* GoogleWallet:* GoogleWalletMock:* MainActivity:* WalletIntentProcessor:* WalletOpener:*
 
 echo ""
 echo "✅ Log finalizado!"

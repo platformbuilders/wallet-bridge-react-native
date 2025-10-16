@@ -110,6 +110,11 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
     googleWalletImplementation.finishActivity(promise)
   }
 
+  @ReactMethod
+  fun openWallet(promise: Promise) {
+    googleWalletImplementation.openWallet(promise)
+  }
+
 
 
   override fun getConstants(): MutableMap<String, Any> {

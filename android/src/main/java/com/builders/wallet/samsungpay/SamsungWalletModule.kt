@@ -104,6 +104,11 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     samsungWalletImplementation.finishActivity(promise)
   }
 
+  @ReactMethod
+  fun openWallet(promise: Promise) {
+    samsungWalletImplementation.openWallet(promise)
+  }
+
   override fun getConstants(): MutableMap<String, Any> {
     val constants = samsungWalletImplementation.getConstants().toMutableMap()
     

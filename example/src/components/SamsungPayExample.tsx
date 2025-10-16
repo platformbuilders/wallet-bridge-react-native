@@ -16,6 +16,7 @@ import {
   FlatList,
   Clipboard,
 } from 'react-native';
+import { showWalletOpenResult } from '../utils/walletUtils';
 import {
   SamsungWalletModule as SamsungWalletClient,
   SamsungActivationStatus,
@@ -624,6 +625,27 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
       }
     };
 
+    const handleOpenWallet = async (): Promise<void> => {
+      try {
+        console.log('🔍 [JS] Iniciando abertura do Samsung Pay...');
+
+        // Usar o método nativo openWallet
+        const result = await samsungWalletClient.openWallet();
+        console.log('✅ [JS] Resultado da abertura:', result);
+
+        // Exibir resultado
+        showWalletOpenResult(result, 'Samsung Pay');
+      } catch (err) {
+        console.log('❌ [JS] Erro ao abrir Samsung Pay:', err);
+        console.log(
+          '❌ [JS] Stack trace:',
+          err instanceof Error ? err.stack : 'N/A'
+        );
+        const errorMessage = handleSamsungPayError(err);
+        Alert.alert('Erro', `Erro ao abrir Samsung Pay: ${errorMessage}`);
+      }
+    };
+
     // Componente do Modal de Provider
     const ProviderModal = () => (
       <Modal
@@ -1051,6 +1073,9 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
             onPress={handleActivateSamsungPay}
           >
             <Text style={styles.buttonText}>Ativar Samsung Pay</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={handleOpenWallet}>
+            <Text style={styles.buttonText}>Abrir Samsung Pay</Text>
           </TouchableOpacity>
         </View>
 

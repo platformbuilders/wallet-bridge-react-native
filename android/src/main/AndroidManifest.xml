@@ -1,2 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Declara que o app precisa acessar o Google Wallet e Samsung Wallet -->
+    <queries>
+        <package android:name="com.google.android.apps.walletnfcrel" />
+        <package android:name="com.samsung.android.spay" />
+    </queries>
 </manifest>

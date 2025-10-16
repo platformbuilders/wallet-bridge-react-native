@@ -94,6 +94,9 @@ export interface GoogleWalletData {
 
 export interface GoogleWalletConstants {
   SDK_NAME: string;
+  GOOGLE_WALLET_PACKAGE: string;
+  GOOGLE_WALLET_APP_PACKAGE: string;
+  GOOGLE_WALLET_PLAY_STORE_URL: string;
 
   // Google Token Provider
   TOKEN_PROVIDER_AMEX: number;
@@ -245,6 +248,9 @@ export interface GoogleWalletSpec {
 
   // Método para finalizar atividade
   finishActivity(): Promise<boolean>;
+
+  // Método para abrir wallet
+  openWallet(): Promise<boolean>;
 }
 
 // ============================================================================
