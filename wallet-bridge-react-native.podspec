@@ -19,4 +19,6 @@ Pod::Spec.new do |s|
   # Dependencies
   s.dependency "React-Core"
   s.dependency "React-CoreModules"
+
+  install_modules_dependencies(s)
 end
