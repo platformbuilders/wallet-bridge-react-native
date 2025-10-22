@@ -46,7 +46,9 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     Log.i(TAG, "> Init started")
 
     try {
-      val partnerInfo = PartnerInfoHolder.getInstance(serviceId).partnerInfo as PartnerInfo
+      val bundle = Bundle()
+      bundle.putString(SamsungPay.PARTNER_SERVICE_TYPE, SpaySdk.ServiceType.APP2APP.toString())
+      val partnerInfo = PartnerInfo(serviceId, bundle)
 
       // Código LIMPO - usa diretamente o SDK!
       samsungPay = SamsungPay(reactContext, partnerInfo)

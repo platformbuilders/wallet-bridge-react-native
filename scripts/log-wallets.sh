@@ -39,6 +39,8 @@ echo "   - GoogleWalletMock"
 echo "   - MainActivity"
 echo "   - WalletIntentProcessor"
 echo "   - WalletOpener"
+echo "   - TapAndPay"
+echo "   - SPAYSDK"
 echo ""
 echo "💡 Dica: Use Ctrl+C para parar o log"
 echo ""
@@ -53,6 +55,8 @@ echo ""
 # - MainActivity: Logs da MainActivity (para ver o processamento de intents)
 # - WalletIntentProcessor: Logs do processador centralizado
 # - WalletOpener: Logs da classe nativa para abertura de wallets
+# - TapAndPay: Logs do Google Tap and Pay
+# - SPAYSDK: Logs do Samsung Pay SDK
 
 adb logcat -c  # Limpa o buffer de logs
 
@@ -62,7 +66,7 @@ echo ""
 
 # Captura logs com filtros específicos usando tags do adb logcat
 # Usando filtros mais específicos para evitar logs desnecessários
-adb logcat -s SamsungWallet:* SamsungWalletMock:* GoogleWallet:* GoogleWalletMock:* MainActivity:* WalletIntentProcessor:* WalletOpener:*
+adb logcat -s SamsungWallet:* SamsungWalletMock:* GoogleWallet:* GoogleWalletMock:* MainActivity:* WalletIntentProcessor:* WalletOpener:* TapAndPay:* SPAYSDK:*
 
 echo ""
 echo "✅ Log finalizado!"
