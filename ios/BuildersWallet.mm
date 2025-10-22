@@ -3,16 +3,42 @@
 @implementation BuildersWallet
 RCT_EXPORT_MODULE()
 
-- (NSNumber *)multiply:(double)a b:(double)b {
-    NSNumber *result = @(a * b);
-
-    return result;
+// Métodos básicos para Google Wallet
+RCT_EXPORT_METHOD(checkWalletAvailability:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  // Implementação básica - retorna false por enquanto
+  resolve(@(NO));
 }
 
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-    (const facebook::react::ObjCTurboModule::InitParams &)params
+RCT_EXPORT_METHOD(getEnvironment:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
 {
-    return std::make_shared<facebook::react::NativeBuildersWalletSpecJSI>(params);
+  // Implementação básica - retorna "development"
+  resolve(@"development");
+}
+
+RCT_EXPORT_METHOD(openWallet:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  // Implementação básica - retorna false por enquanto
+  resolve(@(NO));
+}
+
+// Métodos básicos para Samsung Wallet
+RCT_EXPORT_METHOD(init:(NSString *)serviceId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  // Implementação básica - retorna true por enquanto
+  resolve(@(YES));
+}
+
+RCT_EXPORT_METHOD(getSamsungPayStatus:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  // Implementação básica - retorna 0 (não disponível)
+  resolve(@(0));
 }
 
 @end

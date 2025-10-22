@@ -1,12 +1,13 @@
-import { NativeModules } from 'react-native';
-import type {
-  GoogleWalletSpec,
-  SamsungWalletSpec,
-} from './types/index';
+import { NativeModules, Platform } from 'react-native';
+import type { GoogleWalletSpec, SamsungWalletSpec } from './types/index';
+import { GoogleWalletIOS } from './google-wallet.ios';
+import { SamsungWalletIOS } from './samsung-wallet.ios';
 
 // Re-exporta todos os types
 export * from './types/index';
 
+// Re-exporta os event emitters
+export * from './event-emitters/index';
 // ============================================================================
 // MÓDULOS ESPECÍFICOS
 // ============================================================================
@@ -27,6 +28,11 @@ if (!SamsungWallet) {
 }
 
 // Exporta os módulos específicos
-export const GoogleWalletModule = GoogleWallet as GoogleWalletSpec;
-export const SamsungWalletModule = SamsungWallet as SamsungWalletSpec;
-
+export const GoogleWalletModule = Platform.select({
+  ios: GoogleWalletIOS,
+  android: GoogleWallet,
+}) as GoogleWalletSpec;
+export const SamsungWalletModule = Platform.select({
+  ios: SamsungWalletIOS,
+  android: SamsungWallet,
+}) as SamsungWalletSpec;

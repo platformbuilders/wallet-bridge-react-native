@@ -2,6 +2,12 @@
 // TYPES ESPECÍFICOS DO SAMSUNG PAY / SAMSUNG WALLET
 // ============================================================================
 
+import type {
+  SamsungActivationStatus,
+  SamsungWalletDataFormat,
+  SamsungWalletIntentType,
+} from '../enums';
+
 // Samsung Pay - Card (baseado na classe Card do SDK e SerializableCard)
 export interface SamsungCard {
   // Campos básicos do Card
@@ -145,27 +151,6 @@ export interface SamsungWalletConstants {
   ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY: number;
 }
 
-// Samsung Wallet - Intent Types
-export enum SamsungWalletIntentType {
-  LAUNCH_A2A_IDV = 'LAUNCH_A2A_IDV',
-  WALLET_INTENT = 'WALLET_INTENT',
-  INVALID_CALLER = 'INVALID_CALLER',
-}
-
-// Samsung Wallet - DataFormat
-export enum SamsungWalletDataFormat {
-  BASE64_DECODED = 'base64_decoded',
-  RAW = 'raw',
-}
-
-// Samsung Wallet - Activation Status
-export enum SamsungActivationStatus {
-  ACCEPTED = 'accepted',
-  DECLINED = 'declined',
-  FAILURE = 'failure',
-  APP_NOT_READY = 'appNotReady',
-}
-
 // Samsung Wallet - Evento de Intent
 export interface SamsungWalletIntentEvent {
   action: string;
@@ -230,113 +215,4 @@ export interface SamsungWalletSpec {
 
   // Método para abrir wallet
   openWallet(): Promise<boolean>;
-}
-
-// ============================================================================
-// SAMSUNG WALLET EVENT EMITTER
-// ============================================================================
-
-import { NativeEventEmitter, NativeModules } from 'react-native';
-
-export class SamsungWalletEventEmitter {
-  private eventEmitter: NativeEventEmitter | null = null;
-  private listeners: Map<string, (event: SamsungWalletIntentEvent) => void> =
-    new Map();
-
-  constructor() {
-    try {
-      // Verificar se o módulo está disponível
-      const SamsungWalletModule = NativeModules.SamsungWallet;
-      if (SamsungWalletModule) {
-        this.eventEmitter = new NativeEventEmitter(SamsungWalletModule);
-        console.log(
-          '✅ [SamsungWalletEventEmitter] EventEmitter inicializado com sucesso'
-        );
-      } else {
-        console.warn(
-          '⚠️ [SamsungWalletEventEmitter] Módulo SamsungWallet não está disponível'
-        );
-      }
-    } catch (error) {
-      console.error(
-        '❌ [SamsungWalletEventEmitter] Erro ao inicializar EventEmitter:',
-        error
-      );
-    }
-  }
-
-  /**
-   * Adiciona um listener para eventos de intent do Samsung Wallet
-   * @param callback Função que será chamada quando um evento for recebido
-   * @returns Função para remover o listener
-   */
-  addIntentListener(
-    callback: (event: SamsungWalletIntentEvent) => void
-  ): () => void {
-    const listenerId = `listener_${Date.now()}_${Math.random()}`;
-
-    // Verificar se o EventEmitter está disponível
-    if (!this.eventEmitter) {
-      console.error(
-        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível'
-      );
-      return () => {}; // Retornar função vazia para evitar erros
-    }
-
-    // Armazenar o callback
-    this.listeners.set(listenerId, callback);
-
-    // Criar o listener do NativeEventEmitter
-    const subscription = this.eventEmitter.addListener(
-      'SamsungWalletIntentReceived',
-      (event: any) => {
-        const walletEvent = event as SamsungWalletIntentEvent;
-        console.log(
-          '🎯 [SamsungWalletEventEmitter] Intent recebido:',
-          walletEvent
-        );
-        callback(walletEvent);
-      }
-    );
-
-    console.log(
-      `✅ [SamsungWalletEventEmitter] Listener adicionado: ${listenerId}`
-    );
-
-    // Retornar função de cleanup
-    return () => {
-      this.listeners.delete(listenerId);
-      subscription.remove();
-      console.log(
-        `🧹 [SamsungWalletEventEmitter] Listener removido: ${listenerId}`
-      );
-    };
-  }
-
-  /**
-   * Remove todos os listeners ativos
-   */
-  removeAllListeners(): void {
-    this.listeners.clear();
-    if (this.eventEmitter) {
-      this.eventEmitter.removeAllListeners('SamsungWalletIntentReceived');
-      console.log(
-        '🧹 [SamsungWalletEventEmitter] Todos os listeners foram removidos'
-      );
-    }
-  }
-
-  /**
-   * Obtém o número de listeners ativos
-   */
-  getListenerCount(): number {
-    return this.listeners.size;
-  }
-
-  /**
-   * Verifica se o EventEmitter está disponível
-   */
-  isAvailable(): boolean {
-    return this.eventEmitter !== null;
-  }
 }

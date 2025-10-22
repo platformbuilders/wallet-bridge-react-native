@@ -7,14 +7,14 @@ set -e  # Para o script se algum comando falhar
 
 echo "🚀 Iniciando build do app Android example..."
 
-# Navega para o diretório raiz do repositório
+# Navega para o diretório raiz do repositório (relativo ao script)
 echo "📦 Publicando com yalc no diretório raiz..."
-cd /Users/neivitor/Desktop/pnb/react-native-builders-wallet
+cd "$(dirname "$0")/.." # volta para a pasta raiz do projeto
 yalc publish
 
 # Navega para o diretório example
 echo "🔄 Atualizando dependências com yalc no diretório example..."
-cd /Users/neivitor/Desktop/pnb/react-native-builders-wallet/example
+cd example
 yalc update
 
 # Limpa o cache do Android
