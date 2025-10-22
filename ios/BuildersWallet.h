@@ -1,5 +1,5 @@
-#import <BuildersWalletSpec/BuildersWalletSpec.h>
+#import <React/RCTBridgeModule.h>
 
-@interface BuildersWallet : NSObject <NativeBuildersWalletSpec>
+@interface BuildersWallet : NSObject <RCTBridgeModule>
 
 @end

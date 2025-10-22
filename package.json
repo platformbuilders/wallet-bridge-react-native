@@ -142,14 +142,6 @@
       ]
     ]
   },
-  "codegenConfig": {
-    "name": "BuildersWalletSpec",
-    "type": "modules",
-    "jsSrcsDir": "src",
-    "android": {
-      "javaPackageName": "com.builders.wallet"
-    }
-  },
   "react-native": {
     "android": {
       "sourceDir": "./android",
