@@ -25,4 +25,5 @@ interface SamsungWalletContract {
     fun setActivationResult(status: String, activationCode: String?, promise: Promise)
     fun finishActivity(promise: Promise)
     fun openWallet(promise: Promise)
+    fun sendNoIntentReceivedEvent()
 }

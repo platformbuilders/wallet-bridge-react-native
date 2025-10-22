@@ -135,6 +135,10 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "GoogleWallet"
     private const val TAG = "GoogleWallet"
+    
+    // Flag para indicar que nenhuma intent foi recebida
+    @Volatile
+    private var hasNoIntentReceivedFlag: Boolean = false
 
     @JvmStatic
     fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
@@ -161,6 +165,56 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
         }
       } catch (e: Exception) {
         Log.e(TAG, "❌ [STATIC] Erro ao processar intent: ${e.message}", e)
+      }
+    }
+
+    @JvmStatic
+    fun setNoIntentReceivedFlag() {
+      hasNoIntentReceivedFlag = true
+      Log.d(TAG, "🔍 [STATIC] Flag de nenhuma intent definido")
+    }
+    
+    @JvmStatic
+    fun hasNoIntentReceivedFlag(): Boolean {
+      return hasNoIntentReceivedFlag
+    }
+    
+    @JvmStatic
+    fun processNoIntentReceivedEvent(reactContext: com.facebook.react.bridge.ReactApplicationContext) {
+      if (hasNoIntentReceivedFlag) {
+        Log.d(TAG, "🔍 [STATIC] Processando evento de nenhuma intent pendente")
+        try {
+          // Determinar se deve usar mock baseado na configuração
+          val useMock = try {
+            val mockValue = BuildConfig.GOOGLE_WALLET_USE_MOCK
+            Log.d(TAG, "🔧 [STATIC] GOOGLE_WALLET_USE_MOCK = $mockValue")
+            mockValue
+          } catch (e: Exception) {
+            Log.w(TAG, "🔧 [STATIC] GOOGLE_WALLET_USE_MOCK não definido, usando padrão: false")
+            false
+          }
+
+          Log.d(TAG, "🔍 [STATIC] sendNoIntentReceivedEvent chamado")
+          
+          if (useMock) {
+            Log.d(TAG, "🔧 [STATIC] Enviando evento de nenhuma intent com MOCK")
+            val mock = GoogleWalletMock(reactContext)
+            mock.sendNoIntentReceivedEvent()
+          } else {
+            // Usa Real ou Stub dependendo da configuração (selecionado pelo source set do Gradle)
+            Log.d(TAG, "🔧 [STATIC] Enviando evento de nenhuma intent com ${if (BuildConfig.GOOGLE_WALLET_ENABLED) "REAL" else "STUB"}")
+            val implementation = GoogleWalletImplementation(reactContext)
+            implementation.sendNoIntentReceivedEvent()
+          }
+          
+          Log.d(TAG, "✅ [STATIC] Evento de nenhuma intent enviado com sucesso")
+        } catch (e: Exception) {
+          Log.e(TAG, "❌ [STATIC] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+        } finally {
+          // Limpar flag após processamento
+          hasNoIntentReceivedFlag = false
+          Log.d(TAG, "🧹 [STATIC] Flag de nenhuma intent limpo")
+        }
       }
     }
   }

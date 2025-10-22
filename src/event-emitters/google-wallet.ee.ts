@@ -11,6 +11,7 @@ export class GoogleWalletEventEmitter {
   private eventEmitter: NativeEventEmitter | null = null;
   private listeners: Map<string, (event: GoogleWalletIntentEvent) => void> =
     new Map();
+  private noIntentListeners: Map<string, () => void> = new Map();
   private isIOS: boolean;
 
   constructor() {
@@ -103,22 +104,75 @@ export class GoogleWalletEventEmitter {
   }
 
   /**
+   * Adiciona um listener para eventos de nenhuma intent recebida do Google Wallet
+   * Em iOS, retorna uma função vazia que não faz nada
+   * @param callback Função que será chamada quando nenhuma intent for recebida
+   * @returns Função para remover o listener
+   */
+  addNoIntentListener(callback: () => void): () => void {
+    // Em iOS, retornar função vazia imediatamente
+    if (this.isIOS) {
+      console.warn(
+        '⚠️ [GoogleWalletEventEmitter] addNoIntentListener chamado em iOS - operação ignorada'
+      );
+      return () => {}; // Retornar função vazia para iOS
+    }
+
+    const listenerId = `no_intent_listener_${Date.now()}_${Math.random()}`;
+
+    // Verificar se o EventEmitter está disponível
+    if (!this.eventEmitter) {
+      console.error(
+        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível'
+      );
+      return () => {}; // Retornar função vazia para evitar erros
+    }
+
+    // Armazenar o callback
+    this.noIntentListeners.set(listenerId, callback);
+
+    // Criar o listener do NativeEventEmitter
+    const subscription = this.eventEmitter.addListener(
+      'GoogleWalletNoIntentReceived',
+      () => {
+        console.log('🎯 [GoogleWalletEventEmitter] Nenhuma intent recebida');
+        callback();
+      }
+    );
+
+    console.log(
+      `✅ [GoogleWalletEventEmitter] NoIntent Listener adicionado: ${listenerId}`
+    );
+
+    // Retornar função de cleanup
+    return () => {
+      this.noIntentListeners.delete(listenerId);
+      subscription.remove();
+      console.log(
+        `🧹 [GoogleWalletEventEmitter] NoIntent Listener removido: ${listenerId}`
+      );
+    };
+  }
+
+  /**
    * Remove todos os listeners ativos
    * Em iOS, apenas limpa o Map interno
    */
   removeAllListeners(): void {
     this.listeners.clear();
+    this.noIntentListeners.clear();
 
     // Em iOS, não tentar remover listeners do EventEmitter
     if (this.isIOS) {
       console.warn(
-        '⚠️ [GoogleWalletEventEmitter] removeAllListeners chamado em iOS - apenas Map limpo'
+        '⚠️ [GoogleWalletEventEmitter] removeAllListeners chamado em iOS - apenas Maps limpos'
       );
       return;
     }
 
     if (this.eventEmitter) {
       this.eventEmitter.removeAllListeners('GoogleWalletIntentReceived');
+      this.eventEmitter.removeAllListeners('GoogleWalletNoIntentReceived');
       console.log(
         '🧹 [GoogleWalletEventEmitter] Todos os listeners foram removidos'
       );
@@ -136,7 +190,7 @@ export class GoogleWalletEventEmitter {
       );
       return 0;
     }
-    return this.listeners.size;
+    return this.listeners.size + this.noIntentListeners.size;
   }
 
   /**

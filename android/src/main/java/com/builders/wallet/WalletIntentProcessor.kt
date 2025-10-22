@@ -38,7 +38,10 @@ object WalletIntentProcessor {
         // Verificar se há dados EXTRA_TEXT (necessário para processamento)
         val extraText = intent.getStringExtra(Intent.EXTRA_TEXT)
         if (extraText.isNullOrEmpty()) {
-            Log.d(TAG, "🔍 [CENTRAL] Nenhum dado EXTRA_TEXT encontrado - ignorando intent")
+            Log.d(TAG, "🔍 [CENTRAL] Nenhum dado EXTRA_TEXT encontrado - armazenando para processamento posterior")
+            // Armazenar para processamento posterior quando React Native estiver pronto
+            SamsungWalletModule.setNoIntentReceivedFlag()
+            GoogleWalletModule.setNoIntentReceivedFlag()
             return
         }
         
@@ -73,8 +76,10 @@ object WalletIntentProcessor {
                 GoogleWalletModule.processIntent(activity, intent)
             }
             else -> {
-                Log.d(TAG, "🔍 [CENTRAL] Package não identificado como Samsung ou Google - ignorando intent")
-                // Não fazer nada - apenas ignorar a intent
+                Log.d(TAG, "🔍 [CENTRAL] Package não identificado como Samsung ou Google - armazenando para processamento posterior")
+                // Armazenar para processamento posterior quando React Native estiver pronto
+                SamsungWalletModule.setNoIntentReceivedFlag()
+                GoogleWalletModule.setNoIntentReceivedFlag()
             }
         }
     }

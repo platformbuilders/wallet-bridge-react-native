@@ -229,7 +229,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         }
     }
 
-    private fun sendEventToReactNative(eventName: String, eventData: WritableMap) {
+    private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
             Log.d(TAG, "🔍 [GOOGLE] Enviando evento para React Native: $eventName")
             reactContext
@@ -1010,6 +1010,9 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
             // Verificar dados pendentes da MainActivity automaticamente
             checkPendingDataFromMainActivity()
+            
+            // Processar eventos de nenhuma intent pendentes
+            GoogleWalletModule.processNoIntentReceivedEvent(reactContext)
 
             promise.resolve(true)
         } catch (e: Exception) {
@@ -1190,6 +1193,16 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         } catch (e: Exception) {
             Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
             promise.reject("OPEN_WALLET_ERROR", e.message, e)
+        }
+    }
+
+    override fun sendNoIntentReceivedEvent() {
+        Log.d(TAG, "🔍 [GOOGLE] sendNoIntentReceivedEvent chamado")
+        try {
+            sendEventToReactNative("GoogleWalletNoIntentReceived", null)
+            Log.d(TAG, "✅ [GOOGLE] Evento de nenhuma intent enviado com sucesso")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [GOOGLE] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
         }
     }
 

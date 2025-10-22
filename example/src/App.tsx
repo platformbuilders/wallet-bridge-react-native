@@ -150,11 +150,30 @@ export default function App(): React.JSX.Element {
       }
     );
 
+    // Listener para eventos de nenhuma intent do Google Wallet
+    const removeGoogleNoIntentListener = googleEventEmitter.addNoIntentListener(
+      () => {
+        console.log('🎯 [App] Nenhuma intent recebida do Google Wallet');
+        console.log('🔍 [App] Google Wallet não recebeu nenhuma intent válida');
+      }
+    );
+
+    // Listener para eventos de nenhuma intent do Samsung Wallet
+    const removeSamsungNoIntentListener =
+      samsungEventEmitter.addNoIntentListener(() => {
+        console.log('🎯 [App] Nenhuma intent recebida do Samsung Wallet');
+        console.log(
+          '🔍 [App] Samsung Wallet não recebeu nenhuma intent válida'
+        );
+      });
+
     // Cleanup dos listeners
     return () => {
       console.log('🧹 [App] Removendo listeners das wallets...');
       removeGoogleListener();
       removeSamsungListener();
+      removeGoogleNoIntentListener();
+      removeSamsungNoIntentListener();
     };
   }, []); // Executar apenas uma vez na montagem
 
