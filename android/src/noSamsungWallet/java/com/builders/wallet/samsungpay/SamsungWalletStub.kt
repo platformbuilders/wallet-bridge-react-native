@@ -195,6 +195,11 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     }
   }
 
+  override fun sendNoIntentReceivedEvent() {
+    Log.d(TAG, "🔍 [SAMSUNG] sendNoIntentReceivedEvent chamado (STUB)")
+    // Stub não faz nada - apenas log
+  }
+
   companion object {
     private const val TAG = "SamsungWallet"
   }

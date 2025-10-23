@@ -119,11 +119,11 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
 
   override fun getConstants(): MutableMap<String, Any> {
     val constants = googleWalletImplementation.getConstants().toMutableMap()
-    
+
     // Adicionar informações de configuração
     constants["useMock"] = useMock
     constants["SDK_NAME"] = if (useMock) "GoogleWalletMock" else "GoogleWallet"
-    
+
     return constants
   }
 
@@ -135,6 +135,10 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "GoogleWallet"
     private const val TAG = "GoogleWallet"
+
+    // Flag para indicar que nenhuma intent foi recebida
+    @Volatile
+    private var hasNoIntentReceivedFlag: Boolean = false
 
     @JvmStatic
     fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
@@ -150,7 +154,7 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
         }
 
         Log.d(TAG, "🔍 [STATIC] processIntent chamado - Action: ${intent.action}")
-        
+
         if (useMock) {
           Log.d(TAG, "🔧 [STATIC] Processando intent com MOCK")
           GoogleWalletMock.processIntent(activity, intent)
@@ -161,6 +165,34 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
         }
       } catch (e: Exception) {
         Log.e(TAG, "❌ [STATIC] Erro ao processar intent: ${e.message}", e)
+      }
+    }
+
+    @JvmStatic
+    fun setNoIntentReceivedFlag() {
+      hasNoIntentReceivedFlag = true
+      Log.d(TAG, "🔍 [STATIC] Flag de nenhuma intent definido")
+    }
+    
+    @JvmStatic
+    fun processNoIntentReceivedEvent(reactContext: ReactApplicationContext) {
+      if (hasNoIntentReceivedFlag) {
+        Log.d(TAG, "🔍 [STATIC] Processando evento de nenhuma intent pendente")
+        try {
+          val module = reactContext.getNativeModule(GoogleWalletModule::class.java)
+          if (module != null) {
+            module.googleWalletImplementation.sendNoIntentReceivedEvent()
+            Log.d(TAG, "✅ [STATIC] Evento de nenhuma intent enviado com sucesso")
+          } else {
+            Log.e(TAG, "❌ [STATIC] Instância do GoogleWalletModule não encontrada.")
+          }
+        } catch (e: Exception) {
+          Log.e(TAG, "❌ [STATIC] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+        } finally {
+          // Limpar flag após processamento
+          hasNoIntentReceivedFlag = false
+          Log.d(TAG, "🧹 [STATIC] Flag de nenhuma intent limpo")
+        }
       }
     }
   }

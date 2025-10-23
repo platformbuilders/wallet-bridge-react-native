@@ -929,7 +929,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         return result
     }
 
-    private fun sendEventToReactNative(eventName: String, eventData: WritableMap) {
+    private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
             Log.d(TAG, "🔍 [SAMSUNG] Enviando evento para React Native: $eventName")
             reactContext
@@ -991,6 +991,10 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         try {
             intentListenerActive = true
             checkPendingDataFromMainActivity()
+            
+            // Processar eventos de nenhuma intent pendentes
+            SamsungWalletModule.processNoIntentReceivedEvent(reactContext)
+            
             promise.resolve(true)
         } catch (e: Exception) {
             Log.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
@@ -1187,6 +1191,16 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         } catch (e: Exception) {
             Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
             promise.reject("OPEN_WALLET_ERROR", e.message, e)
+        }
+    }
+
+    override fun sendNoIntentReceivedEvent() {
+        Log.d(TAG, "🔍 [SAMSUNG] sendNoIntentReceivedEvent chamado")
+        try {
+            sendEventToReactNative("SamsungWalletNoIntentReceived", null)
+            Log.d(TAG, "✅ [SAMSUNG] Evento de nenhuma intent enviado com sucesso")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
         }
     }
 }

@@ -521,6 +521,10 @@ class GoogleWalletImplementation(
         try {
             intentListenerActive = true
             checkPendingDataFromMainActivity()
+            
+            // Processar eventos de nenhuma intent pendentes
+            GoogleWalletModule.processNoIntentReceivedEvent(reactContext)
+            
             promise.resolve(true)
         } catch (e: Exception) {
             Log.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
@@ -786,7 +790,7 @@ class GoogleWalletImplementation(
         }
     }
 
-    private fun sendEventToReactNative(eventName: String, eventData: WritableMap) {
+    private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
             Log.d(TAG, "🔍 [GOOGLE] Enviando evento para React Native: $eventName")
             reactContext
@@ -936,6 +940,16 @@ class GoogleWalletImplementation(
             Log.d(TAG, "🔍 [GOOGLE] Chamador: $callingPackage")
             
             return callingPackage != null && (callingPackage == GOOGLE_WALLET_PACKAGE || callingPackage == GOOGLE_WALLET_APP_PACKAGE)
+        }
+    }
+
+    override fun sendNoIntentReceivedEvent() {
+        Log.d(TAG, "🔍 [GOOGLE] sendNoIntentReceivedEvent chamado")
+        try {
+            sendEventToReactNative("GoogleWalletNoIntentReceived", null)
+            Log.d(TAG, "✅ [GOOGLE] Evento de nenhuma intent enviado com sucesso")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [GOOGLE] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
         }
     }
 }

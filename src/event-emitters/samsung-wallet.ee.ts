@@ -11,6 +11,7 @@ export class SamsungWalletEventEmitter {
   private eventEmitter: NativeEventEmitter | null = null;
   private listeners: Map<string, (event: SamsungWalletIntentEvent) => void> =
     new Map();
+  private noIntentListeners: Map<string, () => void> = new Map();
   private isIOS: boolean;
 
   constructor() {
@@ -103,22 +104,75 @@ export class SamsungWalletEventEmitter {
   }
 
   /**
+   * Adiciona um listener para eventos de nenhuma intent recebida do Samsung Wallet
+   * Em iOS, retorna uma função vazia que não faz nada
+   * @param callback Função que será chamada quando nenhuma intent for recebida
+   * @returns Função para remover o listener
+   */
+  addNoIntentListener(callback: () => void): () => void {
+    // Em iOS, retornar função vazia imediatamente
+    if (this.isIOS) {
+      console.warn(
+        '⚠️ [SamsungWalletEventEmitter] addNoIntentListener chamado em iOS - operação ignorada'
+      );
+      return () => {}; // Retornar função vazia para iOS
+    }
+
+    const listenerId = `no_intent_listener_${Date.now()}_${Math.random()}`;
+
+    // Verificar se o EventEmitter está disponível
+    if (!this.eventEmitter) {
+      console.error(
+        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível'
+      );
+      return () => {}; // Retornar função vazia para evitar erros
+    }
+
+    // Armazenar o callback
+    this.noIntentListeners.set(listenerId, callback);
+
+    // Criar o listener do NativeEventEmitter
+    const subscription = this.eventEmitter.addListener(
+      'SamsungWalletNoIntentReceived',
+      () => {
+        console.log('🎯 [SamsungWalletEventEmitter] Nenhuma intent recebida');
+        callback();
+      }
+    );
+
+    console.log(
+      `✅ [SamsungWalletEventEmitter] NoIntent Listener adicionado: ${listenerId}`
+    );
+
+    // Retornar função de cleanup
+    return () => {
+      this.noIntentListeners.delete(listenerId);
+      subscription.remove();
+      console.log(
+        `🧹 [SamsungWalletEventEmitter] NoIntent Listener removido: ${listenerId}`
+      );
+    };
+  }
+
+  /**
    * Remove todos os listeners ativos
    * Em iOS, apenas limpa o Map interno
    */
   removeAllListeners(): void {
     this.listeners.clear();
+    this.noIntentListeners.clear();
 
     // Em iOS, não tentar remover listeners do EventEmitter
     if (this.isIOS) {
       console.warn(
-        '⚠️ [SamsungWalletEventEmitter] removeAllListeners chamado em iOS - apenas Map limpo'
+        '⚠️ [SamsungWalletEventEmitter] removeAllListeners chamado em iOS - apenas Maps limpos'
       );
       return;
     }
 
     if (this.eventEmitter) {
       this.eventEmitter.removeAllListeners('SamsungWalletIntentReceived');
+      this.eventEmitter.removeAllListeners('SamsungWalletNoIntentReceived');
       console.log(
         '🧹 [SamsungWalletEventEmitter] Todos os listeners foram removidos'
       );
@@ -136,7 +190,7 @@ export class SamsungWalletEventEmitter {
       );
       return 0;
     }
-    return this.listeners.size;
+    return this.listeners.size + this.noIntentListeners.size;
   }
 
   /**

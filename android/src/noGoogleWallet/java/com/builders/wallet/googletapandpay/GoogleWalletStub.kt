@@ -183,6 +183,11 @@ class GoogleWalletImplementation(
         }
     }
 
+    override fun sendNoIntentReceivedEvent() {
+        Log.d(TAG, "🔍 [GOOGLE] sendNoIntentReceivedEvent chamado (STUB)")
+        // Stub não faz nada - apenas log
+    }
+
     companion object {
         private const val TAG = "GoogleWallet"
         
