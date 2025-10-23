@@ -171,34 +171,17 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     }
     
     @JvmStatic
-    fun processNoIntentReceivedEvent(reactContext: com.facebook.react.bridge.ReactApplicationContext) {
+    fun processNoIntentReceivedEvent(reactContext: ReactApplicationContext) {
       if (hasNoIntentReceivedFlag) {
         Log.d(TAG, "🔍 [STATIC] Processando evento de nenhuma intent pendente")
         try {
-          // Determinar se deve usar mock baseado na configuração
-          val useMock = try {
-            val mockValue = BuildConfig.SAMSUNG_WALLET_USE_MOCK
-            Log.d(TAG, "🔧 [STATIC] SAMSUNG_WALLET_USE_MOCK = $mockValue")
-            mockValue
-          } catch (e: Exception) {
-            Log.w(TAG, "🔧 [STATIC] SAMSUNG_WALLET_USE_MOCK não definido, usando padrão: false")
-            false
-          }
-
-          Log.d(TAG, "🔍 [STATIC] sendNoIntentReceivedEvent chamado")
-          
-          if (useMock) {
-            Log.d(TAG, "🔧 [STATIC] Enviando evento de nenhuma intent com MOCK")
-            val mock = SamsungWalletMock(reactContext)
-            mock.sendNoIntentReceivedEvent()
+          val module = reactContext.getNativeModule(SamsungWalletModule::class.java)
+          if (module != null) {
+            module.samsungWalletImplementation.sendNoIntentReceivedEvent()
+            Log.d(TAG, "✅ [STATIC] Evento de nenhuma intent enviado com sucesso")
           } else {
-            // Usa Real ou Stub dependendo da configuração (selecionado pelo source set do Gradle)
-            Log.d(TAG, "🔧 [STATIC] Enviando evento de nenhuma intent com ${if (BuildConfig.SAMSUNG_WALLET_ENABLED) "REAL" else "STUB"}")
-            val implementation = SamsungWalletImplementation(reactContext)
-            implementation.sendNoIntentReceivedEvent()
+            Log.e(TAG, "❌ [STATIC] Instância do SamsungWalletModule não encontrada.")
           }
-          
-          Log.d(TAG, "✅ [STATIC] Evento de nenhuma intent enviado com sucesso")
         } catch (e: Exception) {
           Log.e(TAG, "❌ [STATIC] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
         } finally {
