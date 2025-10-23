@@ -173,12 +173,7 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
       hasNoIntentReceivedFlag = true
       Log.d(TAG, "🔍 [STATIC] Flag de nenhuma intent definido")
     }
-
-    @JvmStatic
-    fun hasNoIntentReceivedFlag(): Boolean {
-      return hasNoIntentReceivedFlag
-    }
-
+    
     @JvmStatic
     fun processNoIntentReceivedEvent(reactContext: ReactApplicationContext) {
       if (hasNoIntentReceivedFlag) {

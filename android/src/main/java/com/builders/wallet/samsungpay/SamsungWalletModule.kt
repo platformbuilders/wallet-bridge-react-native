@@ -17,7 +17,7 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
   // Lê configuração de mock do BuildConfig (variável de ambiente do Gradle)
   private val useMock: Boolean by lazy {
     try {
-      
+
       val mockValue = BuildConfig.SAMSUNG_WALLET_USE_MOCK
       Log.d(TAG, "🔧 [MODULE] SAMSUNG_WALLET_USE_MOCK = $mockValue")
       mockValue
@@ -111,11 +111,11 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
 
   override fun getConstants(): MutableMap<String, Any> {
     val constants = samsungWalletImplementation.getConstants().toMutableMap()
-    
+
     // Adicionar informações de configuração
     constants["useMock"] = useMock
     constants["SDK_NAME"] = if (useMock) "SamsungWalletMock" else "SamsungWallet"
-    
+
     return constants
   }
 
@@ -126,7 +126,7 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "SamsungWallet"
     private const val TAG = "SamsungWallet"
-    
+
     // Flag para indicar que nenhuma intent foi recebida
     @Volatile
     private var hasNoIntentReceivedFlag: Boolean = false
@@ -145,7 +145,7 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
         }
 
         Log.d(TAG, "🔍 [STATIC] processIntent chamado - Action: ${intent.action}")
-        
+
         if (useMock) {
           Log.d(TAG, "🔧 [STATIC] Processando intent com MOCK")
           SamsungWalletMock.processIntent(activity, intent)
@@ -164,12 +164,7 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
       hasNoIntentReceivedFlag = true
       Log.d(TAG, "🔍 [STATIC] Flag de nenhuma intent definido")
     }
-    
-    @JvmStatic
-    fun hasNoIntentReceivedFlag(): Boolean {
-      return hasNoIntentReceivedFlag
-    }
-    
+
     @JvmStatic
     fun processNoIntentReceivedEvent(reactContext: ReactApplicationContext) {
       if (hasNoIntentReceivedFlag) {
