@@ -1,8 +1,8 @@
 import { CardStatus } from '../types/common.types';
 
-describe('Types e Enums', () => {
+describe('Types and Enums', () => {
   describe('CardStatus', () => {
-    it('deve ter todos os valores corretos', () => {
+    it('should have all correct values', () => {
       expect(CardStatus.NOT_FOUND).toBe('not found');
       expect(CardStatus.ACTIVE).toBe('active');
       expect(CardStatus.REQUIRE_AUTHORIZATION).toBe('requireAuthorization');
@@ -11,19 +11,19 @@ describe('Types e Enums', () => {
       expect(CardStatus.DEACTIVATED).toBe('deactivated');
     });
 
-    it('deve ser um enum válido', () => {
+    it('should be a valid enum', () => {
       expect(typeof CardStatus).toBe('object');
       expect(Object.keys(CardStatus)).toHaveLength(6);
     });
 
-    it('deve permitir verificação de valores', () => {
+    it('should allow value verification', () => {
       const status = CardStatus.ACTIVE;
       expect(Object.values(CardStatus)).toContain(status);
     });
   });
 
   describe('WalletData interface', () => {
-    it('deve ter a estrutura correta', () => {
+    it('should have correct structure', () => {
       const walletData = {
         deviceID: 'test-device-id',
         walletAccountID: 'test-wallet-account-id',

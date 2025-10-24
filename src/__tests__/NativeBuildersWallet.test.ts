@@ -3,7 +3,7 @@ import {
   SamsungWalletModule,
 } from '../NativeBuildersWallet';
 
-// Mock dos dados de teste
+// Mock test data
 const mockWalletData = {
   deviceID: 'test-device-id',
   walletAccountID: 'test-wallet-account-id',
@@ -39,7 +39,7 @@ describe('NativeBuildersWallet', () => {
   });
 
   describe('GoogleWalletModule', () => {
-    it('deve verificar se o Google Wallet está disponível', async () => {
+    it('should check if Google Wallet is available', async () => {
       (
         GoogleWalletModule.checkWalletAvailability as jest.Mock
       ).mockResolvedValue(true);
@@ -52,7 +52,7 @@ describe('NativeBuildersWallet', () => {
       );
     });
 
-    it('deve obter informações seguras da carteira', async () => {
+    it('should get secure wallet information', async () => {
       (GoogleWalletModule.getSecureWalletInfo as jest.Mock).mockResolvedValue(
         mockWalletData
       );
@@ -63,7 +63,7 @@ describe('NativeBuildersWallet', () => {
       expect(GoogleWalletModule.getSecureWalletInfo).toHaveBeenCalledTimes(1);
     });
 
-    it('deve obter status do token', async () => {
+    it('should get token status', async () => {
       const mockTokenStatus = { tokenState: 1, isSelected: true };
       (GoogleWalletModule.getTokenStatus as jest.Mock).mockResolvedValue(
         mockTokenStatus
@@ -81,7 +81,7 @@ describe('NativeBuildersWallet', () => {
       );
     });
 
-    it('deve obter ambiente', async () => {
+    it('should get environment', async () => {
       (GoogleWalletModule.getEnvironment as jest.Mock).mockResolvedValue(
         'PRODUCTION'
       );
@@ -92,7 +92,7 @@ describe('NativeBuildersWallet', () => {
       expect(GoogleWalletModule.getEnvironment).toHaveBeenCalledTimes(1);
     });
 
-    it('deve verificar se está tokenizado', async () => {
+    it('should check if tokenized', async () => {
       (GoogleWalletModule.isTokenized as jest.Mock).mockResolvedValue(true);
 
       const result = await GoogleWalletModule.isTokenized('1234', 1, 1);
@@ -101,7 +101,7 @@ describe('NativeBuildersWallet', () => {
       expect(GoogleWalletModule.isTokenized).toHaveBeenCalledWith('1234', 1, 1);
     });
 
-    it('deve visualizar token', async () => {
+    it('should view token', async () => {
       (GoogleWalletModule.viewToken as jest.Mock).mockResolvedValue(
         mockTokenInfo
       );
@@ -115,7 +115,7 @@ describe('NativeBuildersWallet', () => {
       );
     });
 
-    it('deve adicionar cartão à carteira', async () => {
+    it('should add card to wallet', async () => {
       const mockCardData = {
         address: {
           name: 'Test User',
@@ -146,7 +146,7 @@ describe('NativeBuildersWallet', () => {
       );
     });
 
-    it('deve criar carteira se necessário', async () => {
+    it('should create wallet if needed', async () => {
       (GoogleWalletModule.createWalletIfNeeded as jest.Mock).mockResolvedValue(
         true
       );
@@ -157,7 +157,7 @@ describe('NativeBuildersWallet', () => {
       expect(GoogleWalletModule.createWalletIfNeeded).toHaveBeenCalledTimes(1);
     });
 
-    it('deve listar tokens', async () => {
+    it('should list tokens', async () => {
       const mockTokens = [mockTokenInfo];
       (GoogleWalletModule.listTokens as jest.Mock).mockResolvedValue(
         mockTokens
@@ -169,7 +169,7 @@ describe('NativeBuildersWallet', () => {
       expect(GoogleWalletModule.listTokens).toHaveBeenCalledTimes(1);
     });
 
-    it('deve obter constantes', () => {
+    it('should get constants', () => {
       const mockConstants = { SDK_NAME: 'GoogleWallet', SUCCESS: 0 };
       (GoogleWalletModule.getConstants as jest.Mock).mockReturnValue(
         mockConstants
@@ -183,7 +183,7 @@ describe('NativeBuildersWallet', () => {
   });
 
   describe('SamsungWalletModule', () => {
-    it('deve inicializar o Samsung Pay', async () => {
+    it('should initialize Samsung Pay', async () => {
       (SamsungWalletModule.init as jest.Mock).mockResolvedValue(true);
 
       const result = await SamsungWalletModule.init('test-service-id');
@@ -192,7 +192,7 @@ describe('NativeBuildersWallet', () => {
       expect(SamsungWalletModule.init).toHaveBeenCalledWith('test-service-id');
     });
 
-    it('deve obter status do Samsung Pay', async () => {
+    it('should get Samsung Pay status', async () => {
       (SamsungWalletModule.getSamsungPayStatus as jest.Mock).mockResolvedValue(
         0
       );
@@ -203,19 +203,19 @@ describe('NativeBuildersWallet', () => {
       expect(SamsungWalletModule.getSamsungPayStatus).toHaveBeenCalledTimes(1);
     });
 
-    it('deve ir para página de atualização', () => {
+    it('should go to update page', () => {
       SamsungWalletModule.goToUpdatePage();
 
       expect(SamsungWalletModule.goToUpdatePage).toHaveBeenCalledTimes(1);
     });
 
-    it('deve ativar Samsung Pay', () => {
+    it('should activate Samsung Pay', () => {
       SamsungWalletModule.activateSamsungPay();
 
       expect(SamsungWalletModule.activateSamsungPay).toHaveBeenCalledTimes(1);
     });
 
-    it('deve obter todos os cartões', async () => {
+    it('should get all cards', async () => {
       const mockCards = [mockSamsungCard];
       (SamsungWalletModule.getAllCards as jest.Mock).mockResolvedValue(
         mockCards
@@ -227,7 +227,7 @@ describe('NativeBuildersWallet', () => {
       expect(SamsungWalletModule.getAllCards).toHaveBeenCalledTimes(1);
     });
 
-    it('deve obter informações da carteira', async () => {
+    it('should get wallet information', async () => {
       const mockWalletInfo = {
         walletDMId: 'test-dm-id',
         deviceId: 'test-device-id',
@@ -243,7 +243,7 @@ describe('NativeBuildersWallet', () => {
       expect(SamsungWalletModule.getWalletInfo).toHaveBeenCalledTimes(1);
     });
 
-    it('deve adicionar cartão', async () => {
+    it('should add card', async () => {
       (SamsungWalletModule.addCard as jest.Mock).mockResolvedValue(
         mockSamsungCard
       );
@@ -264,7 +264,7 @@ describe('NativeBuildersWallet', () => {
       );
     });
 
-    it('deve verificar se o Samsung Wallet está disponível', async () => {
+    it('should check if Samsung Wallet is available', async () => {
       (
         SamsungWalletModule.checkWalletAvailability as jest.Mock
       ).mockResolvedValue(true);
@@ -277,7 +277,7 @@ describe('NativeBuildersWallet', () => {
       );
     });
 
-    it('deve obter constantes', () => {
+    it('should get constants', () => {
       const mockConstants = { SDK_NAME: 'SamsungPay', SPAY_READY: 0 };
       (SamsungWalletModule.getConstants as jest.Mock).mockReturnValue(
         mockConstants

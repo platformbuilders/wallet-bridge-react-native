@@ -9,20 +9,20 @@ describe('BuildersWallet - Setup Test', () => {
     jest.clearAllMocks();
   });
 
-  describe('Módulos nativos', () => {
-    it('deve exportar GoogleWalletModule', () => {
+  describe('Native modules', () => {
+    it('should export GoogleWalletModule', () => {
       expect(GoogleWalletModule).toBeDefined();
       expect(typeof GoogleWalletModule).toBe('object');
     });
 
-    it('deve exportar SamsungWalletModule', () => {
+    it('should export SamsungWalletModule', () => {
       expect(SamsungWalletModule).toBeDefined();
       expect(typeof SamsungWalletModule).toBe('object');
     });
   });
 
-  describe('Types e Enums', () => {
-    it('deve exportar CardStatus enum', () => {
+  describe('Types and Enums', () => {
+    it('should export CardStatus enum', () => {
       expect(CardStatus).toBeDefined();
       expect(CardStatus.ACTIVE).toBe('active');
       expect(CardStatus.NOT_FOUND).toBe('not found');
@@ -30,8 +30,8 @@ describe('BuildersWallet - Setup Test', () => {
     });
   });
 
-  describe('Mocks dos módulos nativos', () => {
-    it('deve ter métodos mockados no GoogleWalletModule', () => {
+  describe('Native modules mocks', () => {
+    it('should have mocked methods in GoogleWalletModule', () => {
       expect(GoogleWalletModule.checkWalletAvailability).toBeDefined();
       expect(GoogleWalletModule.getSecureWalletInfo).toBeDefined();
       expect(GoogleWalletModule.getTokenStatus).toBeDefined();
@@ -44,7 +44,7 @@ describe('BuildersWallet - Setup Test', () => {
       expect(GoogleWalletModule.getConstants).toBeDefined();
     });
 
-    it('deve ter métodos mockados no SamsungWalletModule', () => {
+    it('should have mocked methods in SamsungWalletModule', () => {
       expect(SamsungWalletModule.init).toBeDefined();
       expect(SamsungWalletModule.getSamsungPayStatus).toBeDefined();
       expect(SamsungWalletModule.goToUpdatePage).toBeDefined();
