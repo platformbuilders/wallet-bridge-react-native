@@ -28,11 +28,21 @@ import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Função simples para mostrar erros da wallet
-const handleGoogleWalletError = (error: unknown): string => {
-  console.log('🔍 [JS] Erro Google Wallet:', error);
+
+// Função centralizada para logar erros da Google Wallet
+function logGoogleWalletError(error: unknown, context?: string): string {
   const errorMessage = error instanceof Error ? error.message : String(error);
+  if (context) {
+    console.log(`❌ [GoogleWallet][${context}] Erro:`, errorMessage);
+  } else {
+    console.log('❌ [GoogleWallet] Erro:', errorMessage);
+  }
   return errorMessage;
+}
+
+// Função simples para mostrar erros da wallet
+const handleGoogleWalletError = (error: unknown, context?: string): string => {
+  return logGoogleWalletError(error, context);
 };
 
 // Interface para o useImperativeHandle
@@ -77,11 +87,10 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
         let parsedData: Record<string, any> | string;
         try {
           parsedData = JSON.parse(data);
-          console.log('✅ [JS] Dados parseados como JSON:', parsedData);
+          // Log apenas para debug, não é erro
+          console.log('[GoogleWallet] Dados parseados como JSON:', parsedData);
         } catch (jsonError) {
-          console.log(
-            '⚠️ [JS] Dados não são JSON válido, mostrando como string'
-          );
+          logGoogleWalletError(jsonError, 'Dados não são JSON válido, mostrando como string');
           parsedData = data;
         }
 
@@ -120,9 +129,7 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
         return parsedData;
       } catch (error) {
-        console.error('❌ [JS] Erro ao processar dados decodificados:', error);
-        const errorMessage =
-          error instanceof Error ? error.message : 'Erro desconhecido';
+        const errorMessage = logGoogleWalletError(error, 'Erro ao processar dados decodificados');
 
         // Limpar dados decodificados em caso de erro
         setDecodedData(null);
@@ -158,11 +165,10 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
         let parsedData: Record<string, any> | string;
         try {
           parsedData = JSON.parse(decodedData);
-          console.log('✅ [JS] Dados parseados como JSON:', parsedData);
+          // Log apenas para debug, não é erro
+          console.log('[GoogleWallet] Dados parseados como JSON:', parsedData);
         } catch (jsonError) {
-          console.log(
-            '⚠️ [JS] Dados não são JSON válido, mostrando como string'
-          );
+          logGoogleWalletError(jsonError, 'Dados não são JSON válido, mostrando como string');
           parsedData = decodedData;
         }
 
@@ -201,9 +207,7 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
         return parsedData;
       } catch (error) {
-        console.error('❌ [JS] Erro ao decodificar dados base64:', error);
-        const errorMessage =
-          error instanceof Error ? error.message : 'Erro desconhecido';
+        const errorMessage = logGoogleWalletError(error, 'Erro ao decodificar dados base64');
 
         // Limpar dados decodificados em caso de erro
         setDecodedData(null);
@@ -235,7 +239,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
             walletEvent.dataFormat === GoogleWalletDataFormat.BASE64_DECODED
           ) {
             // Dados já decodificados automaticamente pelo nativo
-            console.log('✅ Dados já decodificados automaticamente');
+            // Log apenas para debug, não é erro
+            console.log('[GoogleWallet] Dados já decodificados automaticamente:', walletEvent.data);
             showDecodedData(
               walletEvent.data,
               'Token Ativado',
@@ -246,6 +251,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
             walletEvent.dataFormat === GoogleWalletDataFormat.RAW
           ) {
             // Dados em formato raw, tentar decodificar manualmente
+            // Log apenas para debug, não é erro
+            console.log('[GoogleWallet] Dados em formato raw, decodificando manualmente:', walletEvent.data);
             decodeAndShowData(
               walletEvent.data,
               'Token Ativado',
@@ -266,7 +273,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
             walletEvent.dataFormat === GoogleWalletDataFormat.BASE64_DECODED
           ) {
             // Dados já decodificados automaticamente pelo nativo
-            console.log('✅ Dados já decodificados automaticamente');
+            // Log apenas para debug, não é erro
+            console.log('[GoogleWallet] Dados já decodificados automaticamente:', walletEvent.data);
             showDecodedData(
               walletEvent.data,
               'Intent da Carteira',
@@ -277,6 +285,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
             walletEvent.dataFormat === GoogleWalletDataFormat.RAW
           ) {
             // Dados em formato raw, tentar decodificar manualmente
+            // Log apenas para debug, não é erro
+            console.log('[GoogleWallet] Dados em formato raw, decodificando manualmente:', walletEvent.data);
             decodeAndShowData(
               walletEvent.data,
               'Intent da Carteira',
@@ -297,11 +307,11 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
             `Tentativa de acesso não autorizada!\nAção: ${walletEvent.action}\nPackage: ${walletEvent.callingPackage}\nErro: ${walletEvent.error}`,
             [{ text: 'OK' }]
           );
-          console.warn('🚨 Tentativa de acesso não autorizada:', walletEvent);
+          logGoogleWalletError(walletEvent, 'Tentativa de acesso não autorizada');
           break;
 
         default:
-          console.log('Intent não reconhecido:', walletEvent);
+          logGoogleWalletError(walletEvent, 'Intent não reconhecido');
       }
     };
 
@@ -321,7 +331,7 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
           await googleWalletClient.setIntentListener();
           console.log('✅ [JS] Listener de intent ativado automaticamente');
         } catch (error) {
-          console.error('❌ [JS] Erro ao ativar listener:', error);
+          logGoogleWalletError(error, 'Erro ao ativar listener');
         } finally {
           if (isMounted) {
             setIsCheckingPendingData(false);
@@ -337,7 +347,7 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
         // Desativar listener nativo
         googleWalletClient.removeIntentListener().catch((error) => {
-          console.error('❌ [JS] Erro ao remover listener nativo:', error);
+          logGoogleWalletError(error, 'Erro ao remover listener nativo');
         });
       };
     }, []);
@@ -356,21 +366,18 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
     const handleCheckAvailability = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando verificação de disponibilidade...');
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando verificação de disponibilidade...');
         const isAvailable: boolean =
           await googleWalletClient.checkWalletAvailability();
-        console.log('✅ [JS] Disponibilidade verificada:', isAvailable);
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Disponibilidade verificada:', isAvailable);
         Alert.alert(
           'Disponibilidade',
           `Google Wallet disponível: ${isAvailable ? 'Sim' : 'Não'}`
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao verificar disponibilidade:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao verificar disponibilidade');
         Alert.alert(
           'Erro',
           `Erro ao verificar disponibilidade: ${errorMessage}`
@@ -380,29 +387,26 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
     const handleGetWalletInfo = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando obtenção de informações da wallet...');
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando obtenção de informações da wallet...');
         const walletInfo: GoogleWalletData =
           await googleWalletClient.getSecureWalletInfo();
-        console.log('✅ [JS] Informações da wallet obtidas:', walletInfo);
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Informações da wallet obtidas:', walletInfo);
         Alert.alert(
           'Informações da Google Wallet',
           `Device ID: ${walletInfo.deviceID}\nWallet Account ID: ${walletInfo.walletAccountID}`
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao obter informações da wallet:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao obter informações da wallet');
         Alert.alert('Erro', `Erro ao obter informações: ${errorMessage}`);
       }
     };
 
     const handleGetTokenStatus = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando verificação de status do token...');
-
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando verificação de status do token...');
         // Obter constantes para usar o tokenServiceProvider
         const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
         const tokenReferenceId = 'test-token-id'; // ID de exemplo
@@ -412,44 +416,37 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
             tokenServiceProvider,
             tokenReferenceId
           );
-        console.log('✅ [JS] Status do token obtido:', tokenStatus);
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Status do token obtido:', tokenStatus);
 
         Alert.alert(
           'Status do Token',
           `Estado: ${tokenStatus.tokenState}\nSelecionado: ${tokenStatus.isSelected ? 'Sim' : 'Não'}`
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao obter status do token:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao obter status do token');
         Alert.alert('Erro', `Erro ao obter status do token: ${errorMessage}`);
       }
     };
 
     const handleGetEnvironment = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando obtenção do environment...');
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando obtenção do environment...');
         const environment: string = await googleWalletClient.getEnvironment();
-        console.log('✅ [JS] Environment obtido:', environment);
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Environment obtido:', environment);
         Alert.alert('Environment', `Environment: ${environment}`);
       } catch (err) {
-        console.log('❌ [JS] Erro ao obter environment:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao obter environment');
         Alert.alert('Erro', `Erro ao obter environment: ${errorMessage}`);
       }
     };
 
     const handleIsTokenized = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando verificação se está tokenizado...');
-
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando verificação se está tokenizado...');
         // Obter constantes para usar os valores corretos
         const cardNetwork = constants.CARD_NETWORK_ELO;
         const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
@@ -460,27 +457,23 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
           cardNetwork,
           tokenServiceProvider
         );
-        console.log('✅ [JS] Resultado isTokenized:', isTokenized);
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Resultado isTokenized:', isTokenized);
 
         Alert.alert(
           'Verificação de Tokenização',
           `Cartão terminado em ${fpanLastFour} está tokenizado: ${isTokenized ? 'Sim' : 'Não'}`
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao verificar se está tokenizado:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao verificar se está tokenizado');
         Alert.alert('Erro', `Erro ao verificar tokenização: ${errorMessage}`);
       }
     };
 
     const handleViewToken = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando visualização de token...');
-
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando visualização de token...');
         // Obter constantes para usar os valores corretos
         const tokenServiceProvider = constants.TOKEN_PROVIDER_ELO;
         const issuerTokenId = 'test-token-id'; // ID de exemplo
@@ -490,7 +483,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
             tokenServiceProvider,
             issuerTokenId
           );
-        console.log('✅ [JS] Resultado viewToken:', tokenData);
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Resultado viewToken:', tokenData);
 
         if (tokenData) {
           // Mostrar dados completos do token
@@ -509,28 +503,20 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
           Alert.alert('✅ Token Visualizado', tokenInfo);
         } else {
-          Alert.alert(
-            '⚠️ Token Não Encontrado',
-            'O token especificado não foi encontrado na carteira. Verifique se o ID está correto ou se o token existe.'
-          );
+    logGoogleWalletError('Token não encontrado');
         }
       } catch (err) {
-        console.log('❌ [JS] Erro ao visualizar token:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao visualizar token');
         Alert.alert('Erro', `Erro ao visualizar token: ${errorMessage}`);
       }
     };
 
     const handleAddCard = async (opc?: string): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando processo de adição de cartão...');
-
-        console.log('🔍 [JS] Obtendo constantes...');
-        console.log('✅ [JS] Constantes obtidas:', constants);
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando processo de adição de cartão...');
+  console.log('[GoogleWallet] Obtendo constantes...');
+  console.log('[GoogleWallet] Constantes obtidas:', constants);
 
         const cardData: GooglePushTokenizeRequest = {
           card: {
@@ -552,7 +538,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
           },
         };
 
-        console.log('🔍 [JS] Dados do cartão preparados:', {
+        // Log apenas para debug, não é erro
+        console.log('[GoogleWallet] Dados do cartão preparados:', {
           network: cardData.card.network,
           tokenServiceProvider: cardData.card.tokenServiceProvider,
           displayName: cardData.card.displayName,
@@ -570,30 +557,19 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
         );
         Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
       } catch (err) {
-        console.log('❌ [JS] Erro ao adicionar cartão:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        console.log('❌ [JS] Error details:', {
-          name: err instanceof Error ? err.name : 'Unknown',
-          message: err instanceof Error ? err.message : String(err),
-          code: (err as any)?.code || 'N/A',
-          nativeError: (err as any)?.nativeError || 'N/A',
-        });
-
-        // Usar a função de tratamento de erro personalizada
-        const errorMessage = handleGoogleWalletError(err);
-        Alert.alert('Erro ao Adicionar Cartão', errorMessage);
+        const errorMessage = handleGoogleWalletError(err, 'Erro ao adicionar cartão');
+        Alert.alert('Erro', `Erro ao adicionar cartão: ${errorMessage}`);
       }
     };
 
     const handleCreateWallet = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando criação de carteira...');
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando criação de wallet...');
         const walletCreated: boolean =
           await googleWalletClient.createWalletIfNeeded();
-        console.log('✅ [JS] Resultado da criação de carteira:', walletCreated);
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Resultado da criação de carteira:', walletCreated);
 
         if (walletCreated) {
           Alert.alert('Sucesso', 'Google Wallet criada com sucesso!');
@@ -601,20 +577,15 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
           Alert.alert('Informação', 'Google Wallet já existia.');
         }
       } catch (err) {
-        console.log('❌ [JS] Erro ao criar carteira:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
-        Alert.alert('Erro', `Erro ao criar carteira: ${errorMessage}`);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao criar wallet');
+        Alert.alert('Erro', `Erro ao criar wallet: ${errorMessage}`);
       }
     };
 
     const handleListTokens = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando listagem de tokens...');
-
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando listagem de tokens...');
         // Obter constantes para usar nas descrições
         console.log('🔍 [JS] Constantes obtidas:', constants);
 
@@ -648,12 +619,7 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
           );
         }
       } catch (err) {
-        console.log('❌ [JS] Erro ao listar tokens:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao listar tokens');
         Alert.alert('Erro', `Erro ao listar tokens: ${errorMessage}`);
       }
     };
@@ -663,7 +629,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
       activationCode?: string
     ): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando definição de resultado de ativação...');
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando setActivationResult...');
         console.log(
           '🔍 [JS] Status:',
           status,
@@ -682,22 +649,15 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
           `Status: ${status}\n${activationCode ? `ActivationCode: ${activationCode}` : 'Sem ActivationCode'}`
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao definir resultado de ativação:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
-        Alert.alert(
-          'Erro',
-          `Erro ao definir resultado de ativação: ${errorMessage}`
-        );
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao setar activation result');
+        Alert.alert('Erro', `Erro ao setar activation result: ${errorMessage}`);
       }
     };
 
     const handleFinishActivity = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando finalização da atividade...');
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando finishActivity...');
 
         const result = await googleWalletClient.finishActivity();
         console.log('✅ [JS] Atividade finalizada:', result);
@@ -707,19 +667,15 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
           'A atividade foi finalizada e você voltará para o app chamador.'
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao finalizar atividade:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
-        Alert.alert('Erro', `Erro ao finalizar atividade: ${errorMessage}`);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao finalizar activity');
+        Alert.alert('Erro', `Erro ao finalizar activity: ${errorMessage}`);
       }
     };
 
     const handleOpenWallet = async (): Promise<void> => {
       try {
-        console.log('🔍 [JS] Iniciando abertura do Google Wallet...');
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando openWallet...');
 
         // Usar o método nativo openWallet
         const result = await googleWalletClient.openWallet();
@@ -728,13 +684,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
         // Exibir resultado
         showWalletOpenResult(result, 'Google Wallet');
       } catch (err) {
-        console.log('❌ [JS] Erro ao abrir Google Wallet:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleGoogleWalletError(err);
-        Alert.alert('Erro', `Erro ao abrir Google Wallet: ${errorMessage}`);
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao abrir wallet');
+        Alert.alert('Erro', `Erro ao abrir wallet: ${errorMessage}`);
       }
     };
 
@@ -745,6 +696,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
     const handlePasteOPC = async (): Promise<void> => {
       try {
+  // Log apenas para debug, não é erro
+  console.log('[GoogleWallet] Iniciando colar OPC...');
         const clipboardContent = await Clipboard.getString();
         if (clipboardContent.trim()) {
           setOpcValue(clipboardContent.trim());
@@ -754,8 +707,8 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
           Alert.alert('Aviso', 'Área de transferência está vazia');
         }
       } catch (err) {
-        console.log('❌ [JS] Erro ao colar OPC:', err);
-        Alert.alert('Erro', 'Erro ao acessar área de transferência');
+  const errorMessage = handleGoogleWalletError(err, 'Erro ao colar OPC');
+        Alert.alert('Erro', `Erro ao colar OPC: ${errorMessage}`);
       }
     };
 

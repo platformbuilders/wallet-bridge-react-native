@@ -1,6 +1,6 @@
 package com.builders.wallet.samsungpay
 
-import android.util.Log
+import com.builders.wallet.WalletLogger
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -14,7 +14,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 class SamsungWalletImplementation(private val reactContext: ReactApplicationContext) : SamsungWalletContract {
 
   override fun init(serviceId: String, promise: Promise) {
-    Log.w(TAG, "Samsung Wallet não está habilitado neste build")
+    WalletLogger.w(TAG, "Samsung Wallet não está habilitado neste build")
     promise.reject(
       "SDK_NOT_ENABLED",
       "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
@@ -29,11 +29,11 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
   override fun goToUpdatePage() {
-    Log.w(TAG, "Samsung Wallet não está habilitado - goToUpdatePage ignorado")
+    WalletLogger.w(TAG, "Samsung Wallet não está habilitado - goToUpdatePage ignorado")
   }
 
   override fun activateSamsungPay() {
-    Log.w(TAG, "Samsung Wallet não está habilitado - activateSamsungPay ignorado")
+    WalletLogger.w(TAG, "Samsung Wallet não está habilitado - activateSamsungPay ignorado")
   }
 
   override fun getAllCards(promise: Promise) {
@@ -64,12 +64,12 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
   override fun checkWalletAvailability(promise: Promise) {
-    Log.w(TAG, "Samsung Wallet não está habilitado neste build")
+    WalletLogger.w(TAG, "Samsung Wallet não está habilitado neste build")
     promise.resolve(false)
   }
 
   override fun setIntentListener(promise: Promise) {
-    Log.w(TAG, "Samsung Wallet não está habilitado - setIntentListener ignorado")
+    WalletLogger.w(TAG, "Samsung Wallet não está habilitado - setIntentListener ignorado")
     promise.reject(
       "SDK_NOT_ENABLED",
       "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
@@ -77,7 +77,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
   override fun removeIntentListener(promise: Promise) {
-    Log.w(TAG, "Samsung Wallet não está habilitado - removeIntentListener ignorado")
+    WalletLogger.w(TAG, "Samsung Wallet não está habilitado - removeIntentListener ignorado")
     promise.reject(
       "SDK_NOT_ENABLED",
       "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
@@ -85,7 +85,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
   override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
-    Log.w(TAG, "Samsung Wallet não está habilitado - setActivationResult ignorado")
+    WalletLogger.w(TAG, "Samsung Wallet não está habilitado - setActivationResult ignorado")
     promise.reject(
       "SDK_NOT_ENABLED",
       "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
@@ -93,7 +93,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
   override fun finishActivity(promise: Promise) {
-    Log.w(TAG, "Samsung Wallet não está habilitado - finishActivity ignorado")
+    WalletLogger.w(TAG, "Samsung Wallet não está habilitado - finishActivity ignorado")
     promise.reject(
       "SDK_NOT_ENABLED",
       "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
@@ -196,8 +196,32 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
   override fun sendNoIntentReceivedEvent() {
-    Log.d(TAG, "🔍 [SAMSUNG] sendNoIntentReceivedEvent chamado (STUB)")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] sendNoIntentReceivedEvent chamado (STUB)")
     // Stub não faz nada - apenas log
+  }
+
+  override fun setLogListener(promise: Promise) {
+    WalletLogger.d(TAG, "🔍 [STUB] setLogListener chamado")
+    try {
+      WalletLogger.setLogListener(true)
+      WalletLogger.d(TAG, "✅ [STUB] Listener de log ativado")
+      promise.resolve(true)
+    } catch (e: Exception) {
+      WalletLogger.e(TAG, "❌ [STUB] Erro ao ativar listener de log: ${e.message}", e)
+      promise.reject("SET_LOG_LISTENER_ERROR", e.message, e)
+    }
+  }
+
+  override fun removeLogListener(promise: Promise) {
+    WalletLogger.d(TAG, "🔍 [STUB] removeLogListener chamado")
+    try {
+      WalletLogger.setLogListener(false)
+      WalletLogger.d(TAG, "✅ [STUB] Listener de log desativado")
+      promise.resolve(true)
+    } catch (e: Exception) {
+      WalletLogger.e(TAG, "❌ [STUB] Erro ao desativar listener de log: ${e.message}", e)
+      promise.reject("REMOVE_LOG_LISTENER_ERROR", e.message, e)
+    }
   }
 
   companion object {

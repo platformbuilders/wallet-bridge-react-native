@@ -26,4 +26,6 @@ interface SamsungWalletContract {
     fun finishActivity(promise: Promise)
     fun openWallet(promise: Promise)
     fun sendNoIntentReceivedEvent()
+    fun setLogListener(promise: Promise)
+    fun removeLogListener(promise: Promise)
 }

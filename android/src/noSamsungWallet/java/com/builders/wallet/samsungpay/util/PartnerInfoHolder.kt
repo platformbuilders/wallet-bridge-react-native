@@ -1,6 +1,6 @@
 package com.builders.wallet.samsungpay.util
 
-import android.util.Log
+import com.builders.wallet.WalletLogger
 
 /**
  * STUB do PartnerInfoHolder - usado quando SAMSUNG_WALLET_ENABLED = false
@@ -18,7 +18,7 @@ class PartnerInfoHolder private constructor() {
         fun getInstance(serviceId: String): PartnerInfoHolder {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: PartnerInfoHolder().also { instance ->
-                    Log.w("PartnerInfoHolder", "Samsung Pay SDK não está habilitado - PartnerInfo será null")
+                    WalletLogger.w("PartnerInfoHolder", "Samsung Pay SDK não está habilitado - PartnerInfo será null")
                     instance.partnerInfo = null
                 }
             }

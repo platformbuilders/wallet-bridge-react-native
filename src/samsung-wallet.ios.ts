@@ -293,6 +293,28 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
     console.log('📱 [SamsungWallet-iOS] openWallet() - Retornando false (iOS)');
     return Promise.resolve(false);
   }
+
+  /**
+   * Ativa o listener de logs
+   * No iOS, sempre retorna false
+   */
+  async setLogListener(): Promise<boolean> {
+    console.log(
+      '📝 [SamsungWallet-iOS] setLogListener() - Retornando false (iOS)'
+    );
+    return Promise.resolve(false);
+  }
+
+  /**
+   * Remove o listener de logs
+   * No iOS, sempre retorna false
+   */
+  async removeLogListener(): Promise<boolean> {
+    console.log(
+      '🔇 [SamsungWallet-iOS] removeLogListener() - Retornando false (iOS)'
+    );
+    return Promise.resolve(false);
+  }
 }
 
 // ============================================================================

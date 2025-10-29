@@ -178,6 +178,15 @@ export interface SamsungWalletIntentEvent {
   walletAccountId?: string;
 }
 
+// Samsung Wallet - Evento de Log
+export interface SamsungWalletLogEvent {
+  level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'VERBOSE';
+  tag: string;
+  message: string;
+  error?: string;
+  stackTrace?: string;
+}
+
 // Samsung Pay - Interface do Módulo (baseado nos métodos do SamsungWalletModule)
 export interface SamsungWalletSpec {
   // Métodos principais do Samsung Pay
@@ -215,4 +224,8 @@ export interface SamsungWalletSpec {
 
   // Método para abrir wallet
   openWallet(): Promise<boolean>;
+
+  // Métodos de log listener
+  setLogListener(): Promise<boolean>;
+  removeLogListener(): Promise<boolean>;
 }

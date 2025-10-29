@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
+import com.builders.wallet.WalletLogger
 
 /**
  * Classe nativa para gerenciar a abertura de apps de carteira
@@ -163,7 +163,7 @@ class WalletOpener(private val context: Context) {
      * Log helper
      */
     private fun log(message: String) {
-        Log.d(TAG, message)
+        WalletLogger.d(TAG, message)
     }
 
 }

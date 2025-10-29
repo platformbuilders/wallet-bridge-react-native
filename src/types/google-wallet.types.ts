@@ -194,6 +194,15 @@ export interface GoogleWalletIntentEvent {
   extras?: Record<string, any>;
 }
 
+// Google Wallet - Evento de Log
+export interface GoogleWalletLogEvent {
+  level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'VERBOSE';
+  tag: string;
+  message: string;
+  error?: string;
+  stackTrace?: string;
+}
+
 // Google Wallet - Interface do Módulo
 export interface GoogleWalletSpec {
   checkWalletAvailability(): Promise<boolean>;
@@ -232,4 +241,8 @@ export interface GoogleWalletSpec {
 
   // Método para abrir wallet
   openWallet(): Promise<boolean>;
+
+  // Métodos de log listener
+  setLogListener(): Promise<boolean>;
+  removeLogListener(): Promise<boolean>;
 }

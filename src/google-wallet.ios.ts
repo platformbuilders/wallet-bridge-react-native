@@ -281,6 +281,28 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
     console.log('📱 [GoogleWallet-iOS] openWallet() - Retornando false (iOS)');
     return Promise.resolve(false);
   }
+
+  /**
+   * Ativa o listener de logs
+   * No iOS, sempre retorna false
+   */
+  async setLogListener(): Promise<boolean> {
+    console.log(
+      '📝 [GoogleWallet-iOS] setLogListener() - Retornando false (iOS)'
+    );
+    return Promise.resolve(false);
+  }
+
+  /**
+   * Remove o listener de logs
+   * No iOS, sempre retorna false
+   */
+  async removeLogListener(): Promise<boolean> {
+    console.log(
+      '🔇 [GoogleWallet-iOS] removeLogListener() - Retornando false (iOS)'
+    );
+    return Promise.resolve(false);
+  }
 }
 
 // ============================================================================
