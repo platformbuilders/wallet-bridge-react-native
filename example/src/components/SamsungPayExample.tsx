@@ -27,12 +27,16 @@ import {
   type SamsungWalletIntentEvent,
 } from '@platformbuilders/wallet-bridge-react-native';
 
-// Função simples para mostrar erros da wallet
-const handleSamsungPayError = (error: unknown): string => {
-  console.log('🔍 [JS] Erro Samsung Pay:', error);
+// Função centralizada para logar erros da Samsung Wallet
+function logSamsungWalletError(error: unknown, context?: string): string {
   const errorMessage = error instanceof Error ? error.message : String(error);
+  if (context) {
+    console.log(`❌ [SamsungWallet][${context}] Erro:`, errorMessage);
+  } else {
+    console.log('❌ [SamsungWallet] Erro:', errorMessage);
+  }
   return errorMessage;
-};
+}
 
 // Interface para o useImperativeHandle
 export interface SamsungPayExampleRef {
@@ -156,19 +160,13 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
 
         return parsedData;
       } catch (error) {
-        console.error('❌ [JS] Erro ao processar dados decodificados:', error);
-        const errorMessage =
-          error instanceof Error ? error.message : 'Erro desconhecido';
-
-        // Limpar dados decodificados em caso de erro
+        const errorMessage = logSamsungWalletError(error, 'Erro ao processar dados decodificados');
         setDecodedData(null);
-
         Alert.alert(
           `❌ ${eventType} (Erro de Processamento)`,
           `Intent recebido mas houve erro ao processar os dados!\n\nAção: ${action}\nErro: ${errorMessage}\n\nDados originais:\n${data.substring(0, 200)}...`,
           [{ text: 'OK' }]
         );
-
         return null;
       }
     };
@@ -237,19 +235,13 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
 
         return parsedData;
       } catch (error) {
-        console.error('❌ [JS] Erro ao decodificar dados base64:', error);
-        const errorMessage =
-          error instanceof Error ? error.message : 'Erro desconhecido';
-
-        // Limpar dados decodificados em caso de erro
+        const errorMessage = logSamsungWalletError(error, 'Erro ao decodificar dados base64');
         setDecodedData(null);
-
         Alert.alert(
           `❌ ${eventType} (Erro de Decodificação)`,
           `Intent recebido mas houve erro ao decodificar os dados!\n\nAção: ${action}\nErro: ${errorMessage}\n\nDados originais (base64):\n${data.substring(0, 200)}...`,
           [{ text: 'OK' }]
         );
-
         return null;
       }
     };
@@ -333,7 +325,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
             `Tentativa de acesso não autorizada!\nAção: ${walletEvent.action}\nPackage: ${walletEvent.callingPackage}\nErro: ${walletEvent.error}`,
             [{ text: 'OK' }]
           );
-          console.warn('🚨 Tentativa de acesso não autorizada:', walletEvent);
+          logSamsungWalletError(walletEvent, 'Tentativa de acesso não autorizada');
           break;
 
         default:
@@ -363,7 +355,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
             '✅ [Samsung] Listener de intent Samsung ativado automaticamente'
           );
         } catch (error) {
-          console.error('❌ [Samsung] Erro ao ativar listener Samsung:', error);
+          logSamsungWalletError(error, 'Erro ao ativar listener Samsung');
         } finally {
           if (isMounted) {
             setIsCheckingPendingData(false);
@@ -382,10 +374,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
 
         // Desativar listener nativo
         samsungWalletClient.removeIntentListener().catch((error) => {
-          console.error(
-            '❌ [Samsung] Erro ao remover listener nativo Samsung:',
-            error
-          );
+          logSamsungWalletError(error, 'Erro ao remover listener nativo Samsung');
         });
       };
     }, []);
@@ -400,8 +389,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
 
         Alert.alert('Init', `Inicializado: ${initialized ? 'Sim' : 'Não'}`);
       } catch (err) {
-        console.log('❌ [JS] Erro ao inicializar:', err);
-        const errorMessage = handleSamsungPayError(err);
+        const errorMessage = logSamsungWalletError(err, 'Init');
         Alert.alert('Erro', errorMessage);
       }
     };
@@ -416,8 +404,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
 
         Alert.alert('Status do Samsung Pay', `Status: ${status}`);
       } catch (err) {
-        console.log('❌ [JS] Erro ao obter status:', err);
-        const errorMessage = handleSamsungPayError(err);
+        const errorMessage = logSamsungWalletError(err, 'GetStatus');
         Alert.alert('Erro', errorMessage);
       }
     };
@@ -426,10 +413,8 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
       try {
         SamsungWalletClient.goToUpdatePage();
       } catch (err) {
-        Alert.alert(
-          'Erro',
-          `Falha ao abrir página de atualização: ${String(err)}`
-        );
+        const errorMessage = logSamsungWalletError(err, 'GoToUpdatePage');
+        Alert.alert('Erro', `Falha ao abrir página de atualização: ${errorMessage}`);
       }
     };
 
@@ -437,7 +422,8 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
       try {
         SamsungWalletClient.activateSamsungPay();
       } catch (err) {
-        Alert.alert('Erro', `Falha ao ativar: ${String(err)}`);
+        const errorMessage = logSamsungWalletError(err, 'ActivateSamsungPay');
+        Alert.alert('Erro', `Falha ao ativar: ${errorMessage}`);
       }
     };
 
@@ -472,8 +458,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
           );
         }
       } catch (err) {
-        console.log('❌ [JS] Erro ao listar cartões:', err);
-        const errorMessage = handleSamsungPayError(err);
+        const errorMessage = logSamsungWalletError(err, 'GetAllCards');
         Alert.alert('Erro', errorMessage);
       }
     };
@@ -486,7 +471,8 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
           `walletDMId: ${info.walletDMId}\ndeviceId: ${info.deviceId}\nwalletUserId: ${info.walletUserId}`
         );
       } catch (err) {
-        Alert.alert('Erro', `Falha ao obter wallet info: ${String(err)}`);
+        const errorMessage = logSamsungWalletError(err, 'GetWalletInfo');
+        Alert.alert('Erro', `Falha ao obter wallet info: ${errorMessage}`);
       }
     };
 
@@ -518,8 +504,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
             `Provedor: ${tokenizationProvider}`
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao adicionar cartão:', err);
-        const errorMessage = handleSamsungPayError(err);
+        const errorMessage = logSamsungWalletError(err, 'AddCard');
         Alert.alert('Erro', errorMessage);
       }
     };
@@ -535,8 +520,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
           `Samsung Pay disponível: ${isAvailable ? 'Sim' : 'Não'}`
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao verificar disponibilidade:', err);
-        const errorMessage = handleSamsungPayError(err);
+        const errorMessage = logSamsungWalletError(err, 'CheckAvailability');
         Alert.alert('Erro', errorMessage);
       }
     };
@@ -553,8 +537,8 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
             JSON.stringify(constants, null, 2)
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao obter constantes:', err);
-        Alert.alert('Erro', `Falha ao obter constantes: ${String(err)}`);
+        const errorMessage = logSamsungWalletError(err, 'ShowConstants');
+        Alert.alert('Erro', `Falha ao obter constantes: ${errorMessage}`);
       }
     };
 
@@ -584,19 +568,8 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
           `Status: ${status}\n${activationCode ? `ActivationCode: ${activationCode}` : 'Sem ActivationCode'}`
         );
       } catch (err) {
-        console.log(
-          '❌ [JS] Erro ao definir resultado de ativação Samsung:',
-          err
-        );
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleSamsungPayError(err);
-        Alert.alert(
-          'Erro',
-          `Erro ao definir resultado de ativação Samsung: ${errorMessage}`
-        );
+        const errorMessage = logSamsungWalletError(err, 'SetActivationResult');
+        Alert.alert('Erro', `Erro ao definir resultado de ativação Samsung: ${errorMessage}`);
       }
     };
 
@@ -612,16 +585,8 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
           'A atividade foi finalizada e você voltará para o Samsung Pay.'
         );
       } catch (err) {
-        console.log('❌ [JS] Erro ao finalizar atividade Samsung:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleSamsungPayError(err);
-        Alert.alert(
-          'Erro',
-          `Erro ao finalizar atividade Samsung: ${errorMessage}`
-        );
+        const errorMessage = logSamsungWalletError(err, 'FinishActivity');
+        Alert.alert('Erro', `Erro ao finalizar atividade Samsung: ${errorMessage}`);
       }
     };
 
@@ -636,12 +601,7 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
         // Exibir resultado
         showWalletOpenResult(result, 'Samsung Pay');
       } catch (err) {
-        console.log('❌ [JS] Erro ao abrir Samsung Pay:', err);
-        console.log(
-          '❌ [JS] Stack trace:',
-          err instanceof Error ? err.stack : 'N/A'
-        );
-        const errorMessage = handleSamsungPayError(err);
+        const errorMessage = logSamsungWalletError(err, 'OpenWallet');
         Alert.alert('Erro', `Erro ao abrir Samsung Pay: ${errorMessage}`);
       }
     };

@@ -2,7 +2,7 @@ package com.builders.wallet.googletapandpay
 
 import android.app.Activity
 import android.content.Intent
-import android.util.Log
+import com.builders.wallet.WalletLogger
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 
@@ -17,7 +17,7 @@ class GoogleWalletImplementation(
 ) : GoogleWalletContract {
 
     override fun checkWalletAvailability(promise: Promise) {
-        Log.w(TAG, "Google Wallet não está habilitado neste build")
+        WalletLogger.w(TAG, "Google Wallet não está habilitado neste build")
         promise.resolve(false)
     }
 
@@ -184,8 +184,32 @@ class GoogleWalletImplementation(
     }
 
     override fun sendNoIntentReceivedEvent() {
-        Log.d(TAG, "🔍 [GOOGLE] sendNoIntentReceivedEvent chamado (STUB)")
+        WalletLogger.d(TAG, "🔍 [GOOGLE] sendNoIntentReceivedEvent chamado (STUB)")
         // Stub não faz nada - apenas log
+    }
+
+    override fun setLogListener(promise: Promise) {
+        WalletLogger.d(TAG, "🔍 [STUB] setLogListener chamado")
+        try {
+            WalletLogger.setLogListener(true)
+            WalletLogger.d(TAG, "✅ [STUB] Listener de log ativado")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            WalletLogger.e(TAG, "❌ [STUB] Erro ao ativar listener de log: ${e.message}", e)
+            promise.reject("SET_LOG_LISTENER_ERROR", e.message, e)
+        }
+    }
+
+    override fun removeLogListener(promise: Promise) {
+        WalletLogger.d(TAG, "🔍 [STUB] removeLogListener chamado")
+        try {
+            WalletLogger.setLogListener(false)
+            WalletLogger.d(TAG, "✅ [STUB] Listener de log desativado")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            WalletLogger.e(TAG, "❌ [STUB] Erro ao desativar listener de log: ${e.message}", e)
+            promise.reject("REMOVE_LOG_LISTENER_ERROR", e.message, e)
+        }
     }
 
     companion object {
@@ -193,7 +217,7 @@ class GoogleWalletImplementation(
         
         @JvmStatic
         fun processIntent(activity: Activity, intent: Intent) {
-            Log.w(TAG, "Google Wallet não está habilitado - processIntent ignorado")
+            WalletLogger.w(TAG, "Google Wallet não está habilitado - processIntent ignorado")
         }
     }
 }

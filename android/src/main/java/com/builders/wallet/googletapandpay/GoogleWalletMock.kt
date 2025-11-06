@@ -2,7 +2,7 @@ package com.builders.wallet.googletapandpay
 
 import android.app.Activity
 import android.content.Intent
-import android.util.Log
+import com.builders.wallet.WalletLogger
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
@@ -45,15 +45,15 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             try {
                 val buildConfigUrl = BuildConfig.GOOGLE_WALLET_MOCK_API_URL
                 if (buildConfigUrl.isNotEmpty()) {
-                    Log.d(TAG, "🌐 [MOCK] Usando API URL do BuildConfig: $buildConfigUrl")
+                    WalletLogger.d(TAG, "🌐 [MOCK] Usando API URL do BuildConfig: $buildConfigUrl")
                     return@lazy buildConfigUrl
                 }
 
                 // Se não configurado, usar DEFAULT_API_BASE_URL
-                Log.d(TAG, "🌐 [MOCK] API URL não configurada, usando DEFAULT: $DEFAULT_API_BASE_URL")
+                WalletLogger.d(TAG, "🌐 [MOCK] API URL não configurada, usando DEFAULT: $DEFAULT_API_BASE_URL")
                 DEFAULT_API_BASE_URL
             } catch (e: Exception) {
-                Log.w(TAG, "⚠️ [MOCK] Erro ao obter URL da API: ${e.message}")
+                WalletLogger.w(TAG, "⚠️ [MOCK] Erro ao obter URL da API: ${e.message}")
                 DEFAULT_API_BASE_URL
             }
         }
@@ -115,18 +115,18 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
         @JvmStatic
         fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
-            Log.d(TAG, "🔍 [GOOGLE MOCK] processIntent chamado")
+            WalletLogger.d(TAG, "🔍 [GOOGLE MOCK] processIntent chamado")
 
-            Log.d(TAG, "🔍 [GOOGLE MOCK] Intent encontrada: ${intent.action}")
+            WalletLogger.d(TAG, "🔍 [GOOGLE MOCK] Intent encontrada: ${intent.action}")
 
             // Verificar se é um intent do Google Pay/Wallet
             if (isGooglePayIntent(intent)) {
-                Log.d(TAG, "✅ [GOOGLE MOCK] Intent do Google Pay detectada")
+                WalletLogger.d(TAG, "✅ [GOOGLE MOCK] Intent do Google Pay detectada")
 
                 // Extrair dados da intent
                 val extraText = intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
                 if (!extraText.isNullOrEmpty()) {
-                    Log.d(TAG, "🔍 [GOOGLE MOCK] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
+                    WalletLogger.d(TAG, "🔍 [GOOGLE MOCK] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
 
                     // Armazenar dados para processamento posterior
                     pendingIntentData = extraText
@@ -134,15 +134,15 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                     pendingCallingPackage = activity.callingPackage
                     hasPendingIntentData = true
 
-                    Log.d(TAG, "✅ [GOOGLE MOCK] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
+                    WalletLogger.d(TAG, "✅ [GOOGLE MOCK] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
 
                     // Limpar intent para evitar reprocessamento
                     activity.intent = android.content.Intent()
                 } else {
-                    Log.w(TAG, "⚠️ [GOOGLE MOCK] Nenhum dado EXTRA_TEXT encontrado")
+                    WalletLogger.w(TAG, "⚠️ [GOOGLE MOCK] Nenhum dado EXTRA_TEXT encontrado")
                 }
             } else {
-                Log.d(TAG, "🔍 [GOOGLE MOCK] Intent não relacionada ao Google Pay")
+                WalletLogger.d(TAG, "🔍 [GOOGLE MOCK] Intent não relacionada ao Google Pay")
             }
         }
 
@@ -152,7 +152,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         private fun isGooglePayIntent(intent: Intent): Boolean {
             val action = intent.action
 
-            Log.d(TAG, "🔍 [GOOGLE] Verificando intent - Action: $action")
+            WalletLogger.d(TAG, "🔍 [GOOGLE] Verificando intent - Action: $action")
 
             // Verificar action
             val isValidAction = action != null && (
@@ -168,7 +168,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         @JvmStatic
         fun isValidCallingPackage(activity: android.app.Activity): Boolean {
             val callingPackage = activity.callingPackage
-            Log.d(TAG, "🔍 [GOOGLE MOCK] Chamador: $callingPackage")
+            WalletLogger.d(TAG, "🔍 [GOOGLE MOCK] Chamador: $callingPackage")
 
             return callingPackage != null && (
                 callingPackage == GOOGLE_WALLET_PACKAGE ||
@@ -182,9 +182,9 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
      * Processa dados de intent e envia evento para React Native
      */
     private fun processWalletIntentData(data: String, action: String, callingPackage: String) {
-        Log.d(TAG, "🔍 [GOOGLE] processWalletIntentData chamado")
+        WalletLogger.d(TAG, "🔍 [GOOGLE] processWalletIntentData chamado")
         try {
-            Log.d(TAG, "✅ [GOOGLE] Intent processado: $action")
+            WalletLogger.d(TAG, "✅ [GOOGLE] Intent processado: $action")
 
             // Determinar o tipo de intent baseado na action
             val intentType = if (action.endsWith(".action.ACTIVATE_TOKEN")) {
@@ -202,10 +202,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
                 decodedData = String(decodedBytes, Charsets.UTF_8)
                 dataFormat = "base64_decoded"
-                Log.d(TAG, "🔍 [GOOGLE] Dados decodificados com sucesso: ${decodedData.length} caracteres")
+                WalletLogger.d(TAG, "🔍 [GOOGLE] Dados decodificados com sucesso: ${decodedData.length} caracteres")
             } catch (e: Exception) {
                 // Se falhar ao decodificar, usar dados originais
-                Log.w(TAG, "⚠️ [GOOGLE] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
+                WalletLogger.w(TAG, "⚠️ [GOOGLE] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
                 dataFormat = "raw"
             }
 
@@ -219,25 +219,25 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             // Adicionar dados originais em base64 para referência
             eventData.putString("originalData", data)
 
-            Log.d(TAG, "🔍 [GOOGLE] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
+            WalletLogger.d(TAG, "🔍 [GOOGLE] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
 
             // Enviar evento para React Native
             sendEventToReactNative("GoogleWalletIntentReceived", eventData)
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro ao processar dados da intent: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao processar dados da intent: ${e.message}", e)
         }
     }
 
     private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
-            Log.d(TAG, "🔍 [GOOGLE] Enviando evento para React Native: $eventName")
+            WalletLogger.d(TAG, "🔍 [GOOGLE] Enviando evento para React Native: $eventName")
             reactContext
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
                 .emit(eventName, eventData)
-            Log.d(TAG, "✅ [GOOGLE] Evento enviado com sucesso")
+            WalletLogger.d(TAG, "✅ [GOOGLE] Evento enviado com sucesso")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro ao enviar evento para React Native: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao enviar evento para React Native: ${e.message}", e)
         }
     }
 
@@ -263,12 +263,12 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             var connection: HttpURLConnection? = null
             try {
                 val urlString = "$apiUrl$endpoint"
-                Log.d(TAG, "🌐 [API][REQUEST] ➜ ${'$'}method $urlString")
-                Log.d(TAG, "🌐 [API][REQUEST] Headers: Content-Type=application/json, Accept=application/json")
-                Log.d(TAG, "🌐 [API][REQUEST] Timeouts: connect=${REQUEST_TIMEOUT}ms, read=${REQUEST_TIMEOUT}ms")
+                WalletLogger.d(TAG, "🌐 [API][REQUEST] ➜ ${'$'}method $urlString")
+                WalletLogger.d(TAG, "🌐 [API][REQUEST] Headers: Content-Type=application/json, Accept=application/json")
+                WalletLogger.d(TAG, "🌐 [API][REQUEST] Timeouts: connect=${REQUEST_TIMEOUT}ms, read=${REQUEST_TIMEOUT}ms")
                 if (body != null) {
                     val bodyPreview = if (body.length > 512) body.substring(0, 512) + "…" else body
-                    Log.d(TAG, "🌐 [API][REQUEST] bodyPreview=${'$'}bodyPreview")
+                    WalletLogger.d(TAG, "🌐 [API][REQUEST] bodyPreview=${'$'}bodyPreview")
                 }
 
                 val startAtMs = System.currentTimeMillis()
@@ -293,7 +293,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
                 val responseCode = connection.responseCode
                 val tookMs = System.currentTimeMillis() - startAtMs
-                Log.d(TAG, "🌐 [API][RESPONSE] ⇦ code=$responseCode (${tookMs}ms)")
+                WalletLogger.d(TAG, "🌐 [API][RESPONSE] ⇦ code=$responseCode (${tookMs}ms)")
 
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     val inputStream = connection.inputStream
@@ -309,9 +309,9 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
                     val raw = response.toString()
                     val preview = if (raw.length > 512) raw.substring(0, 512) + "…" else raw
-                    Log.d(TAG, "🌐 [API][RESPONSE] bodyPreview=${'$'}preview")
+                    WalletLogger.d(TAG, "🌐 [API][RESPONSE] bodyPreview=${'$'}preview")
                     val jsonResponse = JSONObject(raw)
-                    Log.d(TAG, "✅ [API] Dados obtidos com sucesso da API local (len=${raw.length})")
+                    WalletLogger.d(TAG, "✅ [API] Dados obtidos com sucesso da API local (len=${raw.length})")
 
                     withContext(Dispatchers.Main) {
                         onSuccess(jsonResponse)
@@ -335,22 +335,22 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                     } catch (_: Exception) { null }
                     if (errorBody != null) {
                         val previewErr = if (errorBody.length > 512) errorBody.substring(0, 512) + "…" else errorBody
-                        Log.w(TAG, "⚠️ [API][RESPONSE] code=$responseCode errorBodyPreview=${'$'}previewErr")
+                        WalletLogger.w(TAG, "⚠️ [API][RESPONSE] code=$responseCode errorBodyPreview=${'$'}previewErr")
                     } else {
-                        Log.w(TAG, "⚠️ [API][RESPONSE] code=$responseCode (sem corpo de erro)")
+                        WalletLogger.w(TAG, "⚠️ [API][RESPONSE] code=$responseCode (sem corpo de erro)")
                     }
                     throw Exception("API retornou código de erro: $responseCode")
                 }
 
             } catch (e: Exception) {
-                Log.w(TAG, "❌ [API] Erro ao buscar dados da API local: ${e::class.java.simpleName}: ${e.message}")
-                Log.d(TAG, "🔄 [API] Usando valor padrão como fallback")
+                WalletLogger.w(TAG, "❌ [API] Erro ao buscar dados da API local: ${e::class.java.simpleName}: ${e.message}")
+                WalletLogger.d(TAG, "🔄 [API] Usando valor padrão como fallback")
 
                 withContext(Dispatchers.Main) {
                     onError(e)
                 }
             } finally {
-                Log.d(TAG, "🌐 [API] Encerrando conexão com servidor mock")
+                WalletLogger.d(TAG, "🌐 [API] Encerrando conexão com servidor mock")
                 connection?.disconnect()
             }
         }
@@ -388,7 +388,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                     }
                     promise.resolve(result)
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
+                    WalletLogger.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
                     promise.resolve(defaultResponse())
                 }
             },
@@ -431,7 +431,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     }
 
     override fun checkWalletAvailability(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
         fetchFromLocalAPI(
             endpoint = "/wallet/availability",
             defaultResponse = { true },
@@ -439,7 +439,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 try {
                     promise.resolve(json.optBoolean("available", true))
                 } catch (e: Exception) {
-                    Log.w(TAG, "⚠️ [MOCK] Erro ao processar disponibilidade, usando fallback: ${e.message}")
+                    WalletLogger.w(TAG, "⚠️ [MOCK] Erro ao processar disponibilidade, usando fallback: ${e.message}")
                     promise.resolve(true)
                 }
             },
@@ -451,7 +451,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     }
 
     override fun getSecureWalletInfo(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] getSecureWalletInfo chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] getSecureWalletInfo chamado")
 
         // Tentar buscar da API local primeiro, com fallback para valor padrão
         fetchFromAPIWithPromise(
@@ -460,7 +460,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 val result = Arguments.createMap()
                 result.putString("deviceID", "mock_device_12345")
                 result.putString("walletAccountID", "mock_wallet_67890")
-                Log.d(TAG, "✅ [MOCK] Informações da carteira obtidas (valor padrão)")
+                WalletLogger.d(TAG, "✅ [MOCK] Informações da carteira obtidas (valor padrão)")
                 result
             },
             promise = promise
@@ -468,7 +468,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     }
 
     override fun getTokenStatus(tokenServiceProvider: Int, tokenReferenceId: String, promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] getTokenStatus chamado - Provider: $tokenServiceProvider, RefId: $tokenReferenceId")
+        WalletLogger.d(TAG, "🔍 [MOCK] getTokenStatus chamado - Provider: $tokenServiceProvider, RefId: $tokenReferenceId")
 
         // Simular diferentes cenários baseados no tokenReferenceId
         val endpoint = "/wallet/token/status?provider=$tokenServiceProvider&refId=$tokenReferenceId"
@@ -484,18 +484,18 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                     if (json.has("error")) {
                         val errorCode = json.getString("errorCode") ?: "TOKEN_STATUS_ERROR"
                         val errorMessage = json.getString("error") ?: "Erro ao obter status do token"
-                        Log.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
+                        WalletLogger.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
                         promise.reject(errorCode, errorMessage)
                     } else {
                         // Resposta de sucesso
                         val result = Arguments.createMap()
                         result.putInt("tokenState", json.optInt("tokenState", 5))
                         result.putBoolean("isSelected", json.optBoolean("isSelected", true))
-                        Log.d(TAG, "✅ [MOCK] Status do token obtido da API")
+                        WalletLogger.d(TAG, "✅ [MOCK] Status do token obtido da API")
                         promise.resolve(result)
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
+                    WalletLogger.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
                     // Fallback para simulação local
                     val result = simulateTokenStatusResponse(tokenReferenceId, tokenServiceProvider)
                     if (result is Exception) {
@@ -519,17 +519,17 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         return when {
             // Simular token não encontrado
             tokenReferenceId.contains("not_found") || tokenReferenceId.contains("404") -> {
-                Log.w(TAG, "❌ [MOCK] Simulando token não encontrado: $tokenReferenceId")
+                WalletLogger.w(TAG, "❌ [MOCK] Simulando token não encontrado: $tokenReferenceId")
                 Exception("Token não encontrado na carteira ativa")
             }
             // Simular calling package não verificado
             tokenReferenceId.contains("unverified") || tokenReferenceId.contains("15009") -> {
-                Log.w(TAG, "❌ [MOCK] Simulando calling package não verificado: $tokenReferenceId")
+                WalletLogger.w(TAG, "❌ [MOCK] Simulando calling package não verificado: $tokenReferenceId")
                 Exception("15009: Calling package not verified")
             }
             // Simular token suspenso
             tokenReferenceId.contains("suspended") || tokenReferenceId.contains("suspended") -> {
-                Log.d(TAG, "✅ [MOCK] Simulando token suspenso: $tokenReferenceId")
+                WalletLogger.d(TAG, "✅ [MOCK] Simulando token suspenso: $tokenReferenceId")
                 val result = Arguments.createMap()
                 result.putInt("tokenState", 4) // TOKEN_STATE_SUSPENDED
                 result.putBoolean("isSelected", false)
@@ -537,7 +537,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             }
             // Simular token pendente
             tokenReferenceId.contains("pending") || tokenReferenceId.contains("pending") -> {
-                Log.d(TAG, "✅ [MOCK] Simulando token pendente: $tokenReferenceId")
+                WalletLogger.d(TAG, "✅ [MOCK] Simulando token pendente: $tokenReferenceId")
                 val result = Arguments.createMap()
                 result.putInt("tokenState", 2) // TOKEN_STATE_PENDING
                 result.putBoolean("isSelected", false)
@@ -545,7 +545,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             }
             // Simular token ativo (padrão)
             else -> {
-                Log.d(TAG, "✅ [MOCK] Simulando token ativo: $tokenReferenceId")
+                WalletLogger.d(TAG, "✅ [MOCK] Simulando token ativo: $tokenReferenceId")
                 val result = Arguments.createMap()
                 result.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
                 result.putBoolean("isSelected", true)
@@ -562,28 +562,28 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             // Simular diferentes tipos de erro baseados no erro
             when {
                 error.contains("15009") || error.contains("unverified") -> {
-                    Log.w(TAG, "❌ [MOCK] Simulando erro 15009: Calling package not verified")
+                    WalletLogger.w(TAG, "❌ [MOCK] Simulando erro 15009: Calling package not verified")
                     promise.reject("CALLING_PACKAGE_NOT_VERIFIED", "15009: Calling package not verified")
                 }
                 error.contains("15003") || error.contains("not_found") -> {
-                    Log.w(TAG, "❌ [MOCK] Simulando erro 15003: Token não encontrado")
+                    WalletLogger.w(TAG, "❌ [MOCK] Simulando erro 15003: Token não encontrado")
                     promise.reject("TOKEN_NOT_FOUND", "15003: Token não encontrado na carteira ativa")
                 }
                 error.contains("15004") || error.contains("invalid_state") -> {
-                    Log.w(TAG, "❌ [MOCK] Simulando erro 15004: Estado do token inválido")
+                    WalletLogger.w(TAG, "❌ [MOCK] Simulando erro 15004: Estado do token inválido")
                     promise.reject("INVALID_TOKEN_STATE", "15004: Token encontrado mas em estado inválido")
                 }
                 error.contains("15005") || error.contains("attestation") -> {
-                    Log.w(TAG, "❌ [MOCK] Simulando erro 15005: Falha na verificação de compatibilidade")
+                    WalletLogger.w(TAG, "❌ [MOCK] Simulando erro 15005: Falha na verificação de compatibilidade")
                     promise.reject("ATTESTATION_ERROR", "15005: Falha na verificação de compatibilidade do dispositivo")
                 }
                 error.contains("15002") || error.contains("no_wallet") -> {
-                    Log.w(TAG, "❌ [MOCK] Simulando erro 15002: Nenhuma carteira ativa")
+                    WalletLogger.w(TAG, "❌ [MOCK] Simulando erro 15002: Nenhuma carteira ativa")
                     promise.reject("NO_ACTIVE_WALLET", "15002: Nenhuma carteira ativa encontrada")
                 }
                 else -> {
                     // Fallback para sucesso padrão
-                    Log.d(TAG, "✅ [MOCK] Fallback para sucesso padrão")
+                    WalletLogger.d(TAG, "✅ [MOCK] Fallback para sucesso padrão")
                     val result = Arguments.createMap()
                     result.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
                     result.putBoolean("isSelected", true)
@@ -591,13 +591,13 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "❌ [MOCK] Erro ao simular erro: ${e.message}")
+            WalletLogger.w(TAG, "❌ [MOCK] Erro ao simular erro: ${e.message}")
             promise.reject("TOKEN_STATUS_ERROR", "Erro ao obter status do token: ${e.message}")
         }
     }
 
     override fun getEnvironment(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] getEnvironment chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] getEnvironment chamado")
         fetchFromLocalAPI(
             endpoint = "/wallet/environment",
             defaultResponse = { "PROD" },
@@ -624,7 +624,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         tokenServiceProvider: Int,
         promise: Promise
     ) {
-        Log.d(TAG, "🔍 [MOCK] isTokenized chamado - LastFour: $fpanLastFour, Network: $cardNetwork, Provider: $tokenServiceProvider")
+        WalletLogger.d(TAG, "🔍 [MOCK] isTokenized chamado - LastFour: $fpanLastFour, Network: $cardNetwork, Provider: $tokenServiceProvider")
         val endpoint = "/wallet/is-tokenized?lastFour=$fpanLastFour&network=$cardNetwork&provider=$tokenServiceProvider"
         fetchFromLocalAPI(
             endpoint = endpoint,
@@ -651,7 +651,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         issuerTokenId: String,
         promise: Promise
     ) {
-        Log.d(TAG, "🔍 [MOCK] viewToken chamado - Provider: $tokenServiceProvider, TokenId: $issuerTokenId")
+        WalletLogger.d(TAG, "🔍 [MOCK] viewToken chamado - Provider: $tokenServiceProvider, TokenId: $issuerTokenId")
         val endpoint = "/wallet/view-token?provider=$tokenServiceProvider&tokenId=$issuerTokenId"
         fetchFromLocalAPI(
             endpoint = endpoint,
@@ -667,7 +667,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 tokenData.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
                 tokenData.putBoolean("isDefaultToken", true)
                 tokenData.putString("portfolioName", "Carteira Principal")
-                Log.d(TAG, "✅ [MOCK] Dados do token simulados para: $issuerTokenId")
+                WalletLogger.d(TAG, "✅ [MOCK] Dados do token simulados para: $issuerTokenId")
                 tokenData
             },
             onSuccess = { json ->
@@ -685,15 +685,15 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                         tokenData.putBoolean("isDefaultToken", json.optBoolean("isDefaultToken", true))
                         tokenData.putString("portfolioName", json.optString("portfolioName", "Carteira Principal"))
 
-                        Log.d(TAG, "✅ [MOCK] Dados do token obtidos da API para: $issuerTokenId")
+                        WalletLogger.d(TAG, "✅ [MOCK] Dados do token obtidos da API para: $issuerTokenId")
                         promise.resolve(tokenData)
                     } else {
                         // Se não encontrou o token, retornar null
-                        Log.w(TAG, "❌ [MOCK] Token não encontrado: $issuerTokenId")
+                        WalletLogger.w(TAG, "❌ [MOCK] Token não encontrado: $issuerTokenId")
                         promise.resolve(null)
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
+                    WalletLogger.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
                     promise.resolve(null)
                 }
             },
@@ -709,25 +709,25 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 tokenData.putInt("tokenState", 5) // TOKEN_STATE_ACTIVE
                 tokenData.putBoolean("isDefaultToken", true)
                 tokenData.putString("portfolioName", "Carteira Principal")
-                Log.d(TAG, "✅ [MOCK] Dados do token simulados (fallback) para: $issuerTokenId")
+                WalletLogger.d(TAG, "✅ [MOCK] Dados do token simulados (fallback) para: $issuerTokenId")
                 promise.resolve(tokenData)
             }
         )
     }
 
     override fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] addCardToWallet chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] addCardToWallet chamado")
         try {
             // Validar dados do cartão (mesmo que na implementação real)
             val validationError = validateCardData(cardData)
             if (validationError != null) {
-                Log.w(TAG, "❌ [MOCK] $validationError")
+                WalletLogger.w(TAG, "❌ [MOCK] $validationError")
                 promise.reject("INVALID_CARD_DATA", validationError)
                 return
             }
 
-            Log.d(TAG, "🔍 [MOCK] Dados validados com sucesso")
-            Log.d(TAG, "🔍 [MOCK] Dados do cartão recebidos: $cardData")
+            WalletLogger.d(TAG, "🔍 [MOCK] Dados validados com sucesso")
+            WalletLogger.d(TAG, "🔍 [MOCK] Dados do cartão recebidos: $cardData")
 
             val bodyJson = readableMapToJson(cardData).toString()
             fetchFromLocalAPI(
@@ -742,23 +742,23 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                         if (json.has("error")) {
                             val errorCode = json.getString("errorCode") ?: "ADD_CARD_ERROR"
                             val errorMessage = json.getString("error") ?: "Erro ao adicionar cartão"
-                            Log.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
+                            WalletLogger.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
                             promise.reject(errorCode, errorMessage)
                         } else {
                             // Verificar se há tokenId na resposta
                             if (json.has("tokenId")) {
                                 val tokenId = json.getString("tokenId")
-                                Log.d(TAG, "✅ [MOCK] Token ID obtido da API: $tokenId")
+                                WalletLogger.d(TAG, "✅ [MOCK] Token ID obtido da API: $tokenId")
                                 promise.resolve(tokenId)
                             } else {
                                 // Fallback para geração de token mock
                                 val mockTokenId = "mock_token_${System.currentTimeMillis()}"
-                                Log.d(TAG, "✅ [MOCK] Token ID gerado (fallback): $mockTokenId")
+                                WalletLogger.d(TAG, "✅ [MOCK] Token ID gerado (fallback): $mockTokenId")
                                 promise.resolve(mockTokenId)
                             }
                         }
                     } catch (e: Exception) {
-                        Log.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
+                        WalletLogger.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
                         val mockTokenId = "mock_token_${System.currentTimeMillis()}"
                         promise.resolve(mockTokenId)
                     }
@@ -771,7 +771,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 body = bodyJson
             )
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro em addCardToWallet: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [MOCK] Erro em addCardToWallet: ${e.message}", e)
             promise.reject("ADD_CARD_TO_WALLET_ERROR", e.message, e)
         }
     }
@@ -785,7 +785,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             val tokenId = "mock_token_${System.currentTimeMillis()}"
             return """{"tokenId": "$tokenId", "success": true, "message": "Cartão adicionado com sucesso"}"""
         } catch (e: Exception) {
-            Log.w(TAG, "❌ [MOCK] Erro ao simular resposta: ${e.message}")
+            WalletLogger.w(TAG, "❌ [MOCK] Erro ao simular resposta: ${e.message}")
             val tokenId = "mock_token_${System.currentTimeMillis()}"
             return """{"tokenId": "$tokenId", "success": true, "message": "Cartão adicionado com sucesso"}"""
         }
@@ -798,10 +798,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         try {
             // Sempre retorna sucesso no fallback de erro
             val mockTokenId = "mock_token_${System.currentTimeMillis()}"
-            Log.d(TAG, "✅ [MOCK] Token ID gerado (fallback de erro): $mockTokenId")
+            WalletLogger.d(TAG, "✅ [MOCK] Token ID gerado (fallback de erro): $mockTokenId")
             promise.resolve(mockTokenId)
         } catch (e: Exception) {
-            Log.w(TAG, "❌ [MOCK] Erro ao simular erro: ${e.message}")
+            WalletLogger.w(TAG, "❌ [MOCK] Erro ao simular erro: ${e.message}")
             val mockTokenId = "mock_token_${System.currentTimeMillis()}"
             promise.resolve(mockTokenId)
         }
@@ -855,7 +855,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     }
 
     override fun createWalletIfNeeded(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] createWalletIfNeeded chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] createWalletIfNeeded chamado")
         fetchFromLocalAPI(
             endpoint = "/wallet/create",
             defaultResponse = { true },
@@ -878,7 +878,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     }
 
     override fun listTokens(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] listTokens chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] listTokens chamado")
 
         // Função especial para arrays - precisa de tratamento diferente
         val defaultArray = {
@@ -909,7 +909,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             token2.putString("portfolioName", "Outros Cartões")
             writableArray.pushMap(token2)
 
-            Log.d(TAG, "✅ [MOCK] Lista de tokens obtida (valor padrão) - ${writableArray.size()} tokens")
+            WalletLogger.d(TAG, "✅ [MOCK] Lista de tokens obtida (valor padrão) - ${writableArray.size()} tokens")
             writableArray
         }
 
@@ -942,10 +942,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                         }
                     }
 
-                    Log.d(TAG, "✅ [API] Lista de tokens obtida da API - ${writableArray.size()} tokens")
+                    WalletLogger.d(TAG, "✅ [API] Lista de tokens obtida da API - ${writableArray.size()} tokens")
                     promise.resolve(writableArray)
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
+                    WalletLogger.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
                     promise.resolve(defaultArray())
                 }
             },
@@ -957,13 +957,13 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
 
     private fun checkPendingDataFromMainActivity() {
-        Log.d(TAG, "🔍 [GOOGLE] Verificando dados pendentes...")
+        WalletLogger.d(TAG, "🔍 [GOOGLE] Verificando dados pendentes...")
         try {
             // Verificar se há dados pendentes
             val hasData = hasPendingData()
 
             if (hasData) {
-                Log.d(TAG, "✅ [GOOGLE] Dados pendentes encontrados")
+                WalletLogger.d(TAG, "✅ [GOOGLE] Dados pendentes encontrados")
 
                 // Obter os dados pendentes sem limpar
                 val data = getPendingIntentDataWithoutClearing()
@@ -971,17 +971,17 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                 val callingPackage = getPendingCallingPackage()
 
                 if (data != null && data.isNotEmpty()) {
-                    Log.d(TAG, "📋 [GOOGLE] Processando dados pendentes: ${data.length} caracteres")
-                    Log.d(TAG, "📋 [GOOGLE] Action: $action, CallingPackage: $callingPackage")
+                    WalletLogger.d(TAG, "📋 [GOOGLE] Processando dados pendentes: ${data.length} caracteres")
+                    WalletLogger.d(TAG, "📋 [GOOGLE] Action: $action, CallingPackage: $callingPackage")
 
                     // Verificar se action e callingPackage estão disponíveis
                     if (action == null) {
-                        Log.e(TAG, "❌ [GOOGLE] Action é null - não é possível processar intent")
+                        WalletLogger.e(TAG, "❌ [GOOGLE] Action é null - não é possível processar intent")
                         return
                     }
 
                     if (callingPackage == null) {
-                        Log.e(TAG, "❌ [GOOGLE] CallingPackage é null - não é possível processar intent")
+                        WalletLogger.e(TAG, "❌ [GOOGLE] CallingPackage é null - não é possível processar intent")
                         return
                     }
 
@@ -991,22 +991,22 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                     // Limpar dados após processamento bem-sucedido
                     clearPendingData()
                 } else {
-                    Log.w(TAG, "⚠️ [GOOGLE] Dados pendentes são null ou vazios")
+                    WalletLogger.w(TAG, "⚠️ [GOOGLE] Dados pendentes são null ou vazios")
                 }
             } else {
-                Log.d(TAG, "🔍 [GOOGLE] Nenhum dado pendente")
+                WalletLogger.d(TAG, "🔍 [GOOGLE] Nenhum dado pendente")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro ao verificar dados pendentes: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao verificar dados pendentes: ${e.message}", e)
         }
     }
 
     //https://developers.google.com/pay/issuers/apis/push-provisioning/android/reading-wallet?hl=pt-br&authuser=1#add_a_listener_for_wallet_updates
     override fun setIntentListener(promise: Promise) {
-        Log.d(TAG, "🔍 [GOOGLE] setIntentListener chamado")
+        WalletLogger.d(TAG, "🔍 [GOOGLE] setIntentListener chamado")
         try {
             intentListenerActive = true
-            Log.d(TAG, "✅ [GOOGLE] Listener de intent ativado")
+            WalletLogger.d(TAG, "✅ [GOOGLE] Listener de intent ativado")
 
             // Verificar dados pendentes da MainActivity automaticamente
             checkPendingDataFromMainActivity()
@@ -1016,36 +1016,36 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro ao ativar listener de intent: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao ativar listener de intent: ${e.message}", e)
             promise.reject("SET_INTENT_LISTENER_ERROR", e.message, e)
         }
     }
 
     override fun removeIntentListener(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] removeIntentListener chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] removeIntentListener chamado")
         try {
             intentListenerActive = false
-            Log.d(TAG, "✅ [MOCK] Listener de intent desativado")
+            WalletLogger.d(TAG, "✅ [MOCK] Listener de intent desativado")
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro ao desativar listener de intent: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [MOCK] Erro ao desativar listener de intent: ${e.message}", e)
             promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
         }
     }
 
     override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
+        WalletLogger.d(TAG, "🔍 [MOCK] setActivationResult chamado - Status: $status, ActivationCode: $activationCode")
         try {
             activity = reactContext.currentActivity
             if (activity == null) {
-                Log.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para definir resultado")
+                WalletLogger.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para definir resultado")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
 
             val validStatuses = listOf("approved", "declined", "failure")
             if (!validStatuses.contains(status)) {
-                Log.w(TAG, "❌ [MOCK] Status inválido: $status. Deve ser: approved, declined ou failure")
+                WalletLogger.w(TAG, "❌ [MOCK] Status inválido: $status. Deve ser: approved, declined ou failure")
                 promise.reject("INVALID_STATUS", "Status deve ser: approved, declined ou failure")
                 return
             }
@@ -1054,45 +1054,45 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             resultIntent.putExtra("BANKING_APP_ACTIVATION_RESPONSE", status)
 
             if (activationCode != null && activationCode.isNotEmpty() && status == "approved") {
-                Log.d(TAG, "🔍 [MOCK] Adicionando activationCode: $activationCode")
+                WalletLogger.d(TAG, "🔍 [MOCK] Adicionando activationCode: $activationCode")
                 resultIntent.putExtra("BANKING_APP_ACTIVATION_CODE", activationCode)
             }
 
             activity?.setResult(Activity.RESULT_OK, resultIntent)
 
-            Log.d(TAG, "✅ [MOCK] Resultado de ativação definido - Status: $status")
+            WalletLogger.d(TAG, "✅ [MOCK] Resultado de ativação definido - Status: $status")
             if (activationCode != null && activationCode.isNotEmpty() && status == "approved") {
-                Log.d(TAG, "✅ [MOCK] ActivationCode incluído: $activationCode")
+                WalletLogger.d(TAG, "✅ [MOCK] ActivationCode incluído: $activationCode")
             }
 
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro ao definir resultado de ativação: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [MOCK] Erro ao definir resultado de ativação: ${e.message}", e)
             promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
         }
     }
 
     override fun finishActivity(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] finishActivity chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] finishActivity chamado")
         try {
             activity = reactContext.currentActivity
             if (activity == null) {
-                Log.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para finalizar")
+                WalletLogger.w(TAG, "❌ [MOCK] Nenhuma atividade disponível para finalizar")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
 
             activity?.finish()
-            Log.d(TAG, "✅ [MOCK] Atividade finalizada com sucesso")
+            WalletLogger.d(TAG, "✅ [MOCK] Atividade finalizada com sucesso")
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [MOCK] Erro ao finalizar atividade: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [MOCK] Erro ao finalizar atividade: ${e.message}", e)
             promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
         }
     }
 
     override fun getConstants(): MutableMap<String, Any> {
-        Log.d(TAG, "🔍 [MOCK] getConstants chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] getConstants chamado")
 
         val constants = hashMapOf<String, Any>()
 
@@ -1163,15 +1163,15 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         constants["RECONNECTION_TIMED_OUT_DURING_UPDATE"] = 21
         constants["RECONNECTION_TIMED_OUT"] = 22
 
-        Log.d(TAG, "✅ [MOCK] Constantes obtidas (simuladas)")
+        WalletLogger.d(TAG, "✅ [MOCK] Constantes obtidas (simuladas)")
         return constants
     }
 
     override fun openWallet(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] openWallet chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] openWallet chamado")
         try {
             if (walletOpener == null) {
-                Log.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
+                WalletLogger.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
                 promise.reject("WALLET_OPENER_NOT_AVAILABLE", "WalletOpener não foi inicializado")
                 return
             }
@@ -1184,25 +1184,49 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
             
             if (success) {
-                Log.d(TAG, "✅ [MOCK] Wallet aberto com sucesso")
+                WalletLogger.d(TAG, "✅ [MOCK] Wallet aberto com sucesso")
                 promise.resolve(true)
             } else {
-                Log.w(TAG, "❌ [MOCK] Falha ao abrir wallet")
+                WalletLogger.w(TAG, "❌ [MOCK] Falha ao abrir wallet")
                 promise.reject("OPEN_WALLET_ERROR", "Falha ao abrir Google Wallet")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
+            WalletLogger.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
             promise.reject("OPEN_WALLET_ERROR", e.message, e)
         }
     }
 
     override fun sendNoIntentReceivedEvent() {
-        Log.d(TAG, "🔍 [GOOGLE] sendNoIntentReceivedEvent chamado")
+        WalletLogger.d(TAG, "🔍 [GOOGLE] sendNoIntentReceivedEvent chamado")
         try {
             sendEventToReactNative("GoogleWalletNoIntentReceived", null)
-            Log.d(TAG, "✅ [GOOGLE] Evento de nenhuma intent enviado com sucesso")
+            WalletLogger.d(TAG, "✅ [GOOGLE] Evento de nenhuma intent enviado com sucesso")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [GOOGLE] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+        }
+    }
+
+    override fun setLogListener(promise: Promise) {
+        WalletLogger.d(TAG, "🔍 [MOCK] setLogListener chamado")
+        try {
+            WalletLogger.setLogListener(true)
+            WalletLogger.d(TAG, "✅ [MOCK] Listener de log ativado")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            WalletLogger.e(TAG, "❌ [MOCK] Erro ao ativar listener de log: ${e.message}", e)
+            promise.reject("SET_LOG_LISTENER_ERROR", e.message, e)
+        }
+    }
+
+    override fun removeLogListener(promise: Promise) {
+        WalletLogger.d(TAG, "🔍 [MOCK] removeLogListener chamado")
+        try {
+            WalletLogger.setLogListener(false)
+            WalletLogger.d(TAG, "✅ [MOCK] Listener de log desativado")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            WalletLogger.e(TAG, "❌ [MOCK] Erro ao desativar listener de log: ${e.message}", e)
+            promise.reject("REMOVE_LOG_LISTENER_ERROR", e.message, e)
         }
     }
 

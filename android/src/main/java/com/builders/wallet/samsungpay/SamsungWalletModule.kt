@@ -1,6 +1,6 @@
 package com.builders.wallet.samsungpay
 
-import android.util.Log
+import com.builders.wallet.WalletLogger
 import com.builders.wallet.BuildConfig
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -15,25 +15,29 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
 
   // Lê configuração de mock do BuildConfig (variável de ambiente do Gradle)
+  init {
+    // Inicializar WalletLogger com o contexto
+    WalletLogger.initialize(reactContext)
+  }
+
   private val useMock: Boolean by lazy {
     try {
-
       val mockValue = BuildConfig.SAMSUNG_WALLET_USE_MOCK
-      Log.d(TAG, "🔧 [MODULE] SAMSUNG_WALLET_USE_MOCK = $mockValue")
+      WalletLogger.d(TAG, "🔧 [MODULE] SAMSUNG_WALLET_USE_MOCK = $mockValue")
       mockValue
     } catch (e: Exception) {
-      Log.w(TAG, "🔧 [MODULE] SAMSUNG_WALLET_USE_MOCK não definido, usando padrão: false")
+      WalletLogger.w(TAG, "🔧 [MODULE] SAMSUNG_WALLET_USE_MOCK não definido, usando padrão: false")
       false
     }
   }
 
   private val samsungWalletImplementation: SamsungWalletContract by lazy {
     if (useMock) {
-      Log.d(TAG, "🔧 [MODULE] Usando implementação MOCK")
+      WalletLogger.d(TAG, "🔧 [MODULE] Usando implementação MOCK")
       SamsungWalletMock(reactContext)
     } else {
       // A implementação correta (Real ou Stub) será selecionada pelo source set do Gradle
-      Log.d(TAG, "🔧 [MODULE] Usando implementação ${if (BuildConfig.SAMSUNG_WALLET_ENABLED) "REAL" else "STUB"}")
+      WalletLogger.d(TAG, "🔧 [MODULE] Usando implementação ${if (BuildConfig.SAMSUNG_WALLET_ENABLED) "REAL" else "STUB"}")
       SamsungWalletImplementation(reactContext)
     }
   }
@@ -109,6 +113,16 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     samsungWalletImplementation.openWallet(promise)
   }
 
+  @ReactMethod
+  fun setLogListener(promise: Promise) {
+    samsungWalletImplementation.setLogListener(promise)
+  }
+
+  @ReactMethod
+  fun removeLogListener(promise: Promise) {
+    samsungWalletImplementation.removeLogListener(promise)
+  }
+
   override fun getConstants(): MutableMap<String, Any> {
     val constants = samsungWalletImplementation.getConstants().toMutableMap()
 
@@ -137,52 +151,52 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
         // Determinar se deve usar mock baseado na configuração
         val useMock = try {
           val mockValue = BuildConfig.SAMSUNG_WALLET_USE_MOCK
-          Log.d(TAG, "🔧 [STATIC] SAMSUNG_WALLET_USE_MOCK = $mockValue")
+          WalletLogger.d(TAG, "🔧 [STATIC] SAMSUNG_WALLET_USE_MOCK = $mockValue")
           mockValue
         } catch (e: Exception) {
-          Log.w(TAG, "🔧 [STATIC] SAMSUNG_WALLET_USE_MOCK não definido, usando padrão: false")
+          WalletLogger.w(TAG, "🔧 [STATIC] SAMSUNG_WALLET_USE_MOCK não definido, usando padrão: false")
           false
         }
 
-        Log.d(TAG, "🔍 [STATIC] processIntent chamado - Action: ${intent.action}")
+        WalletLogger.d(TAG, "🔍 [STATIC] processIntent chamado - Action: ${intent.action}")
 
         if (useMock) {
-          Log.d(TAG, "🔧 [STATIC] Processando intent com MOCK")
+          WalletLogger.d(TAG, "🔧 [STATIC] Processando intent com MOCK")
           SamsungWalletMock.processIntent(activity, intent)
         } else {
           // Usa Real ou Stub dependendo da configuração (selecionado pelo source set do Gradle)
-          Log.d(TAG, "🔧 [STATIC] Processando intent com ${if (BuildConfig.SAMSUNG_WALLET_ENABLED) "REAL" else "STUB"}")
+          WalletLogger.d(TAG, "🔧 [STATIC] Processando intent com ${if (BuildConfig.SAMSUNG_WALLET_ENABLED) "REAL" else "STUB"}")
           SamsungWalletImplementation.processIntent(activity, intent)
         }
       } catch (e: Exception) {
-        Log.e(TAG, "❌ [STATIC] Erro ao processar intent: ${e.message}", e)
+        WalletLogger.e(TAG, "❌ [STATIC] Erro ao processar intent: ${e.message}", e)
       }
     }
 
     @JvmStatic
     fun setNoIntentReceivedFlag() {
       hasNoIntentReceivedFlag = true
-      Log.d(TAG, "🔍 [STATIC] Flag de nenhuma intent definido")
+      WalletLogger.d(TAG, "🔍 [STATIC] Flag de nenhuma intent definido")
     }
 
     @JvmStatic
     fun processNoIntentReceivedEvent(reactContext: ReactApplicationContext) {
       if (hasNoIntentReceivedFlag) {
-        Log.d(TAG, "🔍 [STATIC] Processando evento de nenhuma intent pendente")
+        WalletLogger.d(TAG, "🔍 [STATIC] Processando evento de nenhuma intent pendente")
         try {
           val module = reactContext.getNativeModule(SamsungWalletModule::class.java)
           if (module != null) {
             module.samsungWalletImplementation.sendNoIntentReceivedEvent()
-            Log.d(TAG, "✅ [STATIC] Evento de nenhuma intent enviado com sucesso")
+            WalletLogger.d(TAG, "✅ [STATIC] Evento de nenhuma intent enviado com sucesso")
           } else {
-            Log.e(TAG, "❌ [STATIC] Instância do SamsungWalletModule não encontrada.")
+            WalletLogger.e(TAG, "❌ [STATIC] Instância do SamsungWalletModule não encontrada.")
           }
         } catch (e: Exception) {
-          Log.e(TAG, "❌ [STATIC] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+          WalletLogger.e(TAG, "❌ [STATIC] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
         } finally {
           // Limpar flag após processamento
           hasNoIntentReceivedFlag = false
-          Log.d(TAG, "🧹 [STATIC] Flag de nenhuma intent limpo")
+          WalletLogger.d(TAG, "🧹 [STATIC] Flag de nenhuma intent limpo")
         }
       }
     }

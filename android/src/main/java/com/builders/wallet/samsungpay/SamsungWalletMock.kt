@@ -1,6 +1,6 @@
 package com.builders.wallet.samsungpay
 
-import android.util.Log
+import com.builders.wallet.WalletLogger
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
@@ -82,18 +82,18 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         
         @JvmStatic
         fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
-            Log.d(TAG, "🔍 [SAMSUNG MOCK] processIntent chamado")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG MOCK] processIntent chamado")
             
-            Log.d(TAG, "🔍 [SAMSUNG MOCK] Intent encontrada: ${intent.action}")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG MOCK] Intent encontrada: ${intent.action}")
             
             // Verificar se é um intent do Samsung Pay/Wallet
             if (isSamsungPayIntent(intent)) {
-                Log.d(TAG, "✅ [SAMSUNG MOCK] Intent do Samsung Pay detectada")
+                WalletLogger.d(TAG, "✅ [SAMSUNG MOCK] Intent do Samsung Pay detectada")
                 
                 // Extrair dados da intent
                 val extraText = intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
                 if (!extraText.isNullOrEmpty()) {
-                    Log.d(TAG, "🔍 [SAMSUNG MOCK] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
+                    WalletLogger.d(TAG, "🔍 [SAMSUNG MOCK] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
                     
                     // Armazenar dados para processamento posterior
                     pendingIntentData = extraText
@@ -101,15 +101,15 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                     pendingCallingPackage = activity.callingPackage
                     hasPendingIntentData = true
                     
-                    Log.d(TAG, "✅ [SAMSUNG MOCK] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
+                    WalletLogger.d(TAG, "✅ [SAMSUNG MOCK] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
                     
                     // Limpar intent para evitar reprocessamento
                     activity.intent = android.content.Intent()
                 } else {
-                    Log.w(TAG, "⚠️ [SAMSUNG MOCK] Nenhum dado EXTRA_TEXT encontrado")
+                    WalletLogger.w(TAG, "⚠️ [SAMSUNG MOCK] Nenhum dado EXTRA_TEXT encontrado")
                 }
             } else {
-                Log.d(TAG, "🔍 [SAMSUNG MOCK] Intent não relacionada ao Samsung Pay")
+                WalletLogger.d(TAG, "🔍 [SAMSUNG MOCK] Intent não relacionada ao Samsung Pay")
             }
         }
         
@@ -118,7 +118,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
          */
         private fun isSamsungPayIntent(intent: android.content.Intent): Boolean {
             val action = intent.action
-            Log.d(TAG, "🔍 [SAMSUNG] Verificando intent - Action: $action")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG] Verificando intent - Action: $action")
             
             // Verificar action
             val isValidAction = action != null && (
@@ -134,7 +134,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         @JvmStatic
         fun isValidCallingPackage(activity: android.app.Activity): Boolean {
             val callingPackage = activity.callingPackage
-            Log.d(TAG, "🔍 [SAMSUNG MOCK] Chamador: $callingPackage")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG MOCK] Chamador: $callingPackage")
             
             return callingPackage != null && (
                 callingPackage == SAMSUNG_PAY_PACKAGE ||
@@ -147,15 +147,15 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             try {
                 val buildConfigUrl = BuildConfig.SAMSUNG_WALLET_MOCK_API_URL
                 if (buildConfigUrl.isNotEmpty()) {
-                    Log.d(TAG, "🌐 [MOCK] Usando API URL do BuildConfig: $buildConfigUrl")
+                    WalletLogger.d(TAG, "🌐 [MOCK] Usando API URL do BuildConfig: $buildConfigUrl")
                     return@lazy buildConfigUrl
                 }
                 
                 // Se não configurado, usar DEFAULT_API_BASE_URL
-                Log.d(TAG, "🌐 [MOCK] API URL não configurada, usando DEFAULT: $DEFAULT_API_BASE_URL")
+                WalletLogger.d(TAG, "🌐 [MOCK] API URL não configurada, usando DEFAULT: $DEFAULT_API_BASE_URL")
                 DEFAULT_API_BASE_URL
             } catch (e: Exception) {
-                Log.w(TAG, "⚠️ [MOCK] Erro ao obter URL da API: ${e.message}")
+                WalletLogger.w(TAG, "⚠️ [MOCK] Erro ao obter URL da API: ${e.message}")
                 DEFAULT_API_BASE_URL
             }
         }
@@ -178,7 +178,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             var connection: HttpURLConnection? = null
             try {
                 val urlString = "$apiUrl$endpoint"
-                Log.d(TAG, "🌐 [API][REQUEST] ➜ $method $urlString")
+                WalletLogger.d(TAG, "🌐 [API][REQUEST] ➜ $method $urlString")
                 
                 val startAtMs = System.currentTimeMillis()
                 val url = URL(urlString)
@@ -202,7 +202,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 
                 val responseCode = connection.responseCode
                 val tookMs = System.currentTimeMillis() - startAtMs
-                Log.d(TAG, "🌐 [API][RESPONSE] ⇦ code=$responseCode (${tookMs}ms)")
+                WalletLogger.d(TAG, "🌐 [API][RESPONSE] ⇦ code=$responseCode (${tookMs}ms)")
                 
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     val inputStream = connection.inputStream
@@ -218,7 +218,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                     
                     val raw = response.toString()
                     val jsonResponse = JSONObject(raw)
-                    Log.d(TAG, "✅ [API] Dados obtidos com sucesso da API local")
+                    WalletLogger.d(TAG, "✅ [API] Dados obtidos com sucesso da API local")
                     
                     withContext(Dispatchers.Main) {
                         onSuccess(jsonResponse)
@@ -228,8 +228,8 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 }
                 
             } catch (e: Exception) {
-                Log.w(TAG, "❌ [API] Erro ao buscar dados da API local: ${e::class.java.simpleName}: ${e.message}")
-                Log.d(TAG, "🔄 [API] Usando valor padrão como fallback")
+                WalletLogger.w(TAG, "❌ [API] Erro ao buscar dados da API local: ${e::class.java.simpleName}: ${e.message}")
+                WalletLogger.d(TAG, "🔄 [API] Usando valor padrão como fallback")
                 
                 withContext(Dispatchers.Main) {
                     onError(e)
@@ -269,7 +269,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                     }
                     promise.resolve(result)
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
+                    WalletLogger.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
                     promise.resolve(defaultResponse())
                 }
             },
@@ -328,16 +328,16 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     }
 
     override fun init(serviceId: String, promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] init chamado com serviceId: $serviceId")
+        WalletLogger.d(TAG, "🔍 [MOCK] init chamado com serviceId: $serviceId")
         
         // Simular a criação do PartnerInfo com Bundle (como na implementação real)
         try {
             val bundle = android.os.Bundle()
             bundle.putString("PartnerServiceType", "INAPP_PAYMENT")
             bundle.putString("EXTRA_ISSUER_NAME", "Builders Wallet")
-            Log.d(TAG, "✅ [MOCK] PartnerInfo simulado com Bundle configurado (INAPP_PAYMENT + EXTRA_ISSUER_NAME)")
+            WalletLogger.d(TAG, "✅ [MOCK] PartnerInfo simulado com Bundle configurado (INAPP_PAYMENT + EXTRA_ISSUER_NAME)")
         } catch (e: Exception) {
-            Log.w(TAG, "⚠️ [MOCK] Erro ao simular PartnerInfo: ${e.message}")
+            WalletLogger.w(TAG, "⚠️ [MOCK] Erro ao simular PartnerInfo: ${e.message}")
         }
         
         fetchFromLocalAPI(
@@ -347,7 +347,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 try {
                     promise.resolve(json.optBoolean("success", true))
                 } catch (e: Exception) {
-                    Log.w(TAG, "⚠️ [MOCK] Erro ao processar init, usando fallback: ${e.message}")
+                    WalletLogger.w(TAG, "⚠️ [MOCK] Erro ao processar init, usando fallback: ${e.message}")
                     promise.resolve(true)
                 }
             },
@@ -360,7 +360,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     }
 
     override fun getSamsungPayStatus(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] getSamsungPayStatus chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] getSamsungPayStatus chamado")
         fetchFromLocalAPI(
             endpoint = "/samsung/status",
             defaultResponse = { 1 }, // SPAY_READY
@@ -368,7 +368,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 try {
                     promise.resolve(json.optInt("status", 1))
                 } catch (e: Exception) {
-                    Log.w(TAG, "⚠️ [MOCK] Erro ao processar status, usando fallback: ${e.message}")
+                    WalletLogger.w(TAG, "⚠️ [MOCK] Erro ao processar status, usando fallback: ${e.message}")
                     promise.resolve(1)
                 }
             },
@@ -379,19 +379,19 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     }
 
     override fun goToUpdatePage() {
-        Log.d(TAG, "🔍 [MOCK] goToUpdatePage chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] goToUpdatePage chamado")
         // Simular abertura da página de atualização
-        Log.d(TAG, "✅ [MOCK] Página de atualização simulada")
+        WalletLogger.d(TAG, "✅ [MOCK] Página de atualização simulada")
     }
 
     override fun activateSamsungPay() {
-        Log.d(TAG, "🔍 [MOCK] activateSamsungPay chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] activateSamsungPay chamado")
         // Simular ativação do Samsung Pay
-        Log.d(TAG, "✅ [MOCK] Samsung Pay ativado (simulado)")
+        WalletLogger.d(TAG, "✅ [MOCK] Samsung Pay ativado (simulado)")
     }
 
     override fun getAllCards(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] getAllCards chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] getAllCards chamado")
         
         val defaultArray = {
             val writableArray = Arguments.createArray()
@@ -459,7 +459,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             
             writableArray.pushMap(card2)
             
-            Log.d(TAG, "✅ [MOCK] Lista de cartões obtida (valor padrão) - ${writableArray.size()} cartões")
+            WalletLogger.d(TAG, "✅ [MOCK] Lista de cartões obtida (valor padrão) - ${writableArray.size()} cartões")
             writableArray
         }
 
@@ -523,10 +523,10 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                         }
                     }
                     
-                    Log.d(TAG, "✅ [API] Lista de cartões obtida da API - ${writableArray.size()} cartões")
+                    WalletLogger.d(TAG, "✅ [API] Lista de cartões obtida da API - ${writableArray.size()} cartões")
                     promise.resolve(writableArray)
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
+                    WalletLogger.e(TAG, "❌ [API] Erro ao processar resposta da API: ${e.message}")
                     promise.resolve(defaultArray())
                 }
             },
@@ -537,7 +537,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     }
 
     override fun getWalletInfo(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] getWalletInfo chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] getWalletInfo chamado")
         fetchFromAPIWithPromise(
             endpoint = "/samsung/wallet-info",
             defaultResponse = {
@@ -545,7 +545,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 result.putString("walletDMId", "mock_wallet_dm_12345")
                 result.putString("deviceId", "mock_device_67890")
                 result.putString("walletUserId", "mock_user_54321")
-                Log.d(TAG, "✅ [MOCK] Informações da carteira obtidas (valor padrão)")
+                WalletLogger.d(TAG, "✅ [MOCK] Informações da carteira obtidas (valor padrão)")
                 result
             },
             promise = promise
@@ -559,8 +559,8 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         cardType: String,
         promise: Promise
     ) {
-        Log.d(TAG, "🔍 [MOCK] addCard chamado - Provider: $tokenizationProvider, IssuerId: $issuerId, CardType: $cardType")
-        Log.d(TAG, "🔍 [MOCK] Payload length: ${payload.length}")
+        WalletLogger.d(TAG, "🔍 [MOCK] addCard chamado - Provider: $tokenizationProvider, IssuerId: $issuerId, CardType: $cardType")
+        WalletLogger.d(TAG, "🔍 [MOCK] Payload length: ${payload.length}")
         
         val bodyJson = JSONObject().apply {
             put("payload", payload)
@@ -603,7 +603,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 card.putString("network", tokenizationProvider)
                 card.putString("displayName", "Cartão Adicionado")
                 
-                Log.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso (simulado)")
+                WalletLogger.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso (simulado)")
                 card
             },
             onSuccess = { json ->
@@ -611,7 +611,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                     if (json.has("error")) {
                         val errorCode = json.getString("errorCode") ?: "ADD_CARD_ERROR"
                         val errorMessage = json.getString("error") ?: "Erro ao adicionar cartão"
-                        Log.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
+                        WalletLogger.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
                         promise.reject(errorCode, errorMessage)
                     } else {
                         val card = Arguments.createMap()
@@ -659,11 +659,11 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                             card.putString("cardStatus", status)
                         }
                         
-                        Log.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso da API")
+                        WalletLogger.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso da API")
                         promise.resolve(card)
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
+                    WalletLogger.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
                     val card = Arguments.createMap()
                     
                     // Campos básicos do Card
@@ -729,7 +729,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 card.putString("network", tokenizationProvider)
                 card.putString("displayName", "Cartão Adicionado")
                 
-                Log.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso (fallback)")
+                WalletLogger.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso (fallback)")
                 promise.resolve(card)
             },
             method = "POST",
@@ -738,17 +738,17 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     }
 
     override fun checkWalletAvailability(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
         fetchFromLocalAPI(
             endpoint = "/samsung/availability",
             defaultResponse = { true }, // Por padrão, Samsung Pay está disponível no mock
             onSuccess = { json ->
                 try {
                     val isAvailable = json.optBoolean("available", true)
-                    Log.d(TAG, "✅ [MOCK] Disponibilidade: $isAvailable")
+                    WalletLogger.d(TAG, "✅ [MOCK] Disponibilidade: $isAvailable")
                     promise.resolve(isAvailable)
                 } catch (e: Exception) {
-                    Log.w(TAG, "⚠️ [MOCK] Erro ao processar disponibilidade, usando fallback: ${e.message}")
+                    WalletLogger.w(TAG, "⚠️ [MOCK] Erro ao processar disponibilidade, usando fallback: ${e.message}")
                     promise.resolve(true)
                 }
             },
@@ -762,9 +762,9 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
      * Processa dados específicos da Samsung Wallet
      */
     private fun processSamsungWalletIntentData(data: String, action: String, callingPackage: String) {
-        Log.d(TAG, "🔍 [SAMSUNG] processSamsungWalletIntentData chamado")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] processSamsungWalletIntentData chamado")
         try {
-            Log.d(TAG, "✅ [SAMSUNG] Processando dados Samsung Wallet: ${data.length} caracteres")
+            WalletLogger.d(TAG, "✅ [SAMSUNG] Processando dados Samsung Wallet: ${data.length} caracteres")
 
             // Determinar o tipo de intent baseado na action
             val intentType = if (action.endsWith(".action.LAUNCH_A2A_IDV")) {
@@ -776,7 +776,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             // Processar dados específicos (Mastercard/Visa)
             val processedData = processSamsungWalletData(data)
 
-            Log.d(TAG, "🔍 [SAMSUNG] Dados processados - CardType: ${processedData["cardType"]}, Format: ${processedData["dataFormat"]}")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados processados - CardType: ${processedData["cardType"]}, Format: ${processedData["dataFormat"]}")
 
             // Decodificar dados de base64 para string normal
             var decodedData = data
@@ -787,10 +787,10 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
                 decodedData = String(decodedBytes, Charsets.UTF_8)
                 dataFormat = "base64_decoded"
-                Log.d(TAG, "🔍 [SAMSUNG] Dados decodificados com sucesso: ${decodedData.length} caracteres")
+                WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados decodificados com sucesso: ${decodedData.length} caracteres")
             } catch (e: Exception) {
                 // Se falhar ao decodificar, usar dados originais
-                Log.w(TAG, "⚠️ [SAMSUNG] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
+                WalletLogger.w(TAG, "⚠️ [SAMSUNG] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
                 dataFormat = "raw"
             }
 
@@ -804,15 +804,15 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             // Adicionar dados originais em base64 para referência
             eventData.putString("originalData", data)
 
-            Log.d(TAG, "🔍 [SAMSUNG] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
 
             // Enviar evento para React Native
             sendEventToReactNative("SamsungWalletIntentReceived", eventData)
 
-            Log.d(TAG, "✅ [SAMSUNG] Dados Samsung Wallet processados com sucesso")
+            WalletLogger.d(TAG, "✅ [SAMSUNG] Dados Samsung Wallet processados com sucesso")
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
         }
     }
 
@@ -823,7 +823,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         val result = mutableMapOf<String, Any>()
         
         try {
-            Log.d(TAG, "🔍 [SAMSUNG] Processando dados Samsung Wallet: ${data.length} caracteres")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG] Processando dados Samsung Wallet: ${data.length} caracteres")
             
             // Tentar decodificar como base64 primeiro (Mastercard)
             var decodedData = data
@@ -834,9 +834,9 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
                 decodedData = String(decodedBytes, Charsets.UTF_8)
                 dataFormat = "base64_decoded"
-                Log.d(TAG, "🔍 [SAMSUNG] Dados decodificados como base64: ${decodedData.length} caracteres")
+                WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados decodificados como base64: ${decodedData.length} caracteres")
             } catch (e: Exception) {
-                Log.d(TAG, "🔍 [SAMSUNG] Dados não são base64, usando formato original")
+                WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados não são base64, usando formato original")
                 dataFormat = "raw"
             }
             
@@ -852,7 +852,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                     jsonData.has("paymentAppInstanceId") || 
                     jsonData.has("tokenUniqueReference")) {
                     cardType = "MASTERCARD"
-                    Log.d(TAG, "✅ [SAMSUNG] Detectado Mastercard")
+                    WalletLogger.d(TAG, "✅ [SAMSUNG] Detectado Mastercard")
                     
                     // Extrair campos específicos do Mastercard
                     if (jsonData.has("paymentAppProviderId")) {
@@ -876,7 +876,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                         jsonData.has("trId") || 
                         jsonData.has("tokenReferenceId")) {
                     cardType = "VISA"
-                    Log.d(TAG, "✅ [SAMSUNG] Detectado Visa")
+                    WalletLogger.d(TAG, "✅ [SAMSUNG] Detectado Visa")
                     
                     // Extrair campos específicos do Visa
                     if (jsonData.has("panId")) {
@@ -900,7 +900,7 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 }
                 // Se não conseguir identificar, tentar campos genéricos
                 else {
-                    Log.d(TAG, "🔍 [SAMSUNG] Tipo de cartão não identificado, usando campos genéricos")
+                    WalletLogger.d(TAG, "🔍 [SAMSUNG] Tipo de cartão não identificado, usando campos genéricos")
                     
                     // Adicionar todos os campos disponíveis
                     val keys = jsonData.keys()
@@ -911,17 +911,17 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                     }
                 }
                 
-                Log.d(TAG, "✅ [SAMSUNG] Dados JSON processados com sucesso")
+                WalletLogger.d(TAG, "✅ [SAMSUNG] Dados JSON processados com sucesso")
                 
             } catch (e: Exception) {
-                Log.w(TAG, "⚠️ [SAMSUNG] Dados não são JSON válido: ${e.message}")
+                WalletLogger.w(TAG, "⚠️ [SAMSUNG] Dados não são JSON válido: ${e.message}")
                 cardType = "ENCRYPTED_OR_BINARY"
             }
             
             result["cardType"] = cardType
             
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
             result["error"] = e.message ?: "Erro desconhecido"
             result["cardType"] = "ERROR"
         }
@@ -931,24 +931,24 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
 
     private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
-            Log.d(TAG, "🔍 [SAMSUNG] Enviando evento para React Native: $eventName")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG] Enviando evento para React Native: $eventName")
             reactContext
                 .getJSModule(com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
                 .emit(eventName, eventData)
-            Log.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
+            WalletLogger.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento para React Native: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento para React Native: ${e.message}", e)
         }
     }
 
     private fun checkPendingDataFromMainActivity() {
-        Log.d(TAG, "🔍 [SAMSUNG] Verificando dados pendentes...")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] Verificando dados pendentes...")
         try {
             // Verificar se há dados pendentes
             val hasData = hasPendingData()
             
             if (hasData) {
-                Log.d(TAG, "✅ [SAMSUNG] Dados pendentes encontrados")
+                WalletLogger.d(TAG, "✅ [SAMSUNG] Dados pendentes encontrados")
                 
                 // Obter os dados pendentes sem limpar
                 val data = getPendingIntentDataWithoutClearing()
@@ -956,17 +956,17 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                 val callingPackage = getPendingCallingPackage()
                 
                 if (data != null && data.isNotEmpty()) {
-                    Log.d(TAG, "📋 [SAMSUNG] Processando dados pendentes: ${data.length} caracteres")
-                    Log.d(TAG, "📋 [SAMSUNG] Action: $action, CallingPackage: $callingPackage")
+                    WalletLogger.d(TAG, "📋 [SAMSUNG] Processando dados pendentes: ${data.length} caracteres")
+                    WalletLogger.d(TAG, "📋 [SAMSUNG] Action: $action, CallingPackage: $callingPackage")
                     
                     // Verificar se action e callingPackage estão disponíveis
                     if (action == null) {
-                        Log.e(TAG, "❌ [SAMSUNG] Action é null - não é possível processar intent")
+                        WalletLogger.e(TAG, "❌ [SAMSUNG] Action é null - não é possível processar intent")
                         return
                     }
                     
                     if (callingPackage == null) {
-                        Log.e(TAG, "❌ [SAMSUNG] CallingPackage é null - não é possível processar intent")
+                        WalletLogger.e(TAG, "❌ [SAMSUNG] CallingPackage é null - não é possível processar intent")
                         return
                     }
                     
@@ -976,18 +976,18 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
                     // Limpar dados após processamento bem-sucedido
                     clearPendingData()
                 } else {
-                    Log.w(TAG, "⚠️ [SAMSUNG] Dados pendentes são null ou vazios")
+                    WalletLogger.w(TAG, "⚠️ [SAMSUNG] Dados pendentes são null ou vazios")
                 }
             } else {
-                Log.d(TAG, "🔍 [SAMSUNG] Nenhum dado pendente")
+                WalletLogger.d(TAG, "🔍 [SAMSUNG] Nenhum dado pendente")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [SAMSUNG] Erro ao verificar dados pendentes: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao verificar dados pendentes: ${e.message}", e)
         }
     }
 
     override fun setIntentListener(promise: Promise) {
-        Log.d(TAG, "🔍 [SAMSUNG] setIntentListener chamado")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] setIntentListener chamado")
         try {
             intentListenerActive = true
             checkPendingDataFromMainActivity()
@@ -997,35 +997,35 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
+            WalletLogger.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
             promise.reject("SET_INTENT_LISTENER_ERROR", e.message, e)
         }
     }
 
     override fun removeIntentListener(promise: Promise) {
-        Log.d(TAG, "🔍 [SAMSUNG] removeIntentListener chamado")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] removeIntentListener chamado")
         try {
             intentListenerActive = false
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "REMOVE_INTENT_LISTENER_ERROR: ${e.message}", e)
+            WalletLogger.e(TAG, "REMOVE_INTENT_LISTENER_ERROR: ${e.message}", e)
             promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
         }
     }
 
     override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
-        Log.d(TAG, "🔍 [SAMSUNG] setActivationResult chamado - Status: $status")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] setActivationResult chamado - Status: $status")
         try {
             activity = reactContext.currentActivity
             if (activity == null) {
-                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
+                WalletLogger.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
 
             val validStatuses = listOf("accepted", "declined", "failure", "appNotReady")
             if (!validStatuses.contains(status)) {
-                Log.w(TAG, "INVALID_STATUS: Status deve ser: accepted, declined, failure ou appNotReady")
+                WalletLogger.w(TAG, "INVALID_STATUS: Status deve ser: accepted, declined, failure ou appNotReady")
                 promise.reject("INVALID_STATUS", "Status deve ser: accepted, declined, failure ou appNotReady")
                 return
             }
@@ -1040,31 +1040,31 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             activity?.setResult(android.app.Activity.RESULT_OK, resultIntent)
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "SET_ACTIVATION_RESULT_ERROR: ${e.message}", e)
+            WalletLogger.e(TAG, "SET_ACTIVATION_RESULT_ERROR: ${e.message}", e)
             promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
         }
     }
 
     override fun finishActivity(promise: Promise) {
-        Log.d(TAG, "🔍 [SAMSUNG] finishActivity chamado")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] finishActivity chamado")
         try {
             activity = reactContext.currentActivity
             if (activity == null) {
-                Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
+                WalletLogger.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
                 promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
                 return
             }
             activity?.finish()
             promise.resolve(true)
         } catch (e: Exception) {
-            Log.e(TAG, "FINISH_ACTIVITY_ERROR: ${e.message}", e)
+            WalletLogger.e(TAG, "FINISH_ACTIVITY_ERROR: ${e.message}", e)
             promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
         }
     }
 
 
     override fun getConstants(): MutableMap<String, Any> {
-        Log.d(TAG, "🔍 [MOCK] getConstants chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] getConstants chamado")
         
         val constants = hashMapOf<String, Any>()
         
@@ -1161,15 +1161,15 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         constants["ERROR_SPAY_FMM_LOCK"] = -604
         constants["ERROR_SPAY_CONNECTED_WITH_EXTERNAL_DISPLAY"] = -605
         
-        Log.d(TAG, "✅ [MOCK] Constantes obtidas (baseadas na classe Card)")
+        WalletLogger.d(TAG, "✅ [MOCK] Constantes obtidas (baseadas na classe Card)")
         return constants
     }
 
     override fun openWallet(promise: Promise) {
-        Log.d(TAG, "🔍 [MOCK] openWallet chamado")
+        WalletLogger.d(TAG, "🔍 [MOCK] openWallet chamado")
         try {
             if (walletOpener == null) {
-                Log.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
+                WalletLogger.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
                 promise.reject("WALLET_OPENER_NOT_AVAILABLE", "WalletOpener não foi inicializado")
                 return
             }
@@ -1182,25 +1182,49 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
             
             if (success) {
-                Log.d(TAG, "✅ [MOCK] Wallet aberto com sucesso")
+                WalletLogger.d(TAG, "✅ [MOCK] Wallet aberto com sucesso")
                 promise.resolve(true)
             } else {
-                Log.w(TAG, "❌ [MOCK] Falha ao abrir wallet")
+                WalletLogger.w(TAG, "❌ [MOCK] Falha ao abrir wallet")
                 promise.reject("OPEN_WALLET_ERROR", "Falha ao abrir Samsung Pay")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
+            WalletLogger.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
             promise.reject("OPEN_WALLET_ERROR", e.message, e)
         }
     }
 
     override fun sendNoIntentReceivedEvent() {
-        Log.d(TAG, "🔍 [SAMSUNG] sendNoIntentReceivedEvent chamado")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] sendNoIntentReceivedEvent chamado")
         try {
             sendEventToReactNative("SamsungWalletNoIntentReceived", null)
-            Log.d(TAG, "✅ [SAMSUNG] Evento de nenhuma intent enviado com sucesso")
+            WalletLogger.d(TAG, "✅ [SAMSUNG] Evento de nenhuma intent enviado com sucesso")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+            WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+        }
+    }
+
+    override fun setLogListener(promise: Promise) {
+        WalletLogger.d(TAG, "🔍 [MOCK] setLogListener chamado")
+        try {
+            WalletLogger.setLogListener(true)
+            WalletLogger.d(TAG, "✅ [MOCK] Listener de log ativado")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            WalletLogger.e(TAG, "❌ [MOCK] Erro ao ativar listener de log: ${e.message}", e)
+            promise.reject("SET_LOG_LISTENER_ERROR", e.message, e)
+        }
+    }
+
+    override fun removeLogListener(promise: Promise) {
+        WalletLogger.d(TAG, "🔍 [MOCK] removeLogListener chamado")
+        try {
+            WalletLogger.setLogListener(false)
+            WalletLogger.d(TAG, "✅ [MOCK] Listener de log desativado")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            WalletLogger.e(TAG, "❌ [MOCK] Erro ao desativar listener de log: ${e.message}", e)
+            promise.reject("REMOVE_LOG_LISTENER_ERROR", e.message, e)
         }
     }
 }

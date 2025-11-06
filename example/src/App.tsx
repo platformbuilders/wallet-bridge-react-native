@@ -13,8 +13,12 @@ import {
 import {
   GoogleWalletEventEmitter,
   SamsungWalletEventEmitter,
+  GoogleWalletModule,
+  SamsungWalletModule,
   type GoogleWalletIntentEvent,
   type SamsungWalletIntentEvent,
+  type GoogleWalletLogEvent,
+  type SamsungWalletLogEvent,
 } from '@platformbuilders/wallet-bridge-react-native';
 
 export default function App(): React.JSX.Element {
@@ -88,6 +92,36 @@ export default function App(): React.JSX.Element {
   // Configurar listeners para ambas as wallets
   useEffect(() => {
     console.log('🔍 [App] Configurando listeners das wallets...');
+
+    // Ativar listeners de log para Google Wallet
+    GoogleWalletModule.setLogListener().catch((error) => {
+      console.log('❌ [App] Erro ao ativar log listener do Google:', error.message);
+    });
+
+    // Ativar listeners de log para Samsung Wallet
+    SamsungWalletModule.setLogListener().catch((error) => {
+      console.log('❌ [App] Erro ao ativar log listener do Samsung:', error.message);
+    });
+
+    // Listener para logs do Google Wallet
+    const removeGoogleLogListener = googleEventEmitter.addLogListener(
+      (logEvent: GoogleWalletLogEvent) => {
+        console.log(
+          `[${logEvent.level}] ${logEvent.tag}: ${logEvent.message}`,
+          logEvent.error ? `\nErro: ${logEvent.error}` : '',
+        );
+      }
+    );
+
+    // Listener para logs do Samsung Wallet
+    const removeSamsungLogListener = samsungEventEmitter.addLogListener(
+      (logEvent: SamsungWalletLogEvent) => {
+        console.log(
+          `[${logEvent.level}] ${logEvent.tag}: ${logEvent.message}`,
+          logEvent.error ? `\nErro: ${logEvent.error}` : '',
+        );
+      }
+    );
 
     // Listener para Google Wallet
     const removeGoogleListener = googleEventEmitter.addIntentListener(
@@ -174,6 +208,23 @@ export default function App(): React.JSX.Element {
       removeSamsungListener();
       removeGoogleNoIntentListener();
       removeSamsungNoIntentListener();
+      removeGoogleLogListener();
+      removeSamsungLogListener();
+
+      // Remover listeners de log
+      GoogleWalletModule.removeLogListener().catch((error) => {
+        console.log(
+          '❌ [App] Erro ao remover log listener do Google:',
+          error.message
+        );
+      });
+
+      SamsungWalletModule.removeLogListener().catch((error) => {
+        console.log(
+          '❌ [App] Erro ao remover log listener do Samsung:',
+          error.message
+        );
+      });
     };
   }, []); // Executar apenas uma vez na montagem
 

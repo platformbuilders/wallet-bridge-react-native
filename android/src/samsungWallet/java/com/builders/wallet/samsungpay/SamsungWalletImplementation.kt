@@ -1,7 +1,7 @@
 package com.builders.wallet.samsungpay
 
 import android.os.Bundle
-import android.util.Log
+import com.builders.wallet.WalletLogger
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
@@ -42,8 +42,8 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
   // https://developer.samsung.com/pay/native/common-api.html
   override fun init(serviceId: String, promise: Promise) {
-    Log.i(TAG, "--")
-    Log.i(TAG, "> Init started")
+    WalletLogger.i(TAG, "--")
+    WalletLogger.i(TAG, "> Init started")
 
     try {
       val bundle = Bundle()
@@ -54,10 +54,10 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       samsungPay = SamsungPay(reactContext, partnerInfo)
       cardManager = CardManager(reactContext, partnerInfo)
 
-      Log.i(TAG, "- $TAG initialized")
+      WalletLogger.i(TAG, "- $TAG initialized")
       promise.resolve(true)
     } catch (e: Exception) {
-      Log.e(TAG, "INIT_ERROR: ${e.message}", e)
+      WalletLogger.e(TAG, "INIT_ERROR: ${e.message}", e)
       promise.reject("INIT_ERROR", e.message, e)
     }
   }
@@ -65,11 +65,11 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   // https://developer.samsung.com/pay/native/common-api.html
   // https://developer.samsung.com/pay/api-reference/com/samsung/android/sdk/samsungpay/v2/SamsungPay.html#getSamsungPayStatus(com.samsung.android.sdk.samsungpay.v2.StatusListener)
   override fun getSamsungPayStatus(promise: Promise) {
-    Log.i(TAG, "--")
-    Log.i(TAG, "> getSamsungPayStatus started")
+    WalletLogger.i(TAG, "--")
+    WalletLogger.i(TAG, "> getSamsungPayStatus started")
 
     if (samsungPay == null) {
-      Log.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
+      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
       promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
       return
     }
@@ -77,7 +77,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     // Código LIMPO!
     val listener = object : StatusListener {
       override fun onSuccess(status: Int, bundle: Bundle) {
-        Log.d(TAG, "onSuccess callback is called, status=$status, bundle:$bundle")
+        WalletLogger.d(TAG, "onSuccess callback is called, status=$status, bundle:$bundle")
 
         val extraErrorReason = bundle.getInt(SpaySdk.EXTRA_ERROR_REASON, SpaySdk.ERROR_NONE)
         val statusName = when (status) {
@@ -90,10 +90,10 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
           else -> "UNKNOWN_STATUS_$status"
         }
 
-        Log.i(TAG, "- Samsung Pay Status: $statusName ($status)")
+        WalletLogger.i(TAG, "- Samsung Pay Status: $statusName ($status)")
 
         if (status == SpaySdk.SPAY_READY) {
-          Log.i(TAG, "- Samsung Pay está pronto para uso")
+          WalletLogger.i(TAG, "- Samsung Pay está pronto para uso")
           promise.resolve(status)
         } else {
           // Priorizar EXTRA_ERROR_REASON se disponível (mais específico)
@@ -110,13 +110,13 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
           }
           val formattedErrorMessage = "$errorMessage ($errorCodeName) - result_code:$errorCode"
 
-          Log.w(TAG, "SAMSUNG_PAY_NOT_READY: $formattedErrorMessage")
+          WalletLogger.w(TAG, "SAMSUNG_PAY_NOT_READY: $formattedErrorMessage")
           promise.reject("SAMSUNG_PAY_NOT_READY", formattedErrorMessage)
         }
       }
 
       override fun onFail(errorCode: Int, bundle: Bundle) {
-        Log.d(TAG, "onFail callback is called, errorCode=$errorCode, bundle:$bundle")
+        WalletLogger.d(TAG, "onFail callback is called, errorCode=$errorCode, bundle:$bundle")
 
         val extraErrorReason = bundle.getInt(SpaySdk.EXTRA_ERROR_REASON, SpaySdk.ERROR_NONE)
         val actualErrorCode = if (extraErrorReason != SpaySdk.ERROR_NONE) extraErrorReason else errorCode
@@ -124,7 +124,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
         val errorMessage = ErrorCode.getErrorMessage(actualErrorCode)
         val formattedErrorMessage = "$errorMessage ($errorCodeName) - result_code:$actualErrorCode"
 
-        Log.e(TAG, "SAMSUNG_PAY_STATUS_ERROR: $formattedErrorMessage")
+        WalletLogger.e(TAG, "SAMSUNG_PAY_STATUS_ERROR: $formattedErrorMessage")
         promise.reject("SAMSUNG_PAY_STATUS_ERROR", formattedErrorMessage)
       }
     }
@@ -134,26 +134,26 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
   // https://developer.samsung.com/pay/api-reference/com/samsung/android/sdk/samsungpay/v2/SamsungPay.html#goToUpdatePage()
   override fun goToUpdatePage() {
-    Log.i(TAG, "--")
-    Log.i(TAG, "> goToUpdatePage started")
+    WalletLogger.i(TAG, "--")
+    WalletLogger.i(TAG, "> goToUpdatePage started")
     samsungPay?.goToUpdatePage()
   }
 
   // https://developer.samsung.com/pay/api-reference/com/samsung/android/sdk/samsungpay/v2/SamsungPay.html#activateSamsungPay()
   override fun activateSamsungPay() {
-    Log.i(TAG, "--")
-    Log.i(TAG, "> activateSamsungPay started")
+    WalletLogger.i(TAG, "--")
+    WalletLogger.i(TAG, "> activateSamsungPay started")
     samsungPay?.activateSamsungPay()
   }
 
   // https://developer.samsung.com/pay/native/apptoapp.html
   // https://developer.samsung.com/pay/api-reference/com/samsung/android/sdk/samsungpay/v2/card/CardManager.html#getAllCards(android.os.Bundle,com.samsung.android.sdk.samsungpay.v2.card.GetCardListener)
   override fun getAllCards(promise: Promise) {
-    Log.i(TAG, "--")
-    Log.i(TAG, "> getAllCards started")
+    WalletLogger.i(TAG, "--")
+    WalletLogger.i(TAG, "> getAllCards started")
 
     if (cardManager == null) {
-      Log.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
+      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
       promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
       return
     }
@@ -161,21 +161,21 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     // Código LIMPO!
     val listener = object : GetCardListener {
       override fun onSuccess(cardList: List<Card>) {
-        Log.d(TAG, "onSuccess callback is called, list.size= ${cardList.size}")
+        WalletLogger.d(TAG, "onSuccess callback is called, list.size= ${cardList.size}")
         val result = cardList.map { it.toSerializable() }
-        Log.i(TAG, "- cards - $result")
+        WalletLogger.i(TAG, "- cards - $result")
         promise.resolve(result)
       }
 
       override fun onFail(errorCode: Int, errorData: Bundle) {
-        Log.d(TAG, "onFail callback is called, errorCode:$errorCode")
+        WalletLogger.d(TAG, "onFail callback is called, errorCode:$errorCode")
         val extraErrorReason = errorData.getInt(SpaySdk.EXTRA_ERROR_REASON, SpaySdk.ERROR_NONE)
         val actualErrorCode = if (extraErrorReason != SpaySdk.ERROR_NONE) extraErrorReason else errorCode
         val errorCodeName = ErrorCode.getErrorCodeName(actualErrorCode)
         val errorMessage = ErrorCode.getErrorMessage(actualErrorCode)
         val formattedErrorMessage = "$errorMessage ($errorCodeName) - result_code:$actualErrorCode"
 
-        Log.e(TAG, "GET_ALL_CARDS_ERROR: $formattedErrorMessage")
+        WalletLogger.e(TAG, "GET_ALL_CARDS_ERROR: $formattedErrorMessage")
         promise.reject("GET_ALL_CARDS_ERROR", formattedErrorMessage)
       }
     }
@@ -185,11 +185,11 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
   // https://developer.samsung.com/pay/api-reference/com/samsung/android/sdk/samsungpay/v2/SamsungPay.html#getWalletInfo(java.util.List,com.samsung.android.sdk.samsungpay.v2.StatusListener)
   override fun getWalletInfo(promise: Promise) {
-    Log.i(TAG, "--")
-    Log.i(TAG, "> getWalletInfo started")
+    WalletLogger.i(TAG, "--")
+    WalletLogger.i(TAG, "> getWalletInfo started")
 
     if (samsungPay == null) {
-      Log.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
+      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
       promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
       return
     }
@@ -201,38 +201,38 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       SpaySdk.WALLET_DM_ID
     )
 
-    Log.d(TAG, "Chaves solicitadas para getWalletInfo: $keys")
+    WalletLogger.d(TAG, "Chaves solicitadas para getWalletInfo: $keys")
 
     val listener = object : StatusListener {
       override fun onSuccess(status: Int, walletData: Bundle) {
-        Log.d(TAG, "onSuccess callback is called, status=$status, walletData=$walletData")
+        WalletLogger.d(TAG, "onSuccess callback is called, status=$status, walletData=$walletData")
 
         val deviceId = walletData.getString(SpaySdk.DEVICE_ID)
         val walletUserId = walletData.getString(SpaySdk.WALLET_USER_ID)
         val walletDmId = walletData.getString(SpaySdk.WALLET_DM_ID)
 
-        Log.d(TAG, "Device ID: $deviceId")
-        Log.d(TAG, "Wallet User ID: $walletUserId")
-        Log.d(TAG, "Wallet DM ID: $walletDmId")
+        WalletLogger.d(TAG, "Device ID: $deviceId")
+        WalletLogger.d(TAG, "Wallet User ID: $walletUserId")
+        WalletLogger.d(TAG, "Wallet DM ID: $walletDmId")
 
         val result: WritableMap = Arguments.createMap().apply {
           putString("walletDMId", walletDmId)
           putString("deviceId", deviceId)
           putString("walletUserId", walletUserId)
         }
-        Log.i(TAG, "- Wallet Info obtido com sucesso: $result")
+        WalletLogger.i(TAG, "- Wallet Info obtido com sucesso: $result")
         promise.resolve(result)
       }
 
       override fun onFail(errorCode: Int, errorData: Bundle) {
-        Log.d(TAG, "onFail callback is called, errorCode=$errorCode, errorData=$errorData")
+        WalletLogger.d(TAG, "onFail callback is called, errorCode=$errorCode, errorData=$errorData")
         val extraErrorReason = errorData.getInt(SpaySdk.EXTRA_ERROR_REASON, SpaySdk.ERROR_NONE)
         val actualErrorCode = if (extraErrorReason != SpaySdk.ERROR_NONE) extraErrorReason else errorCode
         val errorCodeName = ErrorCode.getErrorCodeName(actualErrorCode)
         val errorMessage = ErrorCode.getErrorMessage(actualErrorCode)
         val formattedErrorMessage = "$errorMessage ($errorCodeName) - result_code:$actualErrorCode"
 
-        Log.e(TAG, "GET_WALLET_INFO_ERROR: $formattedErrorMessage")
+        WalletLogger.e(TAG, "GET_WALLET_INFO_ERROR: $formattedErrorMessage")
         promise.reject("GET_WALLET_INFO_ERROR", formattedErrorMessage)
       }
     }
@@ -248,15 +248,15 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     cardType: String,
     promise: Promise
   ) {
-    Log.i(TAG, "--")
-    Log.i(TAG, "> addCard started")
-    Log.d(
+    WalletLogger.i(TAG, "--")
+    WalletLogger.i(TAG, "> addCard started")
+    WalletLogger.d(
       TAG,
       "addCard payload : $payload, issuerId : $issuerId, tokenizationProvider : $tokenizationProvider, cardType : $cardType"
     )
 
     if (cardManager == null) {
-      Log.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
+      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
       promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
       return
     }
@@ -274,13 +274,13 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
     val listener = object : AddCardListener {
       override fun onSuccess(status: Int, card: Card) {
-        Log.d(TAG, "doAddCard onSuccess callback is called")
-        Log.i(TAG, "card added - $card")
+        WalletLogger.d(TAG, "doAddCard onSuccess callback is called")
+        WalletLogger.i(TAG, "card added - $card")
         promise.resolve(card.toSerializable())
       }
 
       override fun onFail(errorCode: Int, errorData: Bundle) {
-        Log.d(TAG, "doAddCard onFail callback is called, errorCode:$errorCode")
+        WalletLogger.d(TAG, "doAddCard onFail callback is called, errorCode:$errorCode")
 
         // Priorizar EXTRA_ERROR_REASON (código mais específico)
         val extraErrorReason = errorData.getInt(SpaySdk.EXTRA_ERROR_REASON, SpaySdk.ERROR_NONE)
@@ -290,19 +290,19 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
         // Priorizar EXTRA_ERROR_REASON_MESSAGE (mensagem mais específica)
         val errorMessage = if (errorData.containsKey(SpaySdk.EXTRA_ERROR_REASON_MESSAGE)) {
           val error = errorData.getString(SpaySdk.EXTRA_ERROR_REASON_MESSAGE)
-          Log.e(TAG, "doAddCard onFail extra reason message: $error")
+          WalletLogger.e(TAG, "doAddCard onFail extra reason message: $error")
           error ?: ErrorCode.getErrorMessage(actualErrorCode)
         } else {
           ErrorCode.getErrorMessage(actualErrorCode)
         }
         val formattedErrorMessage = "$errorMessage ($errorCodeName) - result_code:$actualErrorCode"
 
-        Log.e(TAG, "ADD_CARD_ERROR: $formattedErrorMessage")
+        WalletLogger.e(TAG, "ADD_CARD_ERROR: $formattedErrorMessage")
         promise.reject("ADD_CARD_ERROR", formattedErrorMessage)
       }
 
       override fun onProgress(currentCount: Int, totalCount: Int, errorData: Bundle) {
-        Log.d(TAG, "doAddCard onProgress : $currentCount / $totalCount")
+        WalletLogger.d(TAG, "doAddCard onProgress : $currentCount / $totalCount")
         // Progress callback removido - não é compatível com Promise no React Native Bridge
       }
     }
@@ -313,11 +313,11 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   // Método de compatibilidade com a API anterior
   // https://developer.samsung.com/pay/native/common-api.html
   override fun checkWalletAvailability(promise: Promise) {
-    Log.i(TAG, "--")
-    Log.i(TAG, "> checkWalletAvailability started")
+    WalletLogger.i(TAG, "--")
+    WalletLogger.i(TAG, "> checkWalletAvailability started")
 
     if (samsungPay == null) {
-      Log.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
+      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
       promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
       return
     }
@@ -325,21 +325,21 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     // Código LIMPO!
     val listener = object : StatusListener {
       override fun onSuccess(status: Int, bundle: Bundle) {
-        Log.d(TAG, "onSuccess callback is called, status=$status, bundle:$bundle")
+        WalletLogger.d(TAG, "onSuccess callback is called, status=$status, bundle:$bundle")
         val isAvailable = status == SpaySdk.SPAY_READY
-        Log.i(TAG, "- Samsung Pay disponível: $isAvailable (Status: $status)")
+        WalletLogger.i(TAG, "- Samsung Pay disponível: $isAvailable (Status: $status)")
         promise.resolve(isAvailable)
       }
 
       override fun onFail(errorCode: Int, bundle: Bundle) {
-        Log.d(TAG, "onFail callback is called, errorCode=$errorCode, bundle:$bundle")
+        WalletLogger.d(TAG, "onFail callback is called, errorCode=$errorCode, bundle:$bundle")
         val extraErrorReason = bundle.getInt(SpaySdk.EXTRA_ERROR_REASON, SpaySdk.ERROR_NONE)
         val actualErrorCode = if (extraErrorReason != SpaySdk.ERROR_NONE) extraErrorReason else errorCode
         val errorCodeName = ErrorCode.getErrorCodeName(actualErrorCode)
         val errorMessage = ErrorCode.getErrorMessage(actualErrorCode)
         val formattedErrorMessage = "$errorMessage ($errorCodeName) - result_code:$actualErrorCode"
 
-        Log.e(TAG, "SAMSUNG_PAY_NOT_READY: $formattedErrorMessage")
+        WalletLogger.e(TAG, "SAMSUNG_PAY_NOT_READY: $formattedErrorMessage")
         // Nota: Este método resolve com false em vez de rejeitar para manter compatibilidade
         promise.resolve(false)
       }
@@ -350,7 +350,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
   // https://developer.samsung.com/pay/ID&V/implementing-app2app-id&v.html
   override fun setIntentListener(promise: Promise) {
-    Log.d(TAG, "🔍 [SAMSUNG] setIntentListener chamado")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] setIntentListener chamado")
     try {
       intentListenerActive = true
       checkPendingDataFromMainActivity()
@@ -360,18 +360,18 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       
       promise.resolve(true)
     } catch (e: Exception) {
-      Log.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
+      WalletLogger.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
       promise.reject("SET_INTENT_LISTENER_ERROR", e.message, e)
     }
   }
 
   override fun removeIntentListener(promise: Promise) {
-    Log.d(TAG, "🔍 [SAMSUNG] removeIntentListener chamado")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] removeIntentListener chamado")
     try {
       intentListenerActive = false
       promise.resolve(true)
     } catch (e: Exception) {
-      Log.e(TAG, "REMOVE_INTENT_LISTENER_ERROR: ${e.message}", e)
+      WalletLogger.e(TAG, "REMOVE_INTENT_LISTENER_ERROR: ${e.message}", e)
       promise.reject("REMOVE_INTENT_LISTENER_ERROR", e.message, e)
     }
   }
@@ -379,18 +379,18 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
   // https://developer.samsung.com/pay/ID&V/implementing-app2app-id&v.html
   override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
-    Log.d(TAG, "🔍 [SAMSUNG] setActivationResult chamado - Status: $status")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] setActivationResult chamado - Status: $status")
     try {
       activity = reactContext.currentActivity
       if (activity == null) {
-        Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
+        WalletLogger.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
         promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
         return
       }
 
       val validStatuses = listOf("accepted", "declined", "failure", "appNotReady")
       if (!validStatuses.contains(status)) {
-        Log.w(TAG, "INVALID_STATUS: Status deve ser: accepted, declined, failure ou appNotReady")
+        WalletLogger.w(TAG, "INVALID_STATUS: Status deve ser: accepted, declined, failure ou appNotReady")
         promise.reject("INVALID_STATUS", "Status deve ser: accepted, declined, failure ou appNotReady")
         return
       }
@@ -405,36 +405,36 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       activity?.setResult(android.app.Activity.RESULT_OK, resultIntent)
       promise.resolve(true)
     } catch (e: Exception) {
-      Log.e(TAG, "SET_ACTIVATION_RESULT_ERROR: ${e.message}", e)
+      WalletLogger.e(TAG, "SET_ACTIVATION_RESULT_ERROR: ${e.message}", e)
       promise.reject("SET_ACTIVATION_RESULT_ERROR", e.message, e)
     }
   }
 
   override fun finishActivity(promise: Promise) {
-    Log.d(TAG, "🔍 [SAMSUNG] finishActivity chamado")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] finishActivity chamado")
     try {
       activity = reactContext.currentActivity
       if (activity == null) {
-        Log.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
+        WalletLogger.w(TAG, "NO_ACTIVITY: Nenhuma atividade disponível")
         promise.reject("NO_ACTIVITY", "Nenhuma atividade disponível")
         return
       }
       activity?.finish()
       promise.resolve(true)
     } catch (e: Exception) {
-      Log.e(TAG, "FINISH_ACTIVITY_ERROR: ${e.message}", e)
+      WalletLogger.e(TAG, "FINISH_ACTIVITY_ERROR: ${e.message}", e)
       promise.reject("FINISH_ACTIVITY_ERROR", e.message, e)
     }
   }
 
   private fun checkPendingDataFromMainActivity() {
-    Log.d(TAG, "🔍 [SAMSUNG] Verificando dados pendentes...")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] Verificando dados pendentes...")
     try {
       // Verificar se há dados pendentes
       val hasData = hasPendingData()
       
       if (hasData) {
-        Log.d(TAG, "✅ [SAMSUNG] Dados pendentes encontrados")
+        WalletLogger.d(TAG, "✅ [SAMSUNG] Dados pendentes encontrados")
         
         // Obter os dados pendentes sem limpar
         val data = getPendingIntentDataWithoutClearing()
@@ -442,17 +442,17 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
         val callingPackage = getPendingCallingPackage()
         
         if (data != null && data.isNotEmpty()) {
-          Log.d(TAG, "📋 [SAMSUNG] Processando dados pendentes: ${data.length} caracteres")
-          Log.d(TAG, "📋 [SAMSUNG] Action: $action, CallingPackage: $callingPackage")
+          WalletLogger.d(TAG, "📋 [SAMSUNG] Processando dados pendentes: ${data.length} caracteres")
+          WalletLogger.d(TAG, "📋 [SAMSUNG] Action: $action, CallingPackage: $callingPackage")
           
           // Verificar se action e callingPackage estão disponíveis
           if (action == null) {
-            Log.e(TAG, "❌ [SAMSUNG] Action é null - não é possível processar intent")
+            WalletLogger.e(TAG, "❌ [SAMSUNG] Action é null - não é possível processar intent")
             return
           }
           
           if (callingPackage == null) {
-            Log.e(TAG, "❌ [SAMSUNG] CallingPackage é null - não é possível processar intent")
+            WalletLogger.e(TAG, "❌ [SAMSUNG] CallingPackage é null - não é possível processar intent")
             return
           }
           
@@ -462,13 +462,13 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
           // Limpar dados após processamento bem-sucedido
           clearPendingData()
         } else {
-          Log.w(TAG, "⚠️ [SAMSUNG] Dados pendentes são null ou vazios")
+          WalletLogger.w(TAG, "⚠️ [SAMSUNG] Dados pendentes são null ou vazios")
         }
       } else {
-        Log.d(TAG, "🔍 [SAMSUNG] Nenhum dado pendente")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] Nenhum dado pendente")
       }
     } catch (e: Exception) {
-      Log.e(TAG, "❌ [SAMSUNG] Erro ao verificar dados pendentes: ${e.message}", e)
+      WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao verificar dados pendentes: ${e.message}", e)
     }
   }
 
@@ -571,9 +571,9 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
    * Processa dados específicos da Samsung Wallet
    */
   private fun processSamsungWalletIntentData(data: String, action: String, callingPackage: String) {
-    Log.d(TAG, "🔍 [SAMSUNG] processSamsungWalletIntentData chamado")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] processSamsungWalletIntentData chamado")
     try {
-      Log.d(TAG, "✅ [SAMSUNG] Processando dados Samsung Wallet: ${data.length} caracteres")
+      WalletLogger.d(TAG, "✅ [SAMSUNG] Processando dados Samsung Wallet: ${data.length} caracteres")
 
       // Determinar o tipo de intent baseado na action
       val intentType = if (action.endsWith(".action.LAUNCH_A2A_IDV")) {
@@ -585,7 +585,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       // Processar dados específicos (Mastercard/Visa)
       val processedData = processSamsungWalletData(data)
 
-      Log.d(TAG, "🔍 [SAMSUNG] Dados processados - CardType: ${processedData["cardType"]}, Format: ${processedData["dataFormat"]}")
+      WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados processados - CardType: ${processedData["cardType"]}, Format: ${processedData["dataFormat"]}")
 
       // Decodificar dados de base64 para string normal
       var decodedData = data
@@ -596,10 +596,10 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
         val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
         decodedData = String(decodedBytes, Charsets.UTF_8)
         dataFormat = "base64_decoded"
-        Log.d(TAG, "🔍 [SAMSUNG] Dados decodificados com sucesso: ${decodedData.length} caracteres")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados decodificados com sucesso: ${decodedData.length} caracteres")
       } catch (e: Exception) {
         // Se falhar ao decodificar, usar dados originais
-        Log.w(TAG, "⚠️ [SAMSUNG] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
+        WalletLogger.w(TAG, "⚠️ [SAMSUNG] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
         dataFormat = "raw"
       }
 
@@ -613,15 +613,15 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       // Adicionar dados originais em base64 para referência
       eventData.putString("originalData", data)
 
-      Log.d(TAG, "🔍 [SAMSUNG] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
+      WalletLogger.d(TAG, "🔍 [SAMSUNG] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
 
       // Enviar evento para React Native
       sendEventToReactNative("SamsungWalletIntentReceived", eventData)
 
-      Log.d(TAG, "✅ [SAMSUNG] Dados Samsung Wallet processados com sucesso")
+      WalletLogger.d(TAG, "✅ [SAMSUNG] Dados Samsung Wallet processados com sucesso")
 
     } catch (e: Exception) {
-      Log.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
+      WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
     }
   }
 
@@ -630,13 +630,13 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
    */
   private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
     try {
-      Log.d(TAG, "🔍 [SAMSUNG] Enviando evento para React Native: $eventName")
+      WalletLogger.d(TAG, "🔍 [SAMSUNG] Enviando evento para React Native: $eventName")
       reactContext
         .getJSModule(com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
         .emit(eventName, eventData)
-      Log.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
+      WalletLogger.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
     } catch (e: Exception) {
-      Log.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento para React Native: ${e.message}", e)
+      WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento para React Native: ${e.message}", e)
     }
   }
 
@@ -694,18 +694,18 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
 
     @JvmStatic
     fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
-      Log.d(TAG, "🔍 [SAMSUNG] processIntent chamado")
+      WalletLogger.d(TAG, "🔍 [SAMSUNG] processIntent chamado")
       
-      Log.d(TAG, "🔍 [SAMSUNG] Intent encontrada: ${intent.action}")
+      WalletLogger.d(TAG, "🔍 [SAMSUNG] Intent encontrada: ${intent.action}")
       
       // Verificar se é um intent do Samsung Pay/Wallet
       if (isSamsungPayIntent(intent)) {
-        Log.d(TAG, "✅ [SAMSUNG] Intent do Samsung Pay detectada")
+        WalletLogger.d(TAG, "✅ [SAMSUNG] Intent do Samsung Pay detectada")
         
         // Extrair dados da intent
         val extraText = intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
         if (!extraText.isNullOrEmpty()) {
-          Log.d(TAG, "🔍 [SAMSUNG] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
+          WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
           
           // Armazenar dados para processamento posterior
           pendingIntentData = extraText
@@ -713,15 +713,15 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
           pendingCallingPackage = activity.callingPackage
           hasPendingIntentData = true
           
-          Log.d(TAG, "✅ [SAMSUNG] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
+          WalletLogger.d(TAG, "✅ [SAMSUNG] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
           
           // Limpar intent para evitar reprocessamento
           activity.intent = android.content.Intent()
         } else {
-          Log.w(TAG, "⚠️ [SAMSUNG] Nenhum dado EXTRA_TEXT encontrado")
+          WalletLogger.w(TAG, "⚠️ [SAMSUNG] Nenhum dado EXTRA_TEXT encontrado")
         }
       } else {
-        Log.d(TAG, "🔍 [SAMSUNG] Intent não relacionada ao Samsung Pay")
+        WalletLogger.d(TAG, "🔍 [SAMSUNG] Intent não relacionada ao Samsung Pay")
       }
     }
 
@@ -733,7 +733,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
      */
     private fun isSamsungPayIntent(intent: android.content.Intent): Boolean {
       val action = intent.action
-      Log.d(TAG, "🔍 [SAMSUNG] Verificando intent - Action: $action")
+      WalletLogger.d(TAG, "🔍 [SAMSUNG] Verificando intent - Action: $action")
 
       // Verificar action
       val isValidAction = action != null && (
@@ -748,7 +748,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     @JvmStatic
     fun isValidCallingPackage(activity: android.app.Activity): Boolean {
       val callingPackage = activity.callingPackage
-      Log.d(TAG, "🔍 [SAMSUNG] Chamador: $callingPackage")
+      WalletLogger.d(TAG, "🔍 [SAMSUNG] Chamador: $callingPackage")
       return callingPackage != null && callingPackage == SAMSUNG_PAY_PACKAGE
     }
     /**
@@ -767,9 +767,9 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
           val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
           decodedData = String(decodedBytes, Charsets.UTF_8)
           dataFormat = "base64_decoded"
-          Log.d(TAG, "🔍 [SAMSUNG] Dados decodificados como base64: ${decodedData.length} caracteres")
+          WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados decodificados como base64: ${decodedData.length} caracteres")
         } catch (e: Exception) {
-          Log.d(TAG, "🔍 [SAMSUNG] Dados não são base64, usando formato original")
+          WalletLogger.d(TAG, "🔍 [SAMSUNG] Dados não são base64, usando formato original")
           dataFormat = "raw"
         }
 
@@ -785,7 +785,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
               jsonData.has("paymentAppInstanceId") ||
               jsonData.has("tokenUniqueReference")) {
             cardType = "MASTERCARD"
-            Log.d(TAG, "✅ [SAMSUNG] Detectado Mastercard")
+            WalletLogger.d(TAG, "✅ [SAMSUNG] Detectado Mastercard")
 
             // Extrair campos específicos do Mastercard
             if (jsonData.has("paymentAppProviderId")) {
@@ -809,7 +809,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
                   jsonData.has("trId") ||
                   jsonData.has("tokenReferenceId")) {
             cardType = "VISA"
-            Log.d(TAG, "✅ [SAMSUNG] Detectado Visa")
+            WalletLogger.d(TAG, "✅ [SAMSUNG] Detectado Visa")
 
             // Extrair campos específicos do Visa
             if (jsonData.has("panId")) {
@@ -833,7 +833,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
           }
           // Se não conseguir identificar, tentar campos genéricos
           else {
-            Log.d(TAG, "🔍 [SAMSUNG] Tipo de cartão não identificado, usando campos genéricos")
+            WalletLogger.d(TAG, "🔍 [SAMSUNG] Tipo de cartão não identificado, usando campos genéricos")
 
             // Adicionar todos os campos disponíveis
             val keys = jsonData.keys()
@@ -844,17 +844,17 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
             }
           }
 
-          Log.d(TAG, "✅ [SAMSUNG] Dados JSON processados com sucesso")
+          WalletLogger.d(TAG, "✅ [SAMSUNG] Dados JSON processados com sucesso")
 
         } catch (e: Exception) {
-          Log.w(TAG, "⚠️ [SAMSUNG] Dados não são JSON válido: ${e.message}")
+          WalletLogger.w(TAG, "⚠️ [SAMSUNG] Dados não são JSON válido: ${e.message}")
           cardType = "ENCRYPTED_OR_BINARY"
         }
 
         result["cardType"] = cardType
 
       } catch (e: Exception) {
-        Log.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
+        WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao processar dados Samsung Wallet: ${e.message}", e)
         result["error"] = e.message ?: "Erro desconhecido"
         result["cardType"] = "ERROR"
       }
@@ -864,10 +864,10 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   }
 
   override fun openWallet(promise: Promise) {
-    Log.d(TAG, "🔍 [SAMSUNG] openWallet chamado")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] openWallet chamado")
     try {
       if (walletOpener == null) {
-        Log.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
+        WalletLogger.w(TAG, "WALLET_OPENER_NOT_AVAILABLE: WalletOpener não foi inicializado")
         promise.reject("WALLET_OPENER_NOT_AVAILABLE", "WalletOpener não foi inicializado")
         return
       }
@@ -880,25 +880,49 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
       
       if (success) {
-        Log.d(TAG, "✅ [SAMSUNG] Wallet aberto com sucesso")
+        WalletLogger.d(TAG, "✅ [SAMSUNG] Wallet aberto com sucesso")
         promise.resolve(true)
       } else {
-        Log.w(TAG, "❌ [SAMSUNG] Falha ao abrir wallet")
+        WalletLogger.w(TAG, "❌ [SAMSUNG] Falha ao abrir wallet")
         promise.reject("OPEN_WALLET_ERROR", "Falha ao abrir Samsung Pay")
       }
     } catch (e: Exception) {
-      Log.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
+      WalletLogger.e(TAG, "OPEN_WALLET_ERROR: ${e.message}")
       promise.reject("OPEN_WALLET_ERROR", e.message, e)
     }
   }
 
   override fun sendNoIntentReceivedEvent() {
-    Log.d(TAG, "🔍 [SAMSUNG] sendNoIntentReceivedEvent chamado")
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] sendNoIntentReceivedEvent chamado")
     try {
       sendEventToReactNative("SamsungWalletNoIntentReceived", null)
-      Log.d(TAG, "✅ [SAMSUNG] Evento de nenhuma intent enviado com sucesso")
+      WalletLogger.d(TAG, "✅ [SAMSUNG] Evento de nenhuma intent enviado com sucesso")
     } catch (e: Exception) {
-      Log.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+      WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+    }
+  }
+
+  override fun setLogListener(promise: Promise) {
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] setLogListener chamado")
+    try {
+      WalletLogger.setLogListener(true)
+      WalletLogger.d(TAG, "✅ [SAMSUNG] Listener de log ativado")
+      promise.resolve(true)
+    } catch (e: Exception) {
+      WalletLogger.e(TAG, "SET_LOG_LISTENER_ERROR: ${e.message}", e)
+      promise.reject("SET_LOG_LISTENER_ERROR", e.message, e)
+    }
+  }
+
+  override fun removeLogListener(promise: Promise) {
+    WalletLogger.d(TAG, "🔍 [SAMSUNG] removeLogListener chamado")
+    try {
+      WalletLogger.setLogListener(false)
+      WalletLogger.d(TAG, "✅ [SAMSUNG] Listener de log desativado")
+      promise.resolve(true)
+    } catch (e: Exception) {
+      WalletLogger.e(TAG, "REMOVE_LOG_LISTENER_ERROR: ${e.message}", e)
+      promise.reject("REMOVE_LOG_LISTENER_ERROR", e.message, e)
     }
   }
 }
