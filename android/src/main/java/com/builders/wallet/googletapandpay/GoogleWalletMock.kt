@@ -39,6 +39,9 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         private const val GOOGLE_WALLET_PACKAGE = "com.google.android.gms"
         private const val GOOGLE_WALLET_APP_PACKAGE = "com.google.android.apps.walletnfcrel"
         private val GOOGLE_WALLET_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$GOOGLE_WALLET_APP_PACKAGE&hl=pt_BR"
+        
+        // Versão mínima do Android suportada pelo Google Wallet: Android 9.0 (Pie) - API level 28
+        private const val MIN_ANDROID_VERSION = android.os.Build.VERSION_CODES.P
 
         // Obter URL da API do BuildConfig
         private val API_BASE_URL: String by lazy {
@@ -432,6 +435,14 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
     override fun checkWalletAvailability(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
+        
+        // Verificar versão mínima do Android (Android 9.0 - API level 28)
+        if (android.os.Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
+            WalletLogger.w(TAG, "❌ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 9.0 (API ${MIN_ANDROID_VERSION})")
+            promise.resolve(false)
+            return
+        }
+        
         fetchFromLocalAPI(
             endpoint = "/wallet/availability",
             defaultResponse = { true },

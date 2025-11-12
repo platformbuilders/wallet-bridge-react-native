@@ -119,13 +119,15 @@ class GoogleWalletImplementation(
     override fun checkWalletAvailability(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [GOOGLE] checkWalletAvailability chamado")
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-                WalletLogger.d(TAG, "✅ [GOOGLE] Android ${Build.VERSION.SDK_INT} suportado e SDK disponível")
-                promise.resolve(true)
-            } else {
-                WalletLogger.w(TAG, "❌ [GOOGLE] Android ${Build.VERSION.SDK_INT} não suportado")
+            // Verificar versão mínima do Android (Android 9.0 - API level 28)
+            if (Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
+                WalletLogger.w(TAG, "❌ [GOOGLE] Android ${Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 9.0 (API ${MIN_ANDROID_VERSION})")
                 promise.resolve(false)
+                return
             }
+            
+            WalletLogger.d(TAG, "✅ [GOOGLE] Android ${Build.VERSION.SDK_INT} suportado e SDK disponível")
+            promise.resolve(true)
         } catch (e: Exception) {
             WalletLogger.e(TAG, "CHECK_WALLET_AVAILABILITY_ERROR: ${e.message}", e)
             promise.reject("CHECK_WALLET_AVAILABILITY_ERROR", e.message, e)
@@ -838,6 +840,9 @@ class GoogleWalletImplementation(
         private const val GOOGLE_WALLET_PACKAGE = "com.google.android.gms"
         private const val GOOGLE_WALLET_APP_PACKAGE = "com.google.android.apps.walletnfcrel"
         private val GOOGLE_WALLET_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$GOOGLE_WALLET_APP_PACKAGE&hl=pt_BR"
+        
+        // Versão mínima do Android suportada pelo Google Wallet: Android 9.0 (Pie) - API level 28
+        private const val MIN_ANDROID_VERSION = Build.VERSION_CODES.P
         
         // Variáveis estáticas para armazenar dados da intent
         @Volatile
