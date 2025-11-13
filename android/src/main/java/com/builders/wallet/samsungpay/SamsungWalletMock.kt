@@ -35,8 +35,8 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         private const val SAMSUNG_PAY_PACKAGE = "com.samsung.android.spay"
         private val SAMSUNG_PAY_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$SAMSUNG_PAY_PACKAGE&hl=pt_BR"
         
-        // Versão mínima do Android suportada pelo Samsung Wallet: Android 6.0 (Marshmallow) - API level 23
-        private const val MIN_ANDROID_VERSION = android.os.Build.VERSION_CODES.M
+        // Versão mínima do Android suportada pelo Samsung Wallet: Android 11 (R) - API level 30
+        private const val MIN_ANDROID_VERSION = android.os.Build.VERSION_CODES.R
         
         // Variáveis estáticas para armazenar dados da intent
         @Volatile
@@ -743,9 +743,9 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     override fun checkWalletAvailability(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
         
-        // Verificar versão mínima do Android (Android 6.0 - API level 23)
+        // Verificar versão mínima do Android (Android 11 - API level 30)
         if (android.os.Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
-            WalletLogger.w(TAG, "❌ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 6.0 (API ${MIN_ANDROID_VERSION})")
+            WalletLogger.w(TAG, "❌ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 11 (API ${MIN_ANDROID_VERSION})")
             promise.resolve(false)
             return
         }
