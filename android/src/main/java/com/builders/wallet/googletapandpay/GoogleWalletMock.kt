@@ -433,6 +433,37 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         return json
     }
 
+    /**
+     * Verifica internamente se a wallet está disponível
+     * @return true se disponível, false caso contrário
+     */
+    private fun checkWalletAvailabilityInternal(): Boolean {
+        // Verificar versão mínima do Android (Android 9.0 - API level 28)
+        if (android.os.Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
+            WalletLogger.w(TAG, "❌ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 9.0 (API ${MIN_ANDROID_VERSION})")
+            return false
+        }
+        
+        WalletLogger.d(TAG, "✅ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} suportado")
+        return true
+    }
+
+    /**
+     * Verifica se a wallet está disponível e rejeita a promise se não estiver
+     * @param promise Promise a ser rejeitada se a wallet não estiver disponível
+     * @param methodName Nome do método que está sendo chamado (para mensagem de erro)
+     * @return true se disponível, false caso contrário (e promise já foi rejeitada)
+     */
+    private fun ensureWalletAvailable(promise: Promise, methodName: String): Boolean {
+        if (!checkWalletAvailabilityInternal()) {
+            val errorMessage = "Google Wallet não está disponível. Verifique a versão do Android (mínimo: Android 9.0)."
+            WalletLogger.w(TAG, "❌ [MOCK] $methodName falhou: $errorMessage")
+            promise.reject("WALLET_NOT_AVAILABLE", errorMessage)
+            return false
+        }
+        return true
+    }
+
     override fun checkWalletAvailability(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
         
@@ -464,6 +495,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     override fun getSecureWalletInfo(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] getSecureWalletInfo chamado")
 
+        if (!ensureWalletAvailable(promise, "getSecureWalletInfo")) {
+            return
+        }
+
         // Tentar buscar da API local primeiro, com fallback para valor padrão
         fetchFromAPIWithPromise(
             endpoint = "/wallet/info",
@@ -480,6 +515,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
     override fun getTokenStatus(tokenServiceProvider: Int, tokenReferenceId: String, promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] getTokenStatus chamado - Provider: $tokenServiceProvider, RefId: $tokenReferenceId")
+
+        if (!ensureWalletAvailable(promise, "getTokenStatus")) {
+            return
+        }
 
         // Simular diferentes cenários baseados no tokenReferenceId
         val endpoint = "/wallet/token/status?provider=$tokenServiceProvider&refId=$tokenReferenceId"
@@ -636,6 +675,11 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         promise: Promise
     ) {
         WalletLogger.d(TAG, "🔍 [MOCK] isTokenized chamado - LastFour: $fpanLastFour, Network: $cardNetwork, Provider: $tokenServiceProvider")
+        
+        if (!ensureWalletAvailable(promise, "isTokenized")) {
+            return
+        }
+        
         val endpoint = "/wallet/is-tokenized?lastFour=$fpanLastFour&network=$cardNetwork&provider=$tokenServiceProvider"
         fetchFromLocalAPI(
             endpoint = endpoint,
@@ -663,6 +707,11 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         promise: Promise
     ) {
         WalletLogger.d(TAG, "🔍 [MOCK] viewToken chamado - Provider: $tokenServiceProvider, TokenId: $issuerTokenId")
+        
+        if (!ensureWalletAvailable(promise, "viewToken")) {
+            return
+        }
+        
         val endpoint = "/wallet/view-token?provider=$tokenServiceProvider&tokenId=$issuerTokenId"
         fetchFromLocalAPI(
             endpoint = endpoint,
@@ -729,6 +778,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     override fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] addCardToWallet chamado")
         try {
+            if (!ensureWalletAvailable(promise, "addCardToWallet")) {
+                return
+            }
+            
             // Validar dados do cartão (mesmo que na implementação real)
             val validationError = validateCardData(cardData)
             if (validationError != null) {
@@ -867,6 +920,11 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
     override fun createWalletIfNeeded(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] createWalletIfNeeded chamado")
+        
+        if (!ensureWalletAvailable(promise, "createWalletIfNeeded")) {
+            return
+        }
+        
         fetchFromLocalAPI(
             endpoint = "/wallet/create",
             defaultResponse = { true },
@@ -890,6 +948,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
     override fun listTokens(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] listTokens chamado")
+
+        if (!ensureWalletAvailable(promise, "listTokens")) {
+            return
+        }
 
         // Função especial para arrays - precisa de tratamento diferente
         val defaultArray = {

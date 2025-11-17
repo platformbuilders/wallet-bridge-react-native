@@ -46,6 +46,12 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     WalletLogger.i(TAG, "--")
     WalletLogger.i(TAG, "> Init started")
 
+    // Verificar versão mínima do Android antes de inicializar
+    if (!checkAndroidVersion()) {
+      promise.reject("WALLET_NOT_AVAILABLE", "Samsung Wallet não está disponível. Verifique a versão do Android (mínimo: Android 11).")
+      return
+    }
+
     try {
       val bundle = Bundle()
       bundle.putString(SamsungPay.PARTNER_SERVICE_TYPE, SpaySdk.ServiceType.APP2APP.toString())
@@ -69,9 +75,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     WalletLogger.i(TAG, "--")
     WalletLogger.i(TAG, "> getSamsungPayStatus started")
 
-    if (samsungPay == null) {
-      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
-      promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
+    if (!ensureWalletAvailable(promise, "getSamsungPayStatus")) {
       return
     }
 
@@ -137,6 +141,13 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   override fun goToUpdatePage() {
     WalletLogger.i(TAG, "--")
     WalletLogger.i(TAG, "> goToUpdatePage started")
+    
+    // Verificar se a wallet está disponível antes de executar
+    if (!checkWalletAvailabilityInternal()) {
+      WalletLogger.w(TAG, "❌ [SAMSUNG] goToUpdatePage falhou: Samsung Wallet não está disponível")
+      return
+    }
+    
     samsungPay?.goToUpdatePage()
   }
 
@@ -144,6 +155,13 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   override fun activateSamsungPay() {
     WalletLogger.i(TAG, "--")
     WalletLogger.i(TAG, "> activateSamsungPay started")
+    
+    // Verificar se a wallet está disponível antes de executar
+    if (!checkWalletAvailabilityInternal()) {
+      WalletLogger.w(TAG, "❌ [SAMSUNG] activateSamsungPay falhou: Samsung Wallet não está disponível")
+      return
+    }
+    
     samsungPay?.activateSamsungPay()
   }
 
@@ -153,9 +171,13 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     WalletLogger.i(TAG, "--")
     WalletLogger.i(TAG, "> getAllCards started")
 
+    if (!ensureWalletAvailable(promise, "getAllCards")) {
+      return
+    }
+
     if (cardManager == null) {
-      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
-      promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
+      WalletLogger.w(TAG, "NOT_INITIALIZED: CardManager não foi inicializado. Chame init() primeiro.")
+      promise.reject("NOT_INITIALIZED", "CardManager não foi inicializado. Chame init() primeiro.")
       return
     }
 
@@ -189,9 +211,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     WalletLogger.i(TAG, "--")
     WalletLogger.i(TAG, "> getWalletInfo started")
 
-    if (samsungPay == null) {
-      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
-      promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
+    if (!ensureWalletAvailable(promise, "getWalletInfo")) {
       return
     }
 
@@ -256,9 +276,13 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
       "addCard payload : $payload, issuerId : $issuerId, tokenizationProvider : $tokenizationProvider, cardType : $cardType"
     )
 
+    if (!ensureWalletAvailable(promise, "addCard")) {
+      return
+    }
+
     if (cardManager == null) {
-      WalletLogger.w(TAG, "NOT_INITIALIZED: Samsung Pay não foi inicializado. Chame init() primeiro.")
-      promise.reject("NOT_INITIALIZED", "Samsung Pay não foi inicializado. Chame init() primeiro.")
+      WalletLogger.w(TAG, "NOT_INITIALIZED: CardManager não foi inicializado. Chame init() primeiro.")
+      promise.reject("NOT_INITIALIZED", "CardManager não foi inicializado. Chame init() primeiro.")
       return
     }
 
@@ -311,6 +335,53 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     cardManager!!.addCard(addCardInfo, listener)
   }
 
+  /**
+   * Verifica se a versão do Android é compatível com Samsung Wallet
+   * @return true se a versão é compatível, false caso contrário
+   */
+  private fun checkAndroidVersion(): Boolean {
+    if (Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
+      WalletLogger.w(TAG, "❌ [SAMSUNG] Android ${Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 11 (API ${MIN_ANDROID_VERSION})")
+      return false
+    }
+    return true
+  }
+
+  /**
+   * Verifica internamente se a wallet está disponível
+   * @return true se disponível, false caso contrário
+   */
+  private fun checkWalletAvailabilityInternal(): Boolean {
+    // Verificar versão mínima do Android (Android 11 - API level 30)
+    if (!checkAndroidVersion()) {
+      return false
+    }
+
+    // Verificar se o Samsung Pay foi inicializado
+    if (samsungPay == null) {
+      WalletLogger.w(TAG, "❌ [SAMSUNG] Samsung Pay não foi inicializado. Chame init() primeiro.")
+      return false
+    }
+
+    return true
+  }
+
+  /**
+   * Verifica se a wallet está disponível e rejeita a promise se não estiver
+   * @param promise Promise a ser rejeitada se a wallet não estiver disponível
+   * @param methodName Nome do método que está sendo chamado (para mensagem de erro)
+   * @return true se disponível, false caso contrário (e promise já foi rejeitada)
+   */
+  private fun ensureWalletAvailable(promise: Promise, methodName: String): Boolean {
+    if (!checkWalletAvailabilityInternal()) {
+      val errorMessage = "Samsung Wallet não está disponível. Verifique a versão do Android (mínimo: Android 11) e se o SDK foi inicializado corretamente."
+      WalletLogger.w(TAG, "❌ [SAMSUNG] $methodName falhou: $errorMessage")
+      promise.reject("WALLET_NOT_AVAILABLE", errorMessage)
+      return false
+    }
+    return true
+  }
+
   // Método de compatibilidade com a API anterior
   // https://developer.samsung.com/pay/native/common-api.html
   override fun checkWalletAvailability(promise: Promise) {
@@ -318,8 +389,7 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     WalletLogger.i(TAG, "> checkWalletAvailability started")
 
     // Verificar versão mínima do Android (Android 11 - API level 30)
-    if (Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
-      WalletLogger.w(TAG, "❌ [SAMSUNG] Android ${Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 11 (API ${MIN_ANDROID_VERSION})")
+    if (!checkAndroidVersion()) {
       promise.resolve(false)
       return
     }
