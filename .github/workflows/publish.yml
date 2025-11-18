@@ -1,0 +1,13 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  call-workflow:
+    uses: platformbuilders/actions-workflows/.github/workflows/publish-lib.yml@main
+    secrets:
+      PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
+      GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
