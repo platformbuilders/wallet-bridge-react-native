@@ -1,6 +1,6 @@
 {
   "name": "@platformbuilders/wallet-bridge-react-native",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Este repositório contém um pacote React Native para integração com carteiras digitais. Ele atua como uma ponte (bridge) que se conecta aos SDKs nativos de cada carteira, abstraindo a complexidade dos fluxos de provisionamento (Push e App2App). Inicialmente compatível com Google Pay Wallet, com planos de expansão para Samsung Pay e Apple Wallet.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -87,8 +87,8 @@
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
+    "react": "^18.1.0",
+    "react-native": "^0.70.6"
   },
   "workspaces": [
     "example"
