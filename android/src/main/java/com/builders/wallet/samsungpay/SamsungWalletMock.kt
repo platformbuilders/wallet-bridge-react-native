@@ -35,6 +35,9 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         private const val SAMSUNG_PAY_PACKAGE = "com.samsung.android.spay"
         private val SAMSUNG_PAY_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$SAMSUNG_PAY_PACKAGE&hl=pt_BR"
         
+        // Versão mínima do Android suportada pelo Samsung Wallet: Android 11 (R) - API level 30
+        private const val MIN_ANDROID_VERSION = android.os.Build.VERSION_CODES.R
+        
         // Variáveis estáticas para armazenar dados da intent
         @Volatile
         private var pendingIntentData: String? = null
@@ -393,6 +396,10 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     override fun getAllCards(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] getAllCards chamado")
         
+        if (!ensureWalletAvailable(promise, "getAllCards")) {
+            return
+        }
+        
         val defaultArray = {
             val writableArray = Arguments.createArray()
             
@@ -538,6 +545,11 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
 
     override fun getWalletInfo(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] getWalletInfo chamado")
+        
+        if (!ensureWalletAvailable(promise, "getWalletInfo")) {
+            return
+        }
+        
         fetchFromAPIWithPromise(
             endpoint = "/samsung/wallet-info",
             defaultResponse = {
@@ -561,6 +573,10 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     ) {
         WalletLogger.d(TAG, "🔍 [MOCK] addCard chamado - Provider: $tokenizationProvider, IssuerId: $issuerId, CardType: $cardType")
         WalletLogger.d(TAG, "🔍 [MOCK] Payload length: ${payload.length}")
+        
+        if (!ensureWalletAvailable(promise, "addCard")) {
+            return
+        }
         
         val bodyJson = JSONObject().apply {
             put("payload", payload)
@@ -737,8 +753,47 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
         )
     }
 
+    /**
+     * Verifica internamente se a wallet está disponível
+     * @return true se disponível, false caso contrário
+     */
+    private fun checkWalletAvailabilityInternal(): Boolean {
+        // Verificar versão mínima do Android (Android 11 - API level 30)
+        if (android.os.Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
+            WalletLogger.w(TAG, "❌ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 11 (API ${MIN_ANDROID_VERSION})")
+            return false
+        }
+        
+        WalletLogger.d(TAG, "✅ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} suportado")
+        return true
+    }
+
+    /**
+     * Verifica se a wallet está disponível e rejeita a promise se não estiver
+     * @param promise Promise a ser rejeitada se a wallet não estiver disponível
+     * @param methodName Nome do método que está sendo chamado (para mensagem de erro)
+     * @return true se disponível, false caso contrário (e promise já foi rejeitada)
+     */
+    private fun ensureWalletAvailable(promise: Promise, methodName: String): Boolean {
+        if (!checkWalletAvailabilityInternal()) {
+            val errorMessage = "Samsung Wallet não está disponível. Verifique a versão do Android (mínimo: Android 11)."
+            WalletLogger.w(TAG, "❌ [MOCK] $methodName falhou: $errorMessage")
+            promise.reject("WALLET_NOT_AVAILABLE", errorMessage)
+            return false
+        }
+        return true
+    }
+
     override fun checkWalletAvailability(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
+        
+        // Verificar versão mínima do Android (Android 11 - API level 30)
+        if (android.os.Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
+            WalletLogger.w(TAG, "❌ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 11 (API ${MIN_ANDROID_VERSION})")
+            promise.resolve(false)
+            return
+        }
+        
         fetchFromLocalAPI(
             endpoint = "/samsung/availability",
             defaultResponse = { true }, // Por padrão, Samsung Pay está disponível no mock

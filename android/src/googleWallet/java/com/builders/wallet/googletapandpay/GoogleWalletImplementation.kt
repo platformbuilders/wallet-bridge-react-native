@@ -115,17 +115,49 @@ class GoogleWalletImplementation(
         }
     }
 
+    /**
+     * Verifica internamente se a wallet está disponível
+     * @return true se disponível, false caso contrário
+     */
+    private fun checkWalletAvailabilityInternal(): Boolean {
+        // Verificar versão mínima do Android (Android 9.0 - API level 28)
+        if (Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
+            WalletLogger.w(TAG, "❌ [GOOGLE] Android ${Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 9.0 (API ${MIN_ANDROID_VERSION})")
+            return false
+        }
+        
+        // Verificar se o cliente TapAndPay está inicializado
+        if (tapAndPayClient == null) {
+            WalletLogger.w(TAG, "❌ [GOOGLE] Cliente TapAndPay não foi inicializado")
+            return false
+        }
+        
+        WalletLogger.d(TAG, "✅ [GOOGLE] Android ${Build.VERSION.SDK_INT} suportado e SDK disponível")
+        return true
+    }
+
+    /**
+     * Verifica se a wallet está disponível e rejeita a promise se não estiver
+     * @param promise Promise a ser rejeitada se a wallet não estiver disponível
+     * @param methodName Nome do método que está sendo chamado (para mensagem de erro)
+     * @return true se disponível, false caso contrário (e promise já foi rejeitada)
+     */
+    private fun ensureWalletAvailable(promise: Promise, methodName: String): Boolean {
+        if (!checkWalletAvailabilityInternal()) {
+            val errorMessage = "Google Wallet não está disponível. Verifique a versão do Android (mínimo: Android 9.0) e se o SDK foi inicializado corretamente."
+            WalletLogger.w(TAG, "❌ [GOOGLE] $methodName falhou: $errorMessage")
+            promise.reject("WALLET_NOT_AVAILABLE", errorMessage)
+            return false
+        }
+        return true
+    }
+
     // https://developers.google.com/pay/issuers/apis/push-provisioning/android
     override fun checkWalletAvailability(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [GOOGLE] checkWalletAvailability chamado")
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-                WalletLogger.d(TAG, "✅ [GOOGLE] Android ${Build.VERSION.SDK_INT} suportado e SDK disponível")
-                promise.resolve(true)
-            } else {
-                WalletLogger.w(TAG, "❌ [GOOGLE] Android ${Build.VERSION.SDK_INT} não suportado")
-                promise.resolve(false)
-            }
+            val isAvailable = checkWalletAvailabilityInternal()
+            promise.resolve(isAvailable)
         } catch (e: Exception) {
             WalletLogger.e(TAG, "CHECK_WALLET_AVAILABILITY_ERROR: ${e.message}", e)
             promise.reject("CHECK_WALLET_AVAILABILITY_ERROR", e.message, e)
@@ -136,9 +168,7 @@ class GoogleWalletImplementation(
     override fun getSecureWalletInfo(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [GOOGLE] getSecureWalletInfo chamado")
         try {
-            if (tapAndPayClient == null) {
-                WalletLogger.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+            if (!ensureWalletAvailable(promise, "getSecureWalletInfo")) {
                 return
             }
 
@@ -178,9 +208,7 @@ class GoogleWalletImplementation(
         WalletLogger.i(TAG, "--")
         WalletLogger.i(TAG, "> getTokenStatus started")
         try {
-            if (tapAndPayClient == null) {
-                WalletLogger.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+            if (!ensureWalletAvailable(promise, "getTokenStatus")) {
                 return
             }
 
@@ -221,9 +249,7 @@ class GoogleWalletImplementation(
         WalletLogger.i(TAG, "--")
         WalletLogger.i(TAG, "> getEnvironment started")
         try {
-            if (tapAndPayClient == null) {
-                WalletLogger.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+            if (!ensureWalletAvailable(promise, "getEnvironment")) {
                 return
             }
 
@@ -265,9 +291,7 @@ class GoogleWalletImplementation(
         WalletLogger.i(TAG, "--")
         WalletLogger.i(TAG, "> isTokenized started")
         try {
-            if (tapAndPayClient == null) {
-                WalletLogger.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+            if (!ensureWalletAvailable(promise, "isTokenized")) {
                 return
             }
 
@@ -307,9 +331,7 @@ class GoogleWalletImplementation(
         WalletLogger.i(TAG, "--")
         WalletLogger.i(TAG, "> viewToken started - Provider: $tokenServiceProvider, TokenId: $issuerTokenId")
         try {
-            if (tapAndPayClient == null) {
-                WalletLogger.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+            if (!ensureWalletAvailable(promise, "viewToken")) {
                 return
             }
 
@@ -388,9 +410,7 @@ class GoogleWalletImplementation(
     override fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
         WalletLogger.d(TAG, "🔍 [GOOGLE] addCardToWallet chamado")
         try {
-            if (tapAndPayClient == null) {
-                WalletLogger.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+            if (!ensureWalletAvailable(promise, "addCardToWallet")) {
                 return
             }
 
@@ -446,9 +466,7 @@ class GoogleWalletImplementation(
     override fun createWalletIfNeeded(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [GOOGLE] createWalletIfNeeded chamado")
         try {
-            if (tapAndPayClient == null) {
-                WalletLogger.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+            if (!ensureWalletAvailable(promise, "createWalletIfNeeded")) {
                 return
             }
 
@@ -473,9 +491,7 @@ class GoogleWalletImplementation(
         WalletLogger.i(TAG, "--")
         WalletLogger.i(TAG, "> listTokens started")
         try {
-            if (tapAndPayClient == null) {
-                WalletLogger.w(TAG, "TAP_AND_PAY_CLIENT_NOT_AVAILABLE: Cliente TapAndPay não foi inicializado")
-                promise.reject("TAP_AND_PAY_CLIENT_NOT_AVAILABLE", "Cliente TapAndPay não foi inicializado")
+            if (!ensureWalletAvailable(promise, "listTokens")) {
                 return
             }
 
@@ -838,6 +854,9 @@ class GoogleWalletImplementation(
         private const val GOOGLE_WALLET_PACKAGE = "com.google.android.gms"
         private const val GOOGLE_WALLET_APP_PACKAGE = "com.google.android.apps.walletnfcrel"
         private val GOOGLE_WALLET_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$GOOGLE_WALLET_APP_PACKAGE&hl=pt_BR"
+        
+        // Versão mínima do Android suportada pelo Google Wallet: Android 9.0 (Pie) - API level 28
+        private const val MIN_ANDROID_VERSION = Build.VERSION_CODES.P
         
         // Variáveis estáticas para armazenar dados da intent
         @Volatile
