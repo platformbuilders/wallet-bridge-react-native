@@ -90,4 +90,8 @@ nitrogen/
 # Yalc
 .yalc/
 
+# Tests
 coverage/
+
+# Misc
+example/android/libs/
