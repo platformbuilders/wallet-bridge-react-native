@@ -38,6 +38,7 @@
     "test:ci": "jest --ci --coverage --watchAll=false",
     "typecheck": "tsc",
     "lint": "prettier --check .",
+    "build": "bob build",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "prepare": "bob build",
     "release": "release-it --only-version",
