@@ -32,11 +32,12 @@
   ],
   "scripts": {
     "example": "yarn workspace react-native-builders-wallet-example",
+    "build": "bob build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "typecheck": "tsc",
+    "typecheck": "tsc --noEmit",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "prepare": "bob build",
     "release": "release-it --only-version",
