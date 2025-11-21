@@ -92,9 +92,12 @@
     "prettier": "^3.6.2",
     "react": "19.1.0",
     "react-native": "0.81.0",
-    "react-native-builder-bob": "^0.30.2",
+    "react-native-builder-bob": "^0.40.15",
     "turbo": "^1.10.7",
     "typescript": "^5.8.3"
+  },
+  "resolutions": {
+    "arktype": "2.1.15"
   },
   "peerDependencies": {
     "react": "^18.1.0",
