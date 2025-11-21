@@ -13,7 +13,15 @@ const prettierPlugin = require('eslint-plugin-prettier');
 /** @type {import('eslint').Linter.FlatConfig[]} */
 module.exports = [
   {
-    ignores: ['node_modules/', 'e2e', '__mocks__', 'coverage', '_templates'],
+    ignores: [
+      'node_modules/',
+      'e2e',
+      '__mocks__',
+      'coverage',
+      '_templates',
+      'lib/',
+      'build/'
+    ],
   },
   {
     files: ['src/**/*.{js,jsx,ts,tsx}'],
