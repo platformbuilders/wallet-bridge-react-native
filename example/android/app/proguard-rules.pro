@@ -8,3 +8,5 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+# Keep BuildConfig for any namespace (supports dynamic package changes)
+-keep class **.BuildConfig { *; }# Keep BuildConfig for any namespace (supports dynamic package changes)

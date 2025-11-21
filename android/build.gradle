@@ -25,19 +25,62 @@ def getExtOrIntegerDefault(name) {
   return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["BuildersWallet_" + name]).toInteger()
 }
 
+// ============================================
+// CONFIGURAÇÃO DE WALLETS CONDICIONAIS
+// ============================================
+// Verifica quais SDKs devem ser habilitados
+def googleWalletEnabled = project.hasProperty('GOOGLE_WALLET_ENABLED') ? 
+    project.property('GOOGLE_WALLET_ENABLED').toBoolean() : false
+def samsungWalletEnabled = project.hasProperty('SAMSUNG_WALLET_ENABLED') ? 
+    project.property('SAMSUNG_WALLET_ENABLED').toBoolean() : false
+
+println "================================================"
+println "   CONFIGURAÇÃO DE WALLETS"
+println "================================================"
+println "Google Wallet Enabled: ${googleWalletEnabled}"
+println "Samsung Wallet Enabled: ${samsungWalletEnabled}"
+println "================================================"
+
 android {
   namespace "com.builders.wallet"
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
-  defaultConfig {
-    minSdkVersion getExtOrIntegerDefault("minSdkVersion")
-    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-  }
-
   buildFeatures {
     buildConfig true
   }
+
+  defaultConfig {
+    minSdkVersion getExtOrIntegerDefault("minSdkVersion")
+    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+    
+    // Configurações para SDKs habilitados
+    buildConfigField "boolean", "GOOGLE_WALLET_ENABLED", "${googleWalletEnabled}"
+    buildConfigField "boolean", "SAMSUNG_WALLET_ENABLED", "${samsungWalletEnabled}"
+    
+    // Configuração para Google Wallet Mock
+    buildConfigField "boolean", "GOOGLE_WALLET_USE_MOCK", 
+      project.hasProperty('GOOGLE_WALLET_USE_MOCK') ? 
+        project.property('GOOGLE_WALLET_USE_MOCK') : 
+        "false"
+    
+    buildConfigField "String", "GOOGLE_WALLET_MOCK_API_URL", 
+      project.hasProperty('GOOGLE_WALLET_MOCK_API_URL') ? 
+        "\"${project.property('GOOGLE_WALLET_MOCK_API_URL')}\"" : 
+        "\"\""
+    
+    // Configuração para Samsung Wallet Mock
+    buildConfigField "boolean", "SAMSUNG_WALLET_USE_MOCK", 
+      project.hasProperty('SAMSUNG_WALLET_USE_MOCK') ? 
+        project.property('SAMSUNG_WALLET_USE_MOCK') : 
+        "false"
+    
+    buildConfigField "String", "SAMSUNG_WALLET_MOCK_API_URL", 
+      project.hasProperty('SAMSUNG_WALLET_MOCK_API_URL') ? 
+        "\"${project.property('SAMSUNG_WALLET_MOCK_API_URL')}\"" : 
+        "\"\""
+  }
+  
 
   buildTypes {
     release {
@@ -54,12 +97,33 @@ android {
     targetCompatibility JavaVersion.VERSION_1_8
   }
 
+  // ============================================
+  // SOURCE SETS CONDICIONAIS
+  // ============================================
   sourceSets {
     main {
-      java.srcDirs += [
-        "generated/java",
-        "generated/jni"
-      ]
+      java.srcDirs = ['src/main/java', 'generated/java', 'generated/jni']
+      
+      // Adiciona source sets condicionalmente baseado na configuração
+      if (googleWalletEnabled) {
+        // Usa implementação LIMPA (sem reflexão) quando SDK está habilitado
+        java.srcDirs += 'src/googleWallet/java'
+        println "✅ Usando GoogleWallet source set (com SDK)"
+      } else {
+        // Usa STUB quando SDK não está habilitado
+        java.srcDirs += 'src/noGoogleWallet/java'
+        println "⚠️ Usando GoogleWalletStub source set (sem SDK)"
+      }
+      
+      if (samsungWalletEnabled) {
+        // Usa implementação LIMPA (sem reflexão) quando SDK está habilitado
+        java.srcDirs += 'src/samsungWallet/java'
+        println "✅ Usando SamsungWallet source set (com SDK)"
+      } else {
+        // Usa STUB quando SDK não está habilitado
+        java.srcDirs += 'src/noSamsungWallet/java'
+        println "⚠️ Usando SamsungWalletStub source set (sem SDK)"
+      }
     }
   }
 }
@@ -74,5 +138,57 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation 'com.google.android.gms:play-services-tapandpay:+'
+  
+  // ============================================
+  // DEPENDÊNCIAS CONDICIONAIS
+  // ============================================
+  
+  // Adiciona Google Play Services Tap and Pay condicionalmente
+  if (googleWalletEnabled) {
+    implementation 'com.google.android.gms:play-services-tapandpay:+'
+    println "✅ Google Play Services Tap and Pay incluído"
+  } else {
+    println "⚠️ Google Play Services Tap and Pay não incluído"
+  }
+
+  // Adiciona Samsung Pay SDK condicionalmente
+  if (samsungWalletEnabled) {
+    // Tenta encontrar o JAR na pasta libs do projeto
+    def libsPath = "${rootProject.projectDir}/libs"
+    def libsDir = new File(libsPath)
+    
+    def samsungPayJar = null
+    def samsungPayVersion = "desconhecida"
+    
+    if (libsDir.exists() && libsDir.isDirectory()) {
+      // Procura por arquivos que comecem com "samsungpay_" e terminem com ".jar"
+      def jarFiles = libsDir.listFiles(new FilenameFilter() {
+        boolean accept(File dir, String name) {
+          return name.startsWith("samsungpay_") && name.endsWith(".jar")
+        }
+      })
+      
+      if (jarFiles && jarFiles.length > 0) {
+        samsungPayJar = jarFiles[0]
+        // Extrai a versão do nome do arquivo
+        def fileName = samsungPayJar.getName()
+        def versionMatch = fileName =~ /samsungpay_(.+)\.jar/
+        if (versionMatch) {
+          samsungPayVersion = versionMatch[0][1]
+        }
+        
+        implementation files(samsungPayJar)
+        println "✅ Samsung Pay SDK v${samsungPayVersion} incluído"
+      } else {
+        println "❌ ERRO: Samsung Pay SDK habilitado mas JAR não encontrado em: ${libsPath}"
+        println "❌ Certifique-se de ter um arquivo 'samsungpay_*.jar' na pasta libs/"
+      }
+    } else {
+      println "❌ ERRO: Samsung Pay SDK habilitado mas pasta libs não encontrada: ${libsPath}"
+    }
+  } else {
+    println "⚠️ Samsung Pay SDK não incluído"
+  }
 }
+
+println "================================================"

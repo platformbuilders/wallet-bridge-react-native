@@ -1,6 +1,6 @@
 {
-  "name": "react-native-builders-wallet",
-  "version": "0.1.0",
+  "name": "@platformbuilders/wallet-bridge-react-native",
+  "version": "1.0.1",
   "description": "Este repositório contém um pacote React Native para integração com carteiras digitais. Ele atua como uma ponte (bridge) que se conecta aos SDKs nativos de cada carteira, abstraindo a complexidade dos fluxos de provisionamento (Push e App2App). Inicialmente compatível com Google Pay Wallet, com planos de expansão para Samsung Pay e Apple Wallet.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -28,17 +28,29 @@
     "!android/local.properties",
     "!**/__tests__",
     "!**/__fixtures__",
-    "!**/__mocks__",
     "!**/.*"
   ],
   "scripts": {
     "example": "yarn workspace react-native-builders-wallet-example",
+    "build": "bob build",
     "test": "jest",
-    "typecheck": "tsc",
-    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "lint": "yarn typecheck && eslint 'src/**/*.{js,jsx,ts,tsx}' --fix --cache",
+    "pretty": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "typecheck": "tsc --noEmit",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "prepare": "bob build",
-    "release": "release-it --only-version"
+    "pkg:pefisa": "./scripts/change-android-package-name-app-example.sh --package-name=br.com.pefisa.pefisa.hml",
+    "pkg:example": "./scripts/change-android-package-name-app-example.sh --package-name=com.example.wallet",
+    "pkg:palmeiras": "./scripts/change-android-package-name-app-example.sh --package-name=br.com.pefisa.palmeiras.hml",
+    "build:app-example": "./scripts/build-android-example.sh",
+    "build:google-wallet-mock": "./scripts/build-android-google-wallet-mock.sh",
+    "build:samsung-wallet-mock": "./scripts/build-android-samsung-wallet-mock.sh",
+    "log:google-wallet": "./scripts/quick-log-google-wallet.sh",
+    "log:samsung-wallet": "./scripts/quick-log-samsung-wallet.sh",
+    "log:wallets": "./scripts/log-wallets.sh"
   },
   "keywords": [
     "react-native",
@@ -59,51 +71,38 @@
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
-    "@commitlint/config-conventional": "^19.6.0",
-    "@eslint/compat": "^1.2.7",
-    "@eslint/eslintrc": "^3.3.0",
-    "@eslint/js": "^9.22.0",
     "@evilmartians/lefthook": "^1.5.0",
     "@react-native-community/cli": "15.0.0-alpha.2",
     "@react-native/babel-preset": "0.81.0",
-    "@react-native/eslint-config": "^0.78.0",
     "@release-it/conventional-changelog": "^9.0.2",
     "@types/jest": "^29.5.5",
     "@types/react": "^19.1.0",
-    "commitlint": "^19.6.1",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
     "del-cli": "^5.1.0",
-    "eslint": "^9.22.0",
-    "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.3",
+    "eslint": "^9.39.1",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-sonarjs": "^3.0.5",
     "jest": "^29.7.0",
-    "prettier": "^3.0.3",
+    "prettier": "^3.6.2",
     "react": "19.1.0",
     "react-native": "0.81.0",
     "react-native-builder-bob": "^0.40.13",
-    "release-it": "^17.10.0",
     "turbo": "^1.10.7",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
+    "react": "^18.1.0",
+    "react-native": "^0.70.6"
   },
   "workspaces": [
     "example"
   ],
   "packageManager": "yarn@3.6.1",
-  "jest": {
-    "preset": "react-native",
-    "modulePathIgnorePatterns": [
-      "<rootDir>/example/node_modules",
-      "<rootDir>/lib/"
-    ]
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
   "release-it": {
     "git": {
       "commitMessage": "chore: release ${version}",
@@ -122,13 +121,6 @@
         }
       }
     }
-  },
-  "prettier": {
-    "quoteProps": "consistent",
-    "singleQuote": true,
-    "tabWidth": 2,
-    "trailingComma": "es5",
-    "useTabs": false
   },
   "react-native-builder-bob": {
     "source": "src",
@@ -154,6 +146,12 @@
     "jsSrcsDir": "src",
     "android": {
       "javaPackageName": "com.builders.wallet"
+    }
+  },
+  "react-native": {
+    "android": {
+      "sourceDir": "./android",
+      "packageImportPath": "import com.builders.wallet.BuildersWalletPackage;"
     }
   },
   "create-react-native-library": {

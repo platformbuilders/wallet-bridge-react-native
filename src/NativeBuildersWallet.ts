@@ -1,40 +1,38 @@
-import { NativeModules } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
+import { GoogleWalletIOS } from './google-wallet.ios';
+import { SamsungWalletIOS } from './samsung-wallet.ios';
+import type { GoogleWalletSpec, SamsungWalletSpec } from './types/index';
 
-export interface UserAddress {
-  address1: string;
-  address2?: string;
-  countryCode: string;
-  locality: string;
-  administrativeArea: string;
-  name: string;
-  phoneNumber: string;
-  postalCode: string;
-}
+// Re-exporta todos os types
+export * from './types/index';
 
-export interface PaymentCard {
-  opaquePaymentCard: string;
-  network: number;
-  tokenServiceProvider: number;
-  displayName: string;
-  lastDigits: string;
-}
+// Re-exporta os event emitters
+export * from './event-emitters/index';
+// ============================================================================
+// MÓDULOS ESPECÍFICOS
+// ============================================================================
 
-export interface PushTokenizeRequest {
-  address: UserAddress;
-  card: PaymentCard;
-}
+const { GoogleWallet, SamsungWallet } = NativeModules;
 
-export interface Spec {
-  multiply(a: number, b: number): Promise<number>;
-  pushTokenize(request: PushTokenizeRequest): Promise<string>;
-}
-
-const { BuildersWallet } = NativeModules;
-
-if (!BuildersWallet) {
-  throw new Error(
-    'BuildersWallet native module is not available. Make sure you have properly installed the library and rebuilt your app.'
+// Verificação de disponibilidade dos módulos
+if (!GoogleWallet) {
+  console.warn(
+    'GoogleWallet native module is not available. Make sure you have properly installed the library and rebuilt your app.',
   );
 }
 
-export default BuildersWallet as Spec;
+if (!SamsungWallet) {
+  console.warn(
+    'SamsungWallet native module is not available. Make sure you have properly installed the library and rebuilt your app.',
+  );
+}
+
+// Exporta os módulos específicos
+export const GoogleWalletModule = Platform.select({
+  ios: GoogleWalletIOS,
+  android: GoogleWallet,
+}) as GoogleWalletSpec;
+export const SamsungWalletModule = Platform.select({
+  ios: SamsungWalletIOS,
+  android: SamsungWallet,
+}) as SamsungWalletSpec;

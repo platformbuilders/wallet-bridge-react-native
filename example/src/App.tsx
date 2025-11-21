@@ -1,109 +1,279 @@
-import { Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { pushTokenize } from 'react-native-builders-wallet';
-import type { PushTokenizeRequest } from 'react-native-builders-wallet';
+import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, View, Dimensions } from 'react-native';
+import { AnimatedToggleButton } from './components/AnimatedToggleButton';
+import {
+  GooglePayExample,
+  type GooglePayExampleRef,
+} from './components/GooglePayExample';
+import {
+  SamsungPayExample,
+  type SamsungPayExampleRef,
+} from './components/SamsungPayExample';
+import {
+  GoogleWalletEventEmitter,
+  SamsungWalletEventEmitter,
+  GoogleWalletModule,
+  SamsungWalletModule,
+  type GoogleWalletIntentEvent,
+  type SamsungWalletIntentEvent,
+  type GoogleWalletLogEvent,
+  type SamsungWalletLogEvent,
+} from '@platformbuilders/wallet-bridge-react-native';
 
-export default function App() {
-  const handleGPayPush = async () => {
-    const data_card = {
-      push_data: {
-        sender: 'pefisa',
-        cardDescriptor:
-          'MUNEQzlBQUFBODM2MjRFQTg0RTBCNEVEMkU4NjI2MEQ5OEU3NEIyODA5NTJCMjMzMTlEODYyNzkxQzUwRjQ2RTM0NERFMjAxMDUzOUU2ODQxNjAxNzQxNjI4QTk1NEU2MDgwOTA0Mjc0NjBFNkFCN0ZDM0MxMzc3OTUwOEI2RDlBMDc4RDQ5NzJDQ0YyMjk0MDRDNEMzMzRCQzc1NDc0N0E2MzNCNTFEMDM2RjdFMjJCQjQxOEFDMzkwRTNGODVERDQxRjNGM0ZDRjVEQTA4ODBEQzJFMEVBNjc1MjA0MjVEQzJBQ0MyMUREQTExMzRDRjdGNkU0MEJDRUEzNEVDMg==',
-      },
-      additional_info: {
-        name: 'Caleb Pedro Souza',
-        address: 'Rua Jardineira',
-        country: 'BR',
-        city: 'Natal',
-        phone: '73996489673',
-        state: 'RN',
-        zip_code: '59139444',
-        printed_name: 'Caleb Pedro Souza',
-        last_4_digits: '6890',
-      },
-      has_address_info: true,
-      has_phone_info: true,
-    };
+export default function App(): React.JSX.Element {
+  const [isGooglePay, setIsGooglePay] = useState(true);
 
-    try {
-      // Mock data para o push tokenize
-      const mockRequest: PushTokenizeRequest = {
-        address: {
-          address1: '123 Main St',
-          address2: 'Apt 4B',
-          countryCode: 'BR',
-          locality: 'São Paulo',
-          administrativeArea: 'SP',
-          name: 'João Silva',
-          phoneNumber: '+5511999999999',
-          postalCode: '01234-567',
-        },
-        card: {
-          opaquePaymentCard: data_card.push_data.cardDescriptor,
-          network: 12, // Mock network value
-          tokenServiceProvider: 14, // Mock token service provider
-          displayName: data_card.additional_info.name,
-          lastDigits: data_card.additional_info.last_4_digits,
-        },
-      };
+  // Refs para os componentes
+  const googlePayRef = useRef<GooglePayExampleRef>(null);
+  const samsungPayRef = useRef<SamsungPayExampleRef>(null);
+  const flatListRef = useRef<FlatList>(null);
 
-      console.log('Iniciando push tokenize...', mockRequest);
-      const tokenId = await pushTokenize({
-        address: {
-          address1: 'Rua Jardineira',
-          address2: '',
-          countryCode: 'BR',
-          locality: 'Natal',
-          administrativeArea: '',
-          name: 'Caleb Pedro Souza',
-          phoneNumber: '73996489673',
-          postalCode: '59139444',
-        },
-        card: {
-          opaquePaymentCard: data_card.push_data.cardDescriptor, // Representando um array de bytes
-          network: 12,
-          tokenServiceProvider: 14,
-          displayName: data_card.additional_info.name,
-          lastDigits: data_card.additional_info.last_4_digits,
-        },
-      });
-      Alert.alert('Sucesso', `Token criado com ID: ${tokenId}`);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      console.log('Erro no push tokenize:', errorMessage);
-      Alert.alert('Erro', `Falha ao criar token: ${errorMessage}`);
+  // Instanciar os EventEmitters
+  const googleEventEmitter = new GoogleWalletEventEmitter();
+  const samsungEventEmitter = new SamsungWalletEventEmitter();
+
+  // Obter largura da tela para o FlatList
+  const screenWidth = Dimensions.get('window').width;
+
+  // Dados para o FlatList - ambos componentes sempre montados
+  const walletComponents = [
+    {
+      id: 'google',
+      component: <GooglePayExample ref={googlePayRef} />,
+    },
+    {
+      id: 'samsung',
+      component: <SamsungPayExample ref={samsungPayRef} />,
+    },
+  ];
+
+  const handleToggle = (): void => {
+    const newIsGooglePay = !isGooglePay;
+    setIsGooglePay(newIsGooglePay);
+
+    // Scroll para o componente correto no FlatList
+    const targetIndex = newIsGooglePay ? 0 : 1;
+    flatListRef.current?.scrollToIndex({
+      index: targetIndex,
+      animated: true,
+    });
+  };
+
+  // Função para detectar mudança de página quando o usuário arrasta
+  const handleMomentumScrollEnd = (event: any) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const pageIndex = Math.round(contentOffsetX / screenWidth);
+
+    console.log(
+      '🔄 [App] Scroll manual detectado - página:',
+      pageIndex,
+      'offset:',
+      contentOffsetX
+    );
+
+    // Atualizar estado baseado na página atual
+    const newIsGooglePay = pageIndex === 0;
+    if (pageIndex >= 0 && pageIndex <= 1) {
+      if (newIsGooglePay !== isGooglePay) {
+        console.log(
+          '🔄 [App] Atualizando toggle para:',
+          newIsGooglePay ? 'Google Pay' : 'Samsung Pay'
+        );
+        setIsGooglePay(newIsGooglePay);
+      } else {
+        console.log('🔄 [App] Estado já está correto, não atualizando');
+      }
+    } else {
+      console.log('⚠️ [App] Índice de página inválido:', pageIndex);
     }
   };
 
+  // Configurar listeners para ambas as wallets
+  useEffect(() => {
+    console.log('🔍 [App] Configurando listeners das wallets...');
+
+    // Ativar listeners de log para Google Wallet
+    GoogleWalletModule.setLogListener().catch((error) => {
+      console.log('❌ [App] Erro ao ativar log listener do Google:', error.message);
+    });
+
+    // Ativar listeners de log para Samsung Wallet
+    SamsungWalletModule.setLogListener().catch((error) => {
+      console.log('❌ [App] Erro ao ativar log listener do Samsung:', error.message);
+    });
+
+    // Listener para logs do Google Wallet
+    const removeGoogleLogListener = googleEventEmitter.addLogListener(
+      (logEvent: GoogleWalletLogEvent) => {
+        console.log(
+          `[${logEvent.level}] ${logEvent.tag}: ${logEvent.message}`,
+          logEvent.error ? `\nErro: ${logEvent.error}` : '',
+        );
+      }
+    );
+
+    // Listener para logs do Samsung Wallet
+    const removeSamsungLogListener = samsungEventEmitter.addLogListener(
+      (logEvent: SamsungWalletLogEvent) => {
+        console.log(
+          `[${logEvent.level}] ${logEvent.tag}: ${logEvent.message}`,
+          logEvent.error ? `\nErro: ${logEvent.error}` : '',
+        );
+      }
+    );
+
+    // Listener para Google Wallet
+    const removeGoogleListener = googleEventEmitter.addIntentListener(
+      (walletEvent: GoogleWalletIntentEvent) => {
+        console.log('🎯 [App] Intent Google Wallet recebido:', walletEvent);
+        console.log('🔍 [App] Google ref disponível:', !!googlePayRef.current);
+
+        // Atualizar toggle para Google e navegar para o conteúdo do Google
+        console.log(
+          '🔄 [App] Atualizando toggle para Google Pay devido à intent recebida'
+        );
+        setIsGooglePay(true);
+
+        // Navegar para o conteúdo do Google no FlatList
+        const googleIndex = 0; // Google é o índice 0
+        flatListRef.current?.scrollToIndex({
+          index: googleIndex,
+          animated: true,
+        });
+
+        // Chamar a função do componente Google Pay (sempre montado agora)
+        if (googlePayRef.current) {
+          console.log('✅ [App] Chamando processWalletIntent...');
+          googlePayRef.current.processWalletIntent(walletEvent);
+        } else {
+          console.log('⚠️ [App] Google Pay ref não disponível');
+        }
+      }
+    );
+
+    // Listener para Samsung Wallet
+    const removeSamsungListener = samsungEventEmitter.addIntentListener(
+      (walletEvent: SamsungWalletIntentEvent) => {
+        console.log('🎯 [App] Intent Samsung Wallet recebido:', walletEvent);
+        console.log(
+          '🔍 [App] Samsung ref disponível:',
+          !!samsungPayRef.current
+        );
+
+        // Atualizar toggle para Samsung e navegar para o conteúdo da Samsung
+        console.log(
+          '🔄 [App] Atualizando toggle para Samsung Pay devido à intent recebida'
+        );
+        setIsGooglePay(false);
+
+        // Navegar para o conteúdo da Samsung no FlatList
+        const samsungIndex = 1; // Samsung é o índice 1
+        flatListRef.current?.scrollToIndex({
+          index: samsungIndex,
+          animated: true,
+        });
+
+        // Chamar a função do componente Samsung Pay (sempre montado agora)
+        if (samsungPayRef.current) {
+          console.log('✅ [App] Chamando processSamsungWalletIntent...');
+          samsungPayRef.current.processSamsungWalletIntent(walletEvent);
+        } else {
+          console.log('⚠️ [App] Samsung Pay ref não disponível');
+        }
+      }
+    );
+
+    // Listener para eventos de nenhuma intent do Google Wallet
+    const removeGoogleNoIntentListener = googleEventEmitter.addNoIntentListener(
+      () => {
+        console.log('🎯 [App] Nenhuma intent recebida do Google Wallet');
+        console.log('🔍 [App] Google Wallet não recebeu nenhuma intent válida');
+      }
+    );
+
+    // Listener para eventos de nenhuma intent do Samsung Wallet
+    const removeSamsungNoIntentListener =
+      samsungEventEmitter.addNoIntentListener(() => {
+        console.log('🎯 [App] Nenhuma intent recebida do Samsung Wallet');
+        console.log(
+          '🔍 [App] Samsung Wallet não recebeu nenhuma intent válida'
+        );
+      });
+
+    // Cleanup dos listeners
+    return () => {
+      console.log('🧹 [App] Removendo listeners das wallets...');
+      removeGoogleListener();
+      removeSamsungListener();
+      removeGoogleNoIntentListener();
+      removeSamsungNoIntentListener();
+      removeGoogleLogListener();
+      removeSamsungLogListener();
+
+      // Remover listeners de log
+      GoogleWalletModule.removeLogListener().catch((error) => {
+        console.log(
+          '❌ [App] Erro ao remover log listener do Google:',
+          error.message
+        );
+      });
+
+      SamsungWalletModule.removeLogListener().catch((error) => {
+        console.log(
+          '❌ [App] Erro ao remover log listener do Samsung:',
+          error.message
+        );
+      });
+    };
+  }, []); // Executar apenas uma vez na montagem
+
+  // Função para renderizar cada item do FlatList
+  const renderWalletComponent = ({
+    item,
+  }: {
+    item: (typeof walletComponents)[0];
+  }) => {
+    return (
+      <View style={{ flex: 1, width: screenWidth }}>{item.component}</View>
+    );
+  };
+
+  // Função para obter o layout de cada item
+  const getItemLayout = (_: any, index: number) => ({
+    length: screenWidth, // Largura da tela para scroll horizontal
+    offset: screenWidth * index,
+    index,
+  });
+
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.button} onPress={() => handleGPayPush()}>
-        <Text style={styles.buttonText}>G Pay Push</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      {/* Botão animado para alternar entre Google Pay e Samsung Pay */}
+      <AnimatedToggleButton isGooglePay={isGooglePay} onToggle={handleToggle} />
+
+      {/* FlatList com ambos os componentes sempre montados */}
+      <FlatList
+        ref={flatListRef}
+        data={walletComponents}
+        renderItem={renderWalletComponent}
+        keyExtractor={(item) => item.id}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        getItemLayout={getItemLayout}
+        initialScrollIndex={0}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScrollToIndexFailed={(info) => {
+          console.log('⚠️ [App] Falha ao scroll para índice:', info.index);
+          // Fallback: scroll para o índice mais próximo
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: info.index,
+              animated: true,
+            });
+          }, 100);
+        }}
+      />
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resultText: {
-    fontSize: 18,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#4285F4',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});

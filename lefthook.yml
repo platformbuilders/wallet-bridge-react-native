@@ -1,14 +1,10 @@
 pre-commit:
-  parallel: true
+  parallel: false
   commands:
+    pretty:
+      glob: "*.{js,ts,jsx,tsx,json}"
+      run: yarn pretty
     lint:
       glob: "*.{js,ts,jsx,tsx}"
-      run: npx eslint {staged_files}
-    types:
-      glob: "*.{js,ts, jsx, tsx}"
-      run: npx tsc
-commit-msg:
-  parallel: true
-  commands:
-    commitlint:
-      run: npx commitlint --edit
+      run: yarn lint
+      stage_fixed: true

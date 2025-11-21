@@ -1,5 +1,5 @@
 {
-  "name": "react-native-builders-wallet-example",
+  "name": "@platformbuilders/wallet-bridge-react-native-example",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -8,10 +8,8 @@
     "start": "react-native start",
     "build:android": "react-native build-android --extra-params \"--no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a\"",
     "build:ios": "react-native build-ios --mode Debug",
-    "clean": "./scripts/clean.sh",
-    "clean:full": "./scripts/clean-full.sh",
     "clean:node": "rm -rf node_modules && yarn install",
-    "android:clean": "./scripts/android-clean.sh"
+    "clean:android": "cd android && ./gradlew --stop && cd .. && rm -rf android/build example/android/build example/android/app/build && cd android && ./gradlew clean"
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.81.0",
