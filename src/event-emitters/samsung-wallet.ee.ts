@@ -1,3 +1,4 @@
+/* eslint-disable promise/prefer-await-to-callbacks */
 // ============================================================================
 // SAMSUNG WALLET EVENT EMITTER - ANDROID ONLY
 // ============================================================================
@@ -25,7 +26,7 @@ export class SamsungWalletEventEmitter {
     // Em iOS, não inicializar o EventEmitter
     if (this.isIOS) {
       console.warn(
-        '⚠️ [SamsungWalletEventEmitter] iOS detectado - EventEmitter desabilitado'
+        '⚠️ [SamsungWalletEventEmitter] iOS detectado - EventEmitter desabilitado',
       );
       return;
     }
@@ -36,17 +37,17 @@ export class SamsungWalletEventEmitter {
       if (SamsungWalletModule) {
         this.eventEmitter = new NativeEventEmitter(SamsungWalletModule);
         console.log(
-          '✅ [SamsungWalletEventEmitter] EventEmitter inicializado com sucesso'
+          '✅ [SamsungWalletEventEmitter] EventEmitter inicializado com sucesso',
         );
       } else {
         console.warn(
-          '⚠️ [SamsungWalletEventEmitter] Módulo SamsungWallet não está disponível'
+          '⚠️ [SamsungWalletEventEmitter] Módulo SamsungWallet não está disponível',
         );
       }
     } catch (error) {
       console.error(
         '❌ [SamsungWalletEventEmitter] Erro ao inicializar EventEmitter:',
-        error
+        error,
       );
     }
   }
@@ -58,12 +59,12 @@ export class SamsungWalletEventEmitter {
    * @returns Função para remover o listener
    */
   addIntentListener(
-    callback: (event: SamsungWalletIntentEvent) => void
+    callback: (event: SamsungWalletIntentEvent) => void,
   ): () => void {
     // Em iOS, retornar função vazia imediatamente
     if (this.isIOS) {
       console.warn(
-        '⚠️ [SamsungWalletEventEmitter] addIntentListener chamado em iOS - operação ignorada'
+        '⚠️ [SamsungWalletEventEmitter] addIntentListener chamado em iOS - operação ignorada',
       );
       return () => {}; // Retornar função vazia para iOS
     }
@@ -73,7 +74,7 @@ export class SamsungWalletEventEmitter {
     // Verificar se o EventEmitter está disponível
     if (!this.eventEmitter) {
       console.error(
-        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível'
+        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível',
       );
       return () => {}; // Retornar função vazia para evitar erros
     }
@@ -88,14 +89,14 @@ export class SamsungWalletEventEmitter {
         const walletEvent = event as SamsungWalletIntentEvent;
         console.log(
           '🎯 [SamsungWalletEventEmitter] Intent recebido:',
-          walletEvent
+          walletEvent,
         );
         callback(walletEvent);
-      }
+      },
     );
 
     console.log(
-      `✅ [SamsungWalletEventEmitter] Listener adicionado: ${listenerId}`
+      `✅ [SamsungWalletEventEmitter] Listener adicionado: ${listenerId}`,
     );
 
     // Retornar função de cleanup
@@ -103,7 +104,7 @@ export class SamsungWalletEventEmitter {
       this.listeners.delete(listenerId);
       subscription.remove();
       console.log(
-        `🧹 [SamsungWalletEventEmitter] Listener removido: ${listenerId}`
+        `🧹 [SamsungWalletEventEmitter] Listener removido: ${listenerId}`,
       );
     };
   }
@@ -118,7 +119,7 @@ export class SamsungWalletEventEmitter {
     // Em iOS, retornar função vazia imediatamente
     if (this.isIOS) {
       console.warn(
-        '⚠️ [SamsungWalletEventEmitter] addNoIntentListener chamado em iOS - operação ignorada'
+        '⚠️ [SamsungWalletEventEmitter] addNoIntentListener chamado em iOS - operação ignorada',
       );
       return () => {}; // Retornar função vazia para iOS
     }
@@ -128,7 +129,7 @@ export class SamsungWalletEventEmitter {
     // Verificar se o EventEmitter está disponível
     if (!this.eventEmitter) {
       console.error(
-        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível'
+        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível',
       );
       return () => {}; // Retornar função vazia para evitar erros
     }
@@ -142,11 +143,11 @@ export class SamsungWalletEventEmitter {
       () => {
         console.log('🎯 [SamsungWalletEventEmitter] Nenhuma intent recebida');
         callback();
-      }
+      },
     );
 
     console.log(
-      `✅ [SamsungWalletEventEmitter] NoIntent Listener adicionado: ${listenerId}`
+      `✅ [SamsungWalletEventEmitter] NoIntent Listener adicionado: ${listenerId}`,
     );
 
     // Retornar função de cleanup
@@ -154,7 +155,7 @@ export class SamsungWalletEventEmitter {
       this.noIntentListeners.delete(listenerId);
       subscription.remove();
       console.log(
-        `🧹 [SamsungWalletEventEmitter] NoIntent Listener removido: ${listenerId}`
+        `🧹 [SamsungWalletEventEmitter] NoIntent Listener removido: ${listenerId}`,
       );
     };
   }
@@ -165,13 +166,11 @@ export class SamsungWalletEventEmitter {
    * @param callback Função que será chamada quando um log for recebido
    * @returns Função para remover o listener
    */
-  addLogListener(
-    callback: (event: SamsungWalletLogEvent) => void
-  ): () => void {
+  addLogListener(callback: (event: SamsungWalletLogEvent) => void): () => void {
     // Em iOS, retornar função vazia imediatamente
     if (this.isIOS) {
       console.warn(
-        '⚠️ [SamsungWalletEventEmitter] addLogListener chamado em iOS - operação ignorada'
+        '⚠️ [SamsungWalletEventEmitter] addLogListener chamado em iOS - operação ignorada',
       );
       return () => {}; // Retornar função vazia para iOS
     }
@@ -181,7 +180,7 @@ export class SamsungWalletEventEmitter {
     // Verificar se o EventEmitter está disponível
     if (!this.eventEmitter) {
       console.error(
-        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível'
+        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível',
       );
       return () => {}; // Retornar função vazia para evitar erros
     }
@@ -195,11 +194,11 @@ export class SamsungWalletEventEmitter {
       (event: any) => {
         const logEvent = event as SamsungWalletLogEvent;
         callback(logEvent);
-      }
+      },
     );
 
     console.log(
-      `✅ [SamsungWalletEventEmitter] Log Listener adicionado: ${listenerId}`
+      `✅ [SamsungWalletEventEmitter] Log Listener adicionado: ${listenerId}`,
     );
 
     // Retornar função de cleanup
@@ -207,7 +206,7 @@ export class SamsungWalletEventEmitter {
       this.logListeners.delete(listenerId);
       subscription.remove();
       console.log(
-        `🧹 [SamsungWalletEventEmitter] Log Listener removido: ${listenerId}`
+        `🧹 [SamsungWalletEventEmitter] Log Listener removido: ${listenerId}`,
       );
     };
   }
@@ -224,7 +223,7 @@ export class SamsungWalletEventEmitter {
     // Em iOS, não tentar remover listeners do EventEmitter
     if (this.isIOS) {
       console.warn(
-        '⚠️ [SamsungWalletEventEmitter] removeAllListeners chamado em iOS - apenas Maps limpos'
+        '⚠️ [SamsungWalletEventEmitter] removeAllListeners chamado em iOS - apenas Maps limpos',
       );
       return;
     }
@@ -234,7 +233,7 @@ export class SamsungWalletEventEmitter {
       this.eventEmitter.removeAllListeners('SamsungWalletNoIntentReceived');
       this.eventEmitter.removeAllListeners('WalletLog');
       console.log(
-        '🧹 [SamsungWalletEventEmitter] Todos os listeners foram removidos'
+        '🧹 [SamsungWalletEventEmitter] Todos os listeners foram removidos',
       );
     }
   }
@@ -246,7 +245,7 @@ export class SamsungWalletEventEmitter {
   getListenerCount(): number {
     if (this.isIOS) {
       console.warn(
-        '⚠️ [SamsungWalletEventEmitter] getListenerCount chamado em iOS - retornando 0'
+        '⚠️ [SamsungWalletEventEmitter] getListenerCount chamado em iOS - retornando 0',
       );
       return 0;
     }
@@ -262,7 +261,7 @@ export class SamsungWalletEventEmitter {
   isAvailable(): boolean {
     if (this.isIOS) {
       console.warn(
-        '⚠️ [SamsungWalletEventEmitter] isAvailable chamado em iOS - retornando false'
+        '⚠️ [SamsungWalletEventEmitter] isAvailable chamado em iOS - retornando false',
       );
       return false;
     }

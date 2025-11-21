@@ -1,0 +1,9 @@
+name: check
+
+on: pull_request
+
+jobs:
+  call-workflow:
+    uses: platformbuilders/actions-workflows/.github/workflows/check-react-lib.yml@main
+    secrets:
+      PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}

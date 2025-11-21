@@ -200,7 +200,7 @@ export interface SamsungWalletSpec {
     payload: string,
     issuerId: string,
     tokenizationProvider: string,
-    cardType: string
+    cardType: string,
   ): Promise<SamsungCard>;
 
   // Métodos de compatibilidade
@@ -216,7 +216,7 @@ export interface SamsungWalletSpec {
   // Método de resultado de ativação
   setActivationResult(
     status: SamsungActivationStatus,
-    activationCode?: string
+    activationCode?: string,
   ): Promise<boolean>;
 
   // Método para finalizar atividade

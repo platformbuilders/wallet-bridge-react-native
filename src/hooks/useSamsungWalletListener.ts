@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import type { SamsungWalletIntentEvent } from '../types/samsung-wallet.types';
 import { SamsungWalletService } from '../services/samsung-wallet.service';
+import type { SamsungWalletIntentEvent } from '../types/samsung-wallet.types';
 import { usePromise } from '../utils/usePromise';
 
 /**
@@ -9,10 +9,10 @@ import { usePromise } from '../utils/usePromise';
  */
 export const useSamsungWalletListener = (
   onIntentReceived: (event: SamsungWalletIntentEvent) => void,
-  onNoIntentReceived?: () => void
+  onNoIntentReceived?: () => void,
 ) => {
   const { loading, callPromise } = usePromise(
-    SamsungWalletService.startWalletIntentListener
+    SamsungWalletService.startWalletIntentListener,
   );
 
   useEffect(() => {
@@ -29,18 +29,16 @@ export const useSamsungWalletListener = (
     const removeIntentListener =
       SamsungWalletService.walletEventEmitter.addIntentListener(
         (walletEvent: SamsungWalletIntentEvent) => {
-          // eslint-disable-next-line no-console
           console.log(
             '🎯 [Hook] Intent received from Samsung Wallet:',
-            walletEvent
+            walletEvent,
           );
           onIntentReceived(walletEvent);
-        }
+        },
       );
 
     const removeNoIntentListener = onNoIntentReceived
       ? SamsungWalletService.walletEventEmitter.addNoIntentListener(() => {
-          // eslint-disable-next-line no-console
           console.log('🎯 [Hook] No intent received from Samsung Wallet');
           onNoIntentReceived();
         })
@@ -48,6 +46,7 @@ export const useSamsungWalletListener = (
 
     return () => {
       try {
+        // eslint-disable-next-line promise/prefer-await-to-then
         SamsungWalletService.stopWalletIntentListener().catch(() => {});
       } catch {}
       removeIntentListener();

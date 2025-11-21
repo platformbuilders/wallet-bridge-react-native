@@ -5,14 +5,14 @@
 // que utilizam a biblioteca BuildersWallet
 
 import type {
-  GoogleWalletConstants,
   GoogleTokenInfo,
   GoogleTokenStatus,
+  GoogleWalletConstants,
   GoogleWalletData,
 } from '../../types/google-wallet.types';
 import type {
-  SamsungWalletConstants,
   SamsungCard,
+  SamsungWalletConstants,
   SamsungWalletInfo,
 } from '../../types/samsung-wallet.types';
 
@@ -336,7 +336,7 @@ export const resetAllMocks = () => {
 export const setupSuccessMocks = () => {
   mockGoogleWalletModule.checkWalletAvailability.mockResolvedValue(true);
   mockGoogleWalletModule.getSecureWalletInfo.mockResolvedValue(
-    mockGoogleWalletData
+    mockGoogleWalletData,
   );
   mockGoogleWalletModule.listTokens.mockResolvedValue([mockGoogleTokenInfo]);
 

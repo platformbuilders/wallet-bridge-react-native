@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import type { GoogleWalletLogEvent } from '../types/google-wallet.types';
 import { GoogleWalletService } from '../services/google-wallet.service';
+import type { GoogleWalletLogEvent } from '../types/google-wallet.types';
 import { usePromise } from '../utils/usePromise';
 
 /**
@@ -8,10 +8,10 @@ import { usePromise } from '../utils/usePromise';
  * Inicia o listener nativo e registra o listener JS, limpando tudo ao desmontar.
  */
 export const useGoogleWalletLogListener = (
-  onLogReceived: (event: GoogleWalletLogEvent) => void
+  onLogReceived: (event: GoogleWalletLogEvent) => void,
 ) => {
   const { loading, callPromise } = usePromise(
-    GoogleWalletService.startLogListener
+    GoogleWalletService.startLogListener,
   );
 
   useEffect(() => {
@@ -26,14 +26,14 @@ export const useGoogleWalletLogListener = (
     const removeLogListener =
       GoogleWalletService.walletEventEmitter.addLogListener(
         (event: GoogleWalletLogEvent) => {
-          // eslint-disable-next-line no-console
           console.log('📝 [Hook] Google Wallet log:', event);
           onLogReceived(event);
-        }
+        },
       );
 
     return () => {
       try {
+        // eslint-disable-next-line promise/prefer-await-to-then
         GoogleWalletService.stopLogListener().catch(() => {});
       } catch {}
       removeLogListener();
@@ -42,5 +42,3 @@ export const useGoogleWalletLogListener = (
 
   return { isListeningLogs: loading };
 };
-
-

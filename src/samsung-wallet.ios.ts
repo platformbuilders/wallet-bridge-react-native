@@ -5,13 +5,13 @@
 // não está disponível nativamente. Todas as funções retornam valores padrão
 // ou rejeitam promises com mensagens apropriadas.
 
-import type {
-  SamsungWalletSpec,
-  SamsungCard,
-  SamsungWalletInfo,
-  SamsungWalletConstants,
-} from './types/samsung-wallet.types';
 import type { SamsungActivationStatus } from './enums';
+import type {
+  SamsungCard,
+  SamsungWalletConstants,
+  SamsungWalletInfo,
+  SamsungWalletSpec,
+} from './types/samsung-wallet.types';
 
 // ============================================================================
 // CONSTANTES STUB PARA iOS
@@ -121,7 +121,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
 
   private constructor() {
     console.warn(
-      '⚠️ [SamsungWallet-iOS] Samsung Wallet não está disponível no iOS. Usando implementação stub.'
+      '⚠️ [SamsungWallet-iOS] Samsung Wallet não está disponível no iOS. Usando implementação stub.',
     );
   }
 
@@ -138,7 +138,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async init(serviceId: string): Promise<boolean> {
     console.log(
-      `🚀 [SamsungWallet-iOS] init(${serviceId}) - Retornando false (iOS)`
+      `🚀 [SamsungWallet-iOS] init(${serviceId}) - Retornando false (iOS)`,
     );
     return Promise.resolve(false);
   }
@@ -149,7 +149,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async getSamsungPayStatus(): Promise<number> {
     console.log(
-      '📊 [SamsungWallet-iOS] getSamsungPayStatus() - Retornando SPAY_NOT_SUPPORTED (iOS)'
+      '📊 [SamsungWallet-iOS] getSamsungPayStatus() - Retornando SPAY_NOT_SUPPORTED (iOS)',
     );
     return Promise.resolve(iOS_STUB_CONSTANTS.SPAY_NOT_SUPPORTED);
   }
@@ -160,7 +160,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   goToUpdatePage(): void {
     console.log(
-      '🔄 [SamsungWallet-iOS] goToUpdatePage() - Não disponível no iOS'
+      '🔄 [SamsungWallet-iOS] goToUpdatePage() - Não disponível no iOS',
     );
   }
 
@@ -170,7 +170,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   activateSamsungPay(): void {
     console.log(
-      '⚡ [SamsungWallet-iOS] activateSamsungPay() - Não disponível no iOS'
+      '⚡ [SamsungWallet-iOS] activateSamsungPay() - Não disponível no iOS',
     );
   }
 
@@ -180,7 +180,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async getAllCards(): Promise<SamsungCard[]> {
     console.log(
-      '💳 [SamsungWallet-iOS] getAllCards() - Retornando array vazio (iOS)'
+      '💳 [SamsungWallet-iOS] getAllCards() - Retornando array vazio (iOS)',
     );
     return Promise.resolve([]);
   }
@@ -191,7 +191,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async getWalletInfo(): Promise<SamsungWalletInfo> {
     console.log(
-      '👛 [SamsungWallet-iOS] getWalletInfo() - Não disponível no iOS'
+      '👛 [SamsungWallet-iOS] getWalletInfo() - Não disponível no iOS',
     );
     return Promise.reject('Samsung Wallet não está disponível no iOS');
   }
@@ -204,7 +204,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
     payload: string,
     issuerId: string,
     tokenizationProvider: string,
-    cardType: string
+    cardType: string,
   ): Promise<SamsungCard> {
     console.log('➕ [SamsungWallet-iOS] addCard() - Não disponível no iOS');
     console.log('Payload:', payload);
@@ -220,7 +220,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async checkWalletAvailability(): Promise<boolean> {
     console.log(
-      '🔍 [SamsungWallet-iOS] checkWalletAvailability() - Retornando false (iOS)'
+      '🔍 [SamsungWallet-iOS] checkWalletAvailability() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -231,7 +231,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   getConstants(): SamsungWalletConstants {
     console.log(
-      '📊 [SamsungWallet-iOS] getConstants() - Retornando constantes stub'
+      '📊 [SamsungWallet-iOS] getConstants() - Retornando constantes stub',
     );
     return iOS_STUB_CONSTANTS;
   }
@@ -242,7 +242,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async setIntentListener(): Promise<boolean> {
     console.log(
-      '👂 [SamsungWallet-iOS] setIntentListener() - Retornando false (iOS)'
+      '👂 [SamsungWallet-iOS] setIntentListener() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -253,7 +253,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async removeIntentListener(): Promise<boolean> {
     console.log(
-      '🔇 [SamsungWallet-iOS] removeIntentListener() - Retornando false (iOS)'
+      '🔇 [SamsungWallet-iOS] removeIntentListener() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -264,10 +264,10 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async setActivationResult(
     status: SamsungActivationStatus,
-    activationCode?: string
+    activationCode?: string,
   ): Promise<boolean> {
     console.log(
-      '✅ [SamsungWallet-iOS] setActivationResult() - Retornando false (iOS)'
+      '✅ [SamsungWallet-iOS] setActivationResult() - Retornando false (iOS)',
     );
     console.log('Status:', status);
     console.log('ActivationCode:', activationCode);
@@ -280,7 +280,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async finishActivity(): Promise<boolean> {
     console.log(
-      '🏁 [SamsungWallet-iOS] finishActivity() - Retornando false (iOS)'
+      '🏁 [SamsungWallet-iOS] finishActivity() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -300,7 +300,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async setLogListener(): Promise<boolean> {
     console.log(
-      '📝 [SamsungWallet-iOS] setLogListener() - Retornando false (iOS)'
+      '📝 [SamsungWallet-iOS] setLogListener() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -311,7 +311,7 @@ class SamsungWalletiOSStub implements SamsungWalletSpec {
    */
   async removeLogListener(): Promise<boolean> {
     console.log(
-      '🔇 [SamsungWallet-iOS] removeLogListener() - Retornando false (iOS)'
+      '🔇 [SamsungWallet-iOS] removeLogListener() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }

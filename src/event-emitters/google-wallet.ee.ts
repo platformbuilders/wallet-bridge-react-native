@@ -1,3 +1,4 @@
+/* eslint-disable promise/prefer-await-to-callbacks */
 // ============================================================================
 // GOOGLE WALLET EVENT EMITTER - ANDROID ONLY
 // ============================================================================
@@ -25,7 +26,7 @@ export class GoogleWalletEventEmitter {
     // Em iOS, não inicializar o EventEmitter
     if (this.isIOS) {
       console.warn(
-        '⚠️ [GoogleWalletEventEmitter] iOS detectado - EventEmitter desabilitado'
+        '⚠️ [GoogleWalletEventEmitter] iOS detectado - EventEmitter desabilitado',
       );
       return;
     }
@@ -36,17 +37,17 @@ export class GoogleWalletEventEmitter {
       if (GoogleWalletModule) {
         this.eventEmitter = new NativeEventEmitter(GoogleWalletModule);
         console.log(
-          '✅ [GoogleWalletEventEmitter] EventEmitter inicializado com sucesso'
+          '✅ [GoogleWalletEventEmitter] EventEmitter inicializado com sucesso',
         );
       } else {
         console.warn(
-          '⚠️ [GoogleWalletEventEmitter] Módulo GoogleWallet não está disponível'
+          '⚠️ [GoogleWalletEventEmitter] Módulo GoogleWallet não está disponível',
         );
       }
     } catch (error) {
       console.error(
         '❌ [GoogleWalletEventEmitter] Erro ao inicializar EventEmitter:',
-        error
+        error,
       );
     }
   }
@@ -58,12 +59,12 @@ export class GoogleWalletEventEmitter {
    * @returns Função para remover o listener
    */
   addIntentListener(
-    callback: (event: GoogleWalletIntentEvent) => void
+    callback: (event: GoogleWalletIntentEvent) => void,
   ): () => void {
     // Em iOS, retornar função vazia imediatamente
     if (this.isIOS) {
       console.warn(
-        '⚠️ [GoogleWalletEventEmitter] addIntentListener chamado em iOS - operação ignorada'
+        '⚠️ [GoogleWalletEventEmitter] addIntentListener chamado em iOS - operação ignorada',
       );
       return () => {}; // Retornar função vazia para iOS
     }
@@ -73,7 +74,7 @@ export class GoogleWalletEventEmitter {
     // Verificar se o EventEmitter está disponível
     if (!this.eventEmitter) {
       console.error(
-        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível'
+        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível',
       );
       return () => {}; // Retornar função vazia para evitar erros
     }
@@ -88,14 +89,14 @@ export class GoogleWalletEventEmitter {
         const walletEvent = event as GoogleWalletIntentEvent;
         console.log(
           '🎯 [GoogleWalletEventEmitter] Intent recebido:',
-          walletEvent
+          walletEvent,
         );
         callback(walletEvent);
-      }
+      },
     );
 
     console.log(
-      `✅ [GoogleWalletEventEmitter] Listener adicionado: ${listenerId}`
+      `✅ [GoogleWalletEventEmitter] Listener adicionado: ${listenerId}`,
     );
 
     // Retornar função de cleanup
@@ -103,7 +104,7 @@ export class GoogleWalletEventEmitter {
       this.listeners.delete(listenerId);
       subscription.remove();
       console.log(
-        `🧹 [GoogleWalletEventEmitter] Listener removido: ${listenerId}`
+        `🧹 [GoogleWalletEventEmitter] Listener removido: ${listenerId}`,
       );
     };
   }
@@ -118,7 +119,7 @@ export class GoogleWalletEventEmitter {
     // Em iOS, retornar função vazia imediatamente
     if (this.isIOS) {
       console.warn(
-        '⚠️ [GoogleWalletEventEmitter] addNoIntentListener chamado em iOS - operação ignorada'
+        '⚠️ [GoogleWalletEventEmitter] addNoIntentListener chamado em iOS - operação ignorada',
       );
       return () => {}; // Retornar função vazia para iOS
     }
@@ -128,7 +129,7 @@ export class GoogleWalletEventEmitter {
     // Verificar se o EventEmitter está disponível
     if (!this.eventEmitter) {
       console.error(
-        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível'
+        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível',
       );
       return () => {}; // Retornar função vazia para evitar erros
     }
@@ -142,11 +143,11 @@ export class GoogleWalletEventEmitter {
       () => {
         console.log('🎯 [GoogleWalletEventEmitter] Nenhuma intent recebida');
         callback();
-      }
+      },
     );
 
     console.log(
-      `✅ [GoogleWalletEventEmitter] NoIntent Listener adicionado: ${listenerId}`
+      `✅ [GoogleWalletEventEmitter] NoIntent Listener adicionado: ${listenerId}`,
     );
 
     // Retornar função de cleanup
@@ -154,7 +155,7 @@ export class GoogleWalletEventEmitter {
       this.noIntentListeners.delete(listenerId);
       subscription.remove();
       console.log(
-        `🧹 [GoogleWalletEventEmitter] NoIntent Listener removido: ${listenerId}`
+        `🧹 [GoogleWalletEventEmitter] NoIntent Listener removido: ${listenerId}`,
       );
     };
   }
@@ -165,13 +166,11 @@ export class GoogleWalletEventEmitter {
    * @param callback Função que será chamada quando um log for recebido
    * @returns Função para remover o listener
    */
-  addLogListener(
-    callback: (event: GoogleWalletLogEvent) => void
-  ): () => void {
+  addLogListener(callback: (event: GoogleWalletLogEvent) => void): () => void {
     // Em iOS, retornar função vazia imediatamente
     if (this.isIOS) {
       console.warn(
-        '⚠️ [GoogleWalletEventEmitter] addLogListener chamado em iOS - operação ignorada'
+        '⚠️ [GoogleWalletEventEmitter] addLogListener chamado em iOS - operação ignorada',
       );
       return () => {}; // Retornar função vazia para iOS
     }
@@ -181,7 +180,7 @@ export class GoogleWalletEventEmitter {
     // Verificar se o EventEmitter está disponível
     if (!this.eventEmitter) {
       console.error(
-        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível'
+        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível',
       );
       return () => {}; // Retornar função vazia para evitar erros
     }
@@ -195,11 +194,11 @@ export class GoogleWalletEventEmitter {
       (event: any) => {
         const logEvent = event as GoogleWalletLogEvent;
         callback(logEvent);
-      }
+      },
     );
 
     console.log(
-      `✅ [GoogleWalletEventEmitter] Log Listener adicionado: ${listenerId}`
+      `✅ [GoogleWalletEventEmitter] Log Listener adicionado: ${listenerId}`,
     );
 
     // Retornar função de cleanup
@@ -207,7 +206,7 @@ export class GoogleWalletEventEmitter {
       this.logListeners.delete(listenerId);
       subscription.remove();
       console.log(
-        `🧹 [GoogleWalletEventEmitter] Log Listener removido: ${listenerId}`
+        `🧹 [GoogleWalletEventEmitter] Log Listener removido: ${listenerId}`,
       );
     };
   }
@@ -224,7 +223,7 @@ export class GoogleWalletEventEmitter {
     // Em iOS, não tentar remover listeners do EventEmitter
     if (this.isIOS) {
       console.warn(
-        '⚠️ [GoogleWalletEventEmitter] removeAllListeners chamado em iOS - apenas Maps limpos'
+        '⚠️ [GoogleWalletEventEmitter] removeAllListeners chamado em iOS - apenas Maps limpos',
       );
       return;
     }
@@ -234,7 +233,7 @@ export class GoogleWalletEventEmitter {
       this.eventEmitter.removeAllListeners('GoogleWalletNoIntentReceived');
       this.eventEmitter.removeAllListeners('WalletLog');
       console.log(
-        '🧹 [GoogleWalletEventEmitter] Todos os listeners foram removidos'
+        '🧹 [GoogleWalletEventEmitter] Todos os listeners foram removidos',
       );
     }
   }
@@ -246,7 +245,7 @@ export class GoogleWalletEventEmitter {
   getListenerCount(): number {
     if (this.isIOS) {
       console.warn(
-        '⚠️ [GoogleWalletEventEmitter] getListenerCount chamado em iOS - retornando 0'
+        '⚠️ [GoogleWalletEventEmitter] getListenerCount chamado em iOS - retornando 0',
       );
       return 0;
     }
@@ -262,7 +261,7 @@ export class GoogleWalletEventEmitter {
   isAvailable(): boolean {
     if (this.isIOS) {
       console.warn(
-        '⚠️ [GoogleWalletEventEmitter] isAvailable chamado em iOS - retornando false'
+        '⚠️ [GoogleWalletEventEmitter] isAvailable chamado em iOS - retornando false',
       );
       return false;
     }

@@ -93,5 +93,8 @@ nitrogen/
 # Tests
 coverage/
 
+# Eslint
+.eslintcache
+
 # Misc
 example/android/libs/

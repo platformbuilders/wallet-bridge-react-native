@@ -41,19 +41,24 @@ yarn test:ci
 ## Mocks
 
 ### Módulos Nativos (React Native)
+
 - `GoogleWallet` - Mock do módulo nativo do Google Wallet
 - `SamsungWallet` - Mock do módulo nativo do Samsung Wallet
 
 ### Módulos iOS
+
 - `GoogleWalletIOS` - Mock da implementação iOS do Google Wallet
 - `SamsungWalletIOS` - Mock da implementação iOS do Samsung Wallet
 
 ### Event Emitters
+
 - `GoogleWalletEventEmitter` - Mock do event emitter do Google Wallet
 - `SamsungWalletEventEmitter` - Mock do event emitter do Samsung Wallet
 
 ### Mocks Exportáveis
+
 Todos os mocks estão disponíveis em `__mocks__/index.ts` para uso em aplicações externas:
+
 - `mockGoogleWalletModule` - Mock completo do GoogleWalletModule
 - `mockSamsungWalletModule` - Mock completo do SamsungWalletModule
 - `mockGoogleWalletData` - Dados de exemplo para Google Wallet
@@ -110,6 +115,7 @@ Para adicionar novos testes:
 4. Siga o padrão de nomenclatura existente
 
 Exemplo:
+
 ```typescript
 import { GoogleWalletModule } from '../NativeBuildersWallet';
 
