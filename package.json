@@ -4,6 +4,7 @@
   "description": "Este repositório contém um pacote React Native para integração com carteiras digitais. Ele atua como uma ponte (bridge) que se conecta aos SDKs nativos de cada carteira, abstraindo a complexidade dos fluxos de provisionamento (Push e App2App). Inicialmente compatível com Google Pay Wallet, com planos de expansão para Samsung Pay e Apple Wallet.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
+  "module": "./lib/module/index.js",
   "exports": {
     ".": {
       "source": "./src/index.tsx",
@@ -91,7 +92,7 @@
     "prettier": "^3.6.2",
     "react": "19.1.0",
     "react-native": "0.81.0",
-    "react-native-builder-bob": "^0.40.13",
+    "react-native-builder-bob": "^0.30.2",
     "turbo": "^1.10.7",
     "typescript": "^5.8.3"
   },
