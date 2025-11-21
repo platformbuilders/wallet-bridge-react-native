@@ -5,15 +5,15 @@
 // não está disponível nativamente. Todas as funções retornam valores padrão
 // ou rejeitam promises com mensagens apropriadas.
 
-import type {
-  GoogleWalletSpec,
-  GoogleWalletData,
-  GoogleTokenStatus,
-  GoogleTokenInfo,
-  GooglePushTokenizeRequestForCard,
-  GoogleWalletConstants,
-} from './types/google-wallet.types';
 import type { GoogleActivationStatus } from './enums';
+import type {
+  GooglePushTokenizeRequestForCard,
+  GoogleTokenInfo,
+  GoogleTokenStatus,
+  GoogleWalletConstants,
+  GoogleWalletData,
+  GoogleWalletSpec,
+} from './types/google-wallet.types';
 
 // ============================================================================
 // CONSTANTES STUB PARA iOS
@@ -89,7 +89,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
 
   private constructor() {
     console.warn(
-      '⚠️ [GoogleWallet-iOS] Google Wallet não está disponível no iOS. Usando implementação stub.'
+      '⚠️ [GoogleWallet-iOS] Google Wallet não está disponível no iOS. Usando implementação stub.',
     );
   }
 
@@ -106,7 +106,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async checkWalletAvailability(): Promise<boolean> {
     console.log(
-      '🔍 [GoogleWallet-iOS] checkWalletAvailability() - Retornando false (iOS)'
+      '🔍 [GoogleWallet-iOS] checkWalletAvailability() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -117,7 +117,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async getSecureWalletInfo(): Promise<GoogleWalletData> {
     console.log(
-      '🔐 [GoogleWallet-iOS] getSecureWalletInfo() - Não disponível no iOS'
+      '🔐 [GoogleWallet-iOS] getSecureWalletInfo() - Não disponível no iOS',
     );
     throw new Error('Google Wallet não está disponível no iOS');
   }
@@ -128,10 +128,10 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async getTokenStatus(
     tokenServiceProvider: number,
-    tokenReferenceId: string
+    tokenReferenceId: string,
   ): Promise<GoogleTokenStatus> {
     console.log(
-      '🎫 [GoogleWallet-iOS] getTokenStatus() - Não disponível no iOS'
+      '🎫 [GoogleWallet-iOS] getTokenStatus() - Não disponível no iOS',
     );
     console.log('TokenServiceProvider:', tokenServiceProvider);
     console.log('TokenReferenceId:', tokenReferenceId);
@@ -154,7 +154,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
   async isTokenized(
     fpanLastFour: string,
     cardNetwork: number,
-    tokenServiceProvider: number
+    tokenServiceProvider: number,
   ): Promise<boolean> {
     console.log('💳 [GoogleWallet-iOS] isTokenized() - Retornando false (iOS)');
     console.log('FpanLastFour:', fpanLastFour);
@@ -169,7 +169,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async viewToken(
     tokenServiceProvider: number,
-    issuerTokenId: string
+    issuerTokenId: string,
   ): Promise<GoogleTokenInfo | null> {
     console.log('👁️ [GoogleWallet-iOS] viewToken() - Retornando null (iOS)');
     console.log('TokenServiceProvider:', tokenServiceProvider);
@@ -182,10 +182,10 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    * No iOS, rejeita a promise
    */
   async addCardToWallet(
-    cardData: GooglePushTokenizeRequestForCard
+    cardData: GooglePushTokenizeRequestForCard,
   ): Promise<string> {
     console.log(
-      '➕ [GoogleWallet-iOS] addCardToWallet() - Não disponível no iOS'
+      '➕ [GoogleWallet-iOS] addCardToWallet() - Não disponível no iOS',
     );
     console.log('CardData:', cardData);
     return Promise.reject('Google Wallet não está disponível no iOS');
@@ -197,7 +197,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async createWalletIfNeeded(): Promise<boolean> {
     console.log(
-      '🏗️ [GoogleWallet-iOS] createWalletIfNeeded() - Retornando false (iOS)'
+      '🏗️ [GoogleWallet-iOS] createWalletIfNeeded() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -208,7 +208,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async listTokens(): Promise<GoogleTokenInfo[]> {
     console.log(
-      '📋 [GoogleWallet-iOS] listTokens() - Retornando array vazio (iOS)'
+      '📋 [GoogleWallet-iOS] listTokens() - Retornando array vazio (iOS)',
     );
     return [];
   }
@@ -219,7 +219,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   getConstants(): GoogleWalletConstants {
     console.log(
-      '📊 [GoogleWallet-iOS] getConstants() - Retornando constantes stub'
+      '📊 [GoogleWallet-iOS] getConstants() - Retornando constantes stub',
     );
     return iOS_STUB_CONSTANTS;
   }
@@ -230,7 +230,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async setIntentListener(): Promise<boolean> {
     console.log(
-      '👂 [GoogleWallet-iOS] setIntentListener() - Retornando false (iOS)'
+      '👂 [GoogleWallet-iOS] setIntentListener() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -241,7 +241,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async removeIntentListener(): Promise<boolean> {
     console.log(
-      '🔇 [GoogleWallet-iOS] removeIntentListener() - Retornando false (iOS)'
+      '🔇 [GoogleWallet-iOS] removeIntentListener() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -252,10 +252,10 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async setActivationResult(
     status: GoogleActivationStatus,
-    activationCode?: string
+    activationCode?: string,
   ): Promise<boolean> {
     console.log(
-      '✅ [GoogleWallet-iOS] setActivationResult() - Retornando false (iOS)'
+      '✅ [GoogleWallet-iOS] setActivationResult() - Retornando false (iOS)',
     );
     console.log('Status:', status);
     console.log('ActivationCode:', activationCode);
@@ -268,7 +268,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async finishActivity(): Promise<boolean> {
     console.log(
-      '🏁 [GoogleWallet-iOS] finishActivity() - Retornando false (iOS)'
+      '🏁 [GoogleWallet-iOS] finishActivity() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -288,7 +288,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async setLogListener(): Promise<boolean> {
     console.log(
-      '📝 [GoogleWallet-iOS] setLogListener() - Retornando false (iOS)'
+      '📝 [GoogleWallet-iOS] setLogListener() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }
@@ -299,7 +299,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async removeLogListener(): Promise<boolean> {
     console.log(
-      '🔇 [GoogleWallet-iOS] removeLogListener() - Retornando false (iOS)'
+      '🔇 [GoogleWallet-iOS] removeLogListener() - Retornando false (iOS)',
     );
     return Promise.resolve(false);
   }

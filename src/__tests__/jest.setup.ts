@@ -1,14 +1,14 @@
-// Importa os mocks exportáveis
-import { mockReactNative } from './__mocks__/index';
+// Importa os mocks dos módulos iOS
+import {
+  mockGoogleWalletEventEmitter,
+  mockGoogleWalletModule,
+  mockReactNative,
+  mockSamsungWalletEventEmitter,
+  mockSamsungWalletModule,
+} from './__mocks__/index';
 
 // Mock do React Native usando os mocks exportáveis
 jest.mock('react-native', () => mockReactNative);
-
-// Importa os mocks dos módulos iOS
-import {
-  mockGoogleWalletModule,
-  mockSamsungWalletModule,
-} from './__mocks__/index';
 
 // Mock dos módulos específicos do iOS
 jest.mock('../google-wallet.ios', () => ({
@@ -18,12 +18,6 @@ jest.mock('../google-wallet.ios', () => ({
 jest.mock('../samsung-wallet.ios', () => ({
   SamsungWalletIOS: mockSamsungWalletModule,
 }));
-
-// Importa os mocks dos event emitters
-import {
-  mockGoogleWalletEventEmitter,
-  mockSamsungWalletEventEmitter,
-} from './__mocks__/index';
 
 // Mock dos event emitters
 jest.mock('../event-emitters/google-wallet.ee', () => ({

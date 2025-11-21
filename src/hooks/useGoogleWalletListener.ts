@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import type { GoogleWalletIntentEvent } from '../types/google-wallet.types';
 import { GoogleWalletService } from '../services/google-wallet.service';
+import type { GoogleWalletIntentEvent } from '../types/google-wallet.types';
 import { usePromise } from '../utils/usePromise';
 
 /**
@@ -9,10 +9,10 @@ import { usePromise } from '../utils/usePromise';
  */
 export const useGoogleWalletListener = (
   onIntentReceived: (event: GoogleWalletIntentEvent) => void,
-  onNoIntentReceived?: () => void
+  onNoIntentReceived?: () => void,
 ) => {
   const { loading, callPromise } = usePromise(
-    GoogleWalletService.startIntentListener
+    GoogleWalletService.startIntentListener,
   );
 
   useEffect(() => {
@@ -29,18 +29,16 @@ export const useGoogleWalletListener = (
     const removeIntentListener =
       GoogleWalletService.walletEventEmitter.addIntentListener(
         (walletEvent: GoogleWalletIntentEvent) => {
-          // eslint-disable-next-line no-console
           console.log(
             '🎯 [Hook] Intent received from Google Wallet:',
-            walletEvent
+            walletEvent,
           );
           onIntentReceived(walletEvent);
-        }
+        },
       );
 
     const removeNoIntentListener = onNoIntentReceived
       ? GoogleWalletService.walletEventEmitter.addNoIntentListener(() => {
-          // eslint-disable-next-line no-console
           console.log('🎯 [Hook] No intent received from Google Wallet');
           onNoIntentReceived();
         })
@@ -48,6 +46,7 @@ export const useGoogleWalletListener = (
 
     return () => {
       try {
+        // eslint-disable-next-line promise/prefer-await-to-then
         GoogleWalletService.stopIntentListener().catch(() => {});
       } catch {}
       removeIntentListener();

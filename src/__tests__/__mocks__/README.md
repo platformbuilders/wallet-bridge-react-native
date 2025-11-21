@@ -50,8 +50,14 @@ jest.mock('react-native', () => mockReactNative);
 ### 3. Usar nos Testes
 
 ```typescript
-import { GoogleWalletModule, SamsungWalletModule } from '@platformbuilders/wallet-bridge-react-native';
-import { setupSuccessMocks, resetAllMocks } from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';
+import {
+  GoogleWalletModule,
+  SamsungWalletModule,
+} from '@platformbuilders/wallet-bridge-react-native';
+import {
+  setupSuccessMocks,
+  resetAllMocks,
+} from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';
 
 describe('Meu App - Testes de Wallet', () => {
   beforeEach(() => {
@@ -75,10 +81,12 @@ describe('Meu App - Testes de Wallet', () => {
 ## Mocks Disponíveis
 
 ### Módulos de Wallet
+
 - `mockGoogleWalletModule` - Mock completo do GoogleWalletModule
 - `mockSamsungWalletModule` - Mock completo do SamsungWalletModule
 
 ### Dados de Exemplo
+
 - `mockGoogleWalletData` - Dados de exemplo para Google Wallet
 - `mockGoogleTokenInfo` - Informações de token do Google
 - `mockGoogleTokenStatus` - Status de token do Google
@@ -86,33 +94,41 @@ describe('Meu App - Testes de Wallet', () => {
 - `mockSamsungWalletInfo` - Informações da carteira Samsung
 
 ### Constantes
+
 - `mockGoogleWalletConstants` - Constantes do Google Wallet
 - `mockSamsungWalletConstants` - Constantes do Samsung Wallet
 
 ### Event Emitters
+
 - `mockGoogleWalletEventEmitter` - Event emitter do Google Wallet
 - `mockSamsungWalletEventEmitter` - Event emitter do Samsung Wallet
 
 ### React Native
+
 - `mockReactNative` - Mock completo do React Native com os módulos
 
 ## Funções Utilitárias
 
 ### `resetAllMocks()`
+
 Reseta todos os mocks para um estado limpo.
 
 ### `setupSuccessMocks()`
+
 Configura todos os mocks para retornar sucesso.
 
 ### `setupErrorMocks()`
+
 Configura todos os mocks para retornar erro.
 
 ### `setupUnavailableMocks()`
+
 Configura todos os mocks para simular carteiras não disponíveis.
 
 ## Exemplos de Cenários
 
 ### Cenário de Sucesso
+
 ```typescript
 beforeEach(() => {
   setupSuccessMocks();
@@ -125,6 +141,7 @@ it('deve funcionar normalmente', async () => {
 ```
 
 ### Cenário de Erro
+
 ```typescript
 beforeEach(() => {
   setupErrorMocks();
@@ -136,6 +153,7 @@ it('deve lidar com erro', async () => {
 ```
 
 ### Cenário de Carteira Não Disponível
+
 ```typescript
 beforeEach(() => {
   setupUnavailableMocks();
@@ -148,10 +166,11 @@ it('deve detectar carteira não disponível', async () => {
 ```
 
 ### Mock Personalizado
+
 ```typescript
 it('deve usar mock personalizado', async () => {
   mockGoogleWalletModule.checkWalletAvailability.mockResolvedValue(false);
-  
+
   const isAvailable = await GoogleWalletModule.checkWalletAvailability();
   expect(isAvailable).toBe(false);
 });
@@ -160,6 +179,7 @@ it('deve usar mock personalizado', async () => {
 ## Configuração Avançada
 
 ### Jest Configuration
+
 ```javascript
 // jest.config.js
 module.exports = {
@@ -172,12 +192,14 @@ module.exports = {
     '<rootDir>/ios/',
   ],
   moduleNameMapper: {
-    '^@platformbuilders/wallet-bridge-react-native$': '<rootDir>/node_modules/@platformbuilders/wallet-bridge-react-native/src/index.ts',
+    '^@platformbuilders/wallet-bridge-react-native$':
+      '<rootDir>/node_modules/@platformbuilders/wallet-bridge-react-native/src/index.ts',
   },
 };
 ```
 
 ### Setup File
+
 ```typescript
 // jest.setup.ts
 import { mockReactNative } from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';

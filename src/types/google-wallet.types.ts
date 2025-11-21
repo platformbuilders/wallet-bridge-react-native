@@ -209,17 +209,17 @@ export interface GoogleWalletSpec {
   getSecureWalletInfo(): Promise<GoogleWalletData>;
   getTokenStatus(
     tokenServiceProvider: number,
-    tokenReferenceId: string
+    tokenReferenceId: string,
   ): Promise<GoogleTokenStatus>;
   getEnvironment(): Promise<string>;
   isTokenized(
     fpanLastFour: string,
     cardNetwork: number,
-    tokenServiceProvider: number
+    tokenServiceProvider: number,
   ): Promise<boolean>;
   viewToken(
     tokenServiceProvider: number,
-    issuerTokenId: string
+    issuerTokenId: string,
   ): Promise<GoogleTokenInfo | null>;
   addCardToWallet(cardData: GooglePushTokenizeRequestForCard): Promise<string>;
   createWalletIfNeeded(): Promise<boolean>;
@@ -233,7 +233,7 @@ export interface GoogleWalletSpec {
   // Método de resultado de ativação
   setActivationResult(
     status: GoogleActivationStatus,
-    activationCode?: string
+    activationCode?: string,
   ): Promise<boolean>;
 
   // Método para finalizar atividade

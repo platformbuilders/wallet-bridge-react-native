@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import type { SamsungWalletLogEvent } from '../types/samsung-wallet.types';
 import { SamsungWalletService } from '../services/samsung-wallet.service';
+import type { SamsungWalletLogEvent } from '../types/samsung-wallet.types';
 import { usePromise } from '../utils/usePromise';
 
 /**
@@ -8,10 +8,10 @@ import { usePromise } from '../utils/usePromise';
  * Inicia o listener nativo e registra o listener JS, limpando tudo ao desmontar.
  */
 export const useSamsungWalletLogListener = (
-  onLogReceived: (event: SamsungWalletLogEvent) => void
+  onLogReceived: (event: SamsungWalletLogEvent) => void,
 ) => {
   const { loading, callPromise } = usePromise(
-    SamsungWalletService.startLogListener
+    SamsungWalletService.startLogListener,
   );
 
   useEffect(() => {
@@ -26,14 +26,14 @@ export const useSamsungWalletLogListener = (
     const removeLogListener =
       SamsungWalletService.walletEventEmitter.addLogListener(
         (event: SamsungWalletLogEvent) => {
-          // eslint-disable-next-line no-console
           console.log('📝 [Hook] Samsung Wallet log:', event);
           onLogReceived(event);
-        }
+        },
       );
 
     return () => {
       try {
+        // eslint-disable-next-line promise/prefer-await-to-then
         SamsungWalletService.stopLogListener().catch(() => {});
       } catch {}
       removeLogListener();
@@ -42,5 +42,3 @@ export const useSamsungWalletLogListener = (
 
   return { isListeningLogs: loading };
 };
-
-
