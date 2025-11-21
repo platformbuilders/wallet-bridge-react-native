@@ -1,6 +1,6 @@
 {
   "name": "@platformbuilders/wallet-bridge-react-native",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Este repositório contém um pacote React Native para integração com carteiras digitais. Ele atua como uma ponte (bridge) que se conecta aos SDKs nativos de cada carteira, abstraindo a complexidade dos fluxos de provisionamento (Push e App2App). Inicialmente compatível com Google Pay Wallet, com planos de expansão para Samsung Pay e Apple Wallet.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -42,7 +42,6 @@
     "typecheck": "tsc --noEmit",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "prepare": "bob build",
-    "release": "release-it --only-version",
     "pkg:pefisa": "./scripts/change-android-package-name-app-example.sh --package-name=br.com.pefisa.pefisa.hml",
     "pkg:example": "./scripts/change-android-package-name-app-example.sh --package-name=com.example.wallet",
     "pkg:palmeiras": "./scripts/change-android-package-name-app-example.sh --package-name=br.com.pefisa.palmeiras.hml",
@@ -93,7 +92,6 @@
     "react": "19.1.0",
     "react-native": "0.81.0",
     "react-native-builder-bob": "^0.40.13",
-    "release-it": "^17.10.0",
     "turbo": "^1.10.7",
     "typescript": "^5.8.3"
   },
