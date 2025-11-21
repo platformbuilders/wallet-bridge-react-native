@@ -3,7 +3,7 @@ module.exports = {
   overrides: [
     {
       exclude: /\/node_modules\//,
-      test: /\.tsx?$/,
+      test: /\.(js|jsx|ts|tsx)$/,
       presets: ['module:react-native-builder-bob/babel-preset'],
     },
   ],
