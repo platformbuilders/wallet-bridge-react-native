@@ -9,32 +9,26 @@
 #       PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
 
 
-name: Check React Lib
+name: Teste Build to Publish React Lib
 
 on:
   pull_request:
-    secrets:
-      PACKAGES_NPMRC:
-        description: 'Token of the Builders Github Packages'
-        required: false
 
 jobs:
-  check-secret:
+  publish:
+    name: Build
     runs-on: ubuntu-latest
-    outputs:
-      PACKAGES_NPMRC: ${{ steps.PACKAGES_NPMRC.outputs.token_npmrc }}
+    needs: check-secret
     steps:
-      - id: PACKAGES_NPMRC
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org/'
+      - if: needs.check-secret.outputs.PACKAGES_NPMRC == 'true'
+        name: Set NPM Variables
+        run: echo "$PACKAGES_NPMRC" > .npmrc
         env:
           PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
-        if: "${{ env.PACKAGES_NPMRC != '' }}"
-        run: echo "token_npmrc=true" >> $GITHUB_OUTPUT
-
-  check:
-    name: Check React
-    uses: ./.github/workflows/check-react-shared.yml
-    needs: check-secret
-    secrets:
-      PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
-    with:
-      IS_REQUIRED_SET_PACKAGES_NPMRC: ${{ needs.check-secret.outputs.PACKAGES_NPMRC }}
+      - name: Install and Build
+        run: yarn install && yarn build
