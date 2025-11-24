@@ -1,9 +1,40 @@
-name: check
+# name: check
 
-on: pull_request
+# on: pull_request
+
+# jobs:
+#   call-workflow:
+#     uses: platformbuilders/actions-workflows/.github/workflows/check-react-lib.yml@main
+#     secrets:
+#       PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
+
+
+name: Check React Lib
+
+on:
+  pull_request:
+    secrets:
+      PACKAGES_NPMRC:
+        description: 'Token of the Builders Github Packages'
+        required: false
 
 jobs:
-  call-workflow:
-    uses: platformbuilders/actions-workflows/.github/workflows/check-react-lib.yml@main
+  check-secret:
+    runs-on: ubuntu-latest
+    outputs:
+      PACKAGES_NPMRC: ${{ steps.PACKAGES_NPMRC.outputs.token_npmrc }}
+    steps:
+      - id: PACKAGES_NPMRC
+        env:
+          PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
+        if: "${{ env.PACKAGES_NPMRC != '' }}"
+        run: echo "token_npmrc=true" >> $GITHUB_OUTPUT
+
+  check:
+    name: Check React
+    uses: ./.github/workflows/check-react-shared.yml
+    needs: check-secret
     secrets:
       PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
+    with:
+      IS_REQUIRED_SET_PACKAGES_NPMRC: ${{ needs.check-secret.outputs.PACKAGES_NPMRC }}
