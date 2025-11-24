@@ -1,28 +1,85 @@
-# name: check
-
-# on: pull_request
-
-# jobs:
-#   call-workflow:
-#     uses: platformbuilders/actions-workflows/.github/workflows/check-react-lib.yml@main
-#     secrets:
-#       PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
-
-
-name: Teste Build to Publish React Lib
+name: Publish
 
 on:
-  pull_request:
+  workflow_call:
+    secrets:
+      NPM_TOKEN:
+        description: 'Token of the Builders NPM'
+        required: true
+      GITHUB_PACKAGES_TOKEN:
+        description: 'Token of the Builders Github Packages for publish'
+        required: false
+      PACKAGES_NPMRC:
+        description: 'Token of the Builders Github Packages'
+        required: false
+    inputs:
+      PROJECT_PRIVATE:
+        type: boolean
+        description: 'If project is private'
+        required: false
+        default: false
 
 jobs:
+  check-secret:
+      runs-on: ubuntu-latest
+      steps:
+          - id: PACKAGES_NPMRC
+            env:
+                PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
+            if: "${{ env.PACKAGES_NPMRC != '' }}"
+            run: echo "token_npmrc=true" >> $GITHUB_OUTPUT
+          - id: NPM_TOKEN
+            env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            if: "${{ env.NPM_TOKEN != '' }}"
+            run: echo "token_npm=true" >> $GITHUB_OUTPUT
+          - id: GITHUB_PACKAGES_TOKEN
+            env:
+                GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_PACKAGES_TOKEN }}
+            if: "${{ env.GITHUB_PACKAGES_TOKEN != '' }}"
+            run: echo "token_github=true" >> $GITHUB_OUTPUT
+      outputs:
+        GITHUB_PACKAGES_TOKEN: ${{ steps.GITHUB_PACKAGES_TOKEN.outputs.token_github }}
+        NPM_TOKEN: ${{ steps.NPM_TOKEN.outputs.token_npm }}
+        PACKAGES_NPMRC: ${{ steps.PACKAGES_NPMRC.outputs.token_npmrc }}
   publish:
     name: Build
     runs-on: ubuntu-latest
+    needs: check-secret
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org/'
+      - if: needs.check-secret.outputs.PACKAGES_NPMRC == 'true'
+        name: Set NPM Variables
+        run: echo "$PACKAGES_NPMRC" > .npmrc
+        env:
+          PACKAGES_NPMRC: ${{ secrets.PACKAGES_NPMRC }}
       - name: Install and Build
         run: yarn install && yarn build
+      # - name: Clean .npmrc
+      #   run: echo > .npmrc
+      # - if: ${{ !inputs.PROJECT_PRIVATE }}
+      #   name: Publish NPM Public
+      #   run: npm publish --access public
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+      # - uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '18.x'
+      #     registry-url: 'https://npm.pkg.github.com'
+      #     scope: '@platformbuilders'
+      # # Publish to GitHub Packages
+      # - if: needs.check-secret.outputs.GITHUB_PACKAGES_TOKEN == 'true' && inputs.PROJECT_PRIVATE != 'true'
+      #   name: Publish Public Github Packages
+      #   run: npm publish --access public
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_PACKAGES_TOKEN }}
+      # # Publish Private GitHub Packages
+      # - if: needs.check-secret.outputs.GITHUB_PACKAGES_TOKEN == 'true' && inputs.PROJECT_PRIVATE == 'true'
+      #   name: Publish Private Github Packages
+      #   run: npm publish
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_PACKAGES_TOKEN }}
