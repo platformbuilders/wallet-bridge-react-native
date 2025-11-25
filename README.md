@@ -110,9 +110,22 @@ GOOGLE_WALLET_MOCK_API_URL=http://localhost:3000
 SAMSUNG_WALLET_MOCK_API_URL=http://localhost:3000
 ```
 
-#### Required Endpoints
+#### Optional Endpoints (for Advanced Testing)
 
-Your implementation must provide the following endpoints:
+> ⚠️ **Important:** These endpoints are **completely optional**. The mock mode works perfectly without them, using default simulated values that can be customized to simulate different scenarios.
+
+**When to use endpoints:**
+- **Main benefit:** Change simulations without rebuilding the app - you can modify mock responses on the server and test different scenarios instantly
+- You want to test with dynamic responses from a server
+- You need to simulate complex scenarios that require server-side logic
+- You want to facilitate testing by centralizing mock data in a server
+
+**When you don't need endpoints:**
+- The mocks already have default values that work out of the box
+- You can modify the mock implementation directly to simulate different scenarios
+- You prefer a simpler setup without running a server
+
+If you choose to implement a mock HTTP server for advanced testing, your implementation should provide the following endpoints:
 
 1. `GET /wallet/availability` - Checks wallet availability
 2. `GET /wallet/info` - Returns wallet information
@@ -128,18 +141,19 @@ Your implementation must provide the following endpoints:
 12. `GET /wallet/environment` - Returns environment
 13. `POST /wallet/add-card` - Adds card to wallet
 
-> ⚠️ **Local Mock API:** The library supports integration with a mock HTTP server for advanced testing. This server must be implemented separately by the developer. Refer to the complete documentation for details about the required endpoints.
+**Mock Behavior (with or without endpoints):**
 
-**Mock Behavior:**
-
-- `checkWalletAvailability()`: Queries mock server in real-time (if configured)
-- `getSecureWalletInfo()`: Returns simulated data or from local API
-- `addCardToWallet()`: Validates data and simulates different scenarios based on last digits
-- `listTokens()`: Returns 2 simulated tokens (Visa and Mastercard) or from local API
+- `checkWalletAvailability()`: Returns default simulated value, or queries mock server in real-time (if configured)
+- `getSecureWalletInfo()`: Returns default simulated data, or from local API (if configured)
+- `addCardToWallet()`: Validates data and simulates different scenarios based on last digits (default behavior), or uses server response (if configured)
+- `listTokens()`: Returns 2 default simulated tokens (Visa and Mastercard), or from local API (if configured)
 - `getConstants()`: Returns correct constants (ELO = 14/12, TOKEN_STATE_* = 1-6)
-- **Local API**: Full support for local mock server (configurable via gradle.properties)
 
-**Note**: If the mock URL is not configured, the mock will use only default simulated values (without HTTP requests).
+**Default Mock Values:**
+The library includes default simulated values that work immediately without any server setup. These values can be modified directly in the mock implementation to simulate different scenarios (success, errors, edge cases, etc.) without needing to implement any endpoints.
+
+**Using Local API (Optional):**
+If you configure `GOOGLE_WALLET_MOCK_API_URL` or `SAMSUNG_WALLET_MOCK_API_URL` in `gradle.properties`, the mocks will query your server for responses. If not configured, the mocks will use only the default simulated values (no HTTP requests are made).
 
 ## 🎯 Basic Usage
 
