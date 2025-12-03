@@ -809,22 +809,15 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
                             WalletLogger.w(TAG, "❌ [MOCK] Erro da API: $errorMessage")
                             promise.reject(errorCode, errorMessage)
                         } else {
-                            // Verificar se há tokenId na resposta
-                            if (json.has("tokenId")) {
-                                val tokenId = json.getString("tokenId")
-                                WalletLogger.d(TAG, "✅ [MOCK] Token ID obtido da API: $tokenId")
-                                promise.resolve(tokenId)
-                            } else {
-                                // Fallback para geração de token mock
-                                val mockTokenId = "mock_token_${System.currentTimeMillis()}"
-                                WalletLogger.d(TAG, "✅ [MOCK] Token ID gerado (fallback): $mockTokenId")
-                                promise.resolve(mockTokenId)
-                            }
+                            // Retornar null por enquanto (tokenId não está mais sendo retornado)
+                            WalletLogger.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso (sem tokenId)")
+                            promise.resolve(null)
                         }
                     } catch (e: Exception) {
                         WalletLogger.w(TAG, "❌ [MOCK] Erro ao processar resposta da API: ${e.message}")
-                        val mockTokenId = "mock_token_${System.currentTimeMillis()}"
-                        promise.resolve(mockTokenId)
+                        // Retornar null mesmo em caso de erro no processamento
+                        WalletLogger.d(TAG, "✅ [MOCK] Cartão adicionado com sucesso (sem tokenId - fallback)")
+                        promise.resolve(null)
                     }
                 },
                 onError = { error ->

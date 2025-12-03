@@ -17,6 +17,10 @@ echo "🔄 Atualizando dependências com yalc no diretório example..."
 cd example
 yalc update
 
+# Instala as dependências após o yalc update
+echo "📥 Instalando dependências..."
+yarn install
+
 # Limpa o cache do Android
 echo "🧹 Limpando cache do Android..."
 cd android
