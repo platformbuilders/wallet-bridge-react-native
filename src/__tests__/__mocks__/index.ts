@@ -110,7 +110,7 @@ export const mockGoogleWalletModule = {
   getEnvironment: jest.fn().mockResolvedValue('PRODUCTION'),
   isTokenized: jest.fn().mockResolvedValue(true),
   viewToken: jest.fn().mockResolvedValue(mockGoogleTokenInfo),
-  addCardToWallet: jest.fn().mockResolvedValue('success'),
+  addCardToWallet: jest.fn().mockResolvedValue(null),
   createWalletIfNeeded: jest.fn().mockResolvedValue(true),
   listTokens: jest.fn().mockResolvedValue([mockGoogleTokenInfo]),
   getConstants: jest.fn().mockReturnValue(mockGoogleWalletConstants),

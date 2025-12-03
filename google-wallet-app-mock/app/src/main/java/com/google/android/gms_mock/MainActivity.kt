@@ -201,15 +201,10 @@ class MainActivity : ComponentActivity() {
 
     private fun simulateApp2App() {
         try {
-            // Gerar dados simulados com panReferenceId e tokenReferenceId
-            val simulatedJson = generateSimulatedData()
-            val simulatedData = android.util.Base64.encodeToString(
-                simulatedJson.toByteArray(Charsets.UTF_8),
-                android.util.Base64.NO_WRAP
-            )
+            // Gerar dados simulados com tokenReferenceId
+            val simulatedData = "9e4eeb4e-71af-4024-b3ff-05c7a2d4460d"
 
-            Log.d(TAG, "📋 [GOOGLE] JSON gerado: $simulatedJson")
-            Log.d(TAG, "📋 [GOOGLE] Base64 gerado: $simulatedData")
+            Log.d(TAG, "📋 [GOOGLE] Simulated Data: $simulatedData")
 
             val intent = Intent(BuildConfig.TARGET_APP_ACTION).apply {
                 setPackage(BuildConfig.TARGET_APP_PACKAGE)
@@ -237,19 +232,6 @@ class MainActivity : ComponentActivity() {
                 resultCode = -1
             )
         }
-    }
-
-    private fun generateSimulatedData(): String {
-        val timestamp = System.currentTimeMillis()
-        val panReferenceId = "PAN_1758556574675_98397"
-        val tokenReferenceId = "TOKEN_1758556574675_98397"
-
-        return """
-        {
-            "panReferenceId": "$panReferenceId",
-            "tokenReferenceId": "$tokenReferenceId"
-        }
-        """.trimIndent()
     }
 
 }

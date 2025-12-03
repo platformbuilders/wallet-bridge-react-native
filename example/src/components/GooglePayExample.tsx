@@ -54,7 +54,7 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
   (_props, ref): React.JSX.Element => {
     // Estado para o OPC (Opaque Payment Card)
     const [opcValue, setOpcValue] = useState(
-      'M0VGNkZENjRFMEM1MTdEOTgwOEU4N0RGMzRCNkE0M0U4QURBNUEyNjIzQjgyQzEzODZEQkZGN0JEQzM3NzI4NjQ0ODMzRDhBODlFREEwODhDREI2NkMwODM2NkQxRERCN0EzQ0U0RkZFMjJERUZFMEYwM0VCQjlBRkVGNDEzNUQxMjhFODg4NkIzMjBFREZENzk5OUMyODQ4ODRCMzNBMURCNDA0MjQwRDYxMEJDNzRFMjQzMTcwRkNBQzEzRjgzQ0Y4ODI0RTc1QkE4RENGRTY3MjRDQ0U4MEIxM0RCOUMwRjA2MkYzQkIzMjJBNjlE'
+      'eyJ0eXBlIjoiL0dvb2dsZV9QYXlfQ2FyZCIsInRva2VuIjoiZXhhbXBsZV90b2tlbl9kYXRhIn0='
     );
 
     // Estado para o resultado do intent
@@ -549,13 +549,18 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
         });
 
         console.log('🔍 [JS] Chamando addCardToWallet...');
-        const tokenId: string =
+        const tokenId: string | null =
           await googleWalletClient.addCardToWallet(cardData);
-        console.log(
-          '✅ [JS] Cartão adicionado com sucesso! Token ID:',
-          tokenId
-        );
-        Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
+        if (tokenId) {
+          console.log(
+            '✅ [JS] Cartão adicionado com sucesso! Token ID:',
+            tokenId
+          );
+          Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
+        } else {
+          console.log('✅ [JS] Cartão adicionado com sucesso! (sem tokenId)');
+          Alert.alert('Sucesso', 'Cartão adicionado com sucesso!');
+        }
       } catch (err) {
         const errorMessage = handleGoogleWalletError(err, 'Erro ao adicionar cartão');
         Alert.alert('Erro', `Erro ao adicionar cartão: ${errorMessage}`);

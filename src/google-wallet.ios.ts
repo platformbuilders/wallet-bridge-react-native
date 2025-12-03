@@ -183,7 +183,7 @@ class GoogleWalletiOSStub implements GoogleWalletSpec {
    */
   async addCardToWallet(
     cardData: GooglePushTokenizeRequestForCard,
-  ): Promise<string> {
+  ): Promise<string | null> {
     console.log(
       '➕ [GoogleWallet-iOS] addCardToWallet() - Não disponível no iOS',
     );
