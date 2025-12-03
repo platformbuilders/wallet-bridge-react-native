@@ -549,13 +549,18 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
         });
 
         console.log('🔍 [JS] Chamando addCardToWallet...');
-        const tokenId: string =
+        const tokenId: string | null =
           await googleWalletClient.addCardToWallet(cardData);
-        console.log(
-          '✅ [JS] Cartão adicionado com sucesso! Token ID:',
-          tokenId
-        );
-        Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
+        if (tokenId) {
+          console.log(
+            '✅ [JS] Cartão adicionado com sucesso! Token ID:',
+            tokenId
+          );
+          Alert.alert('Sucesso', `Cartão adicionado com ID: ${tokenId}`);
+        } else {
+          console.log('✅ [JS] Cartão adicionado com sucesso! (sem tokenId)');
+          Alert.alert('Sucesso', 'Cartão adicionado com sucesso!');
+        }
       } catch (err) {
         const errorMessage = handleGoogleWalletError(err, 'Erro ao adicionar cartão');
         Alert.alert('Erro', `Erro ao adicionar cartão: ${errorMessage}`);
