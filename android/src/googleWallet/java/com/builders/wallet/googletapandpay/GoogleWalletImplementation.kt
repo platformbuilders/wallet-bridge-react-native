@@ -59,14 +59,24 @@ class GoogleWalletImplementation(
                             PUSH_TOKENIZE_REQUEST -> {
                                 when (resultCode) {
                                     Activity.RESULT_OK -> {
-                                        val tokenId = data?.getStringExtra("com.google.android.gms.tapandpay.EXTRA_ISSUER_TOKEN_ID")
-                                        if (tokenId.isNullOrEmpty()) {
-                                            WalletLogger.w(TAG, "PUSH_TOKENIZE_ERROR: Falha ao tokenizar por push - Token ID é null ou vazio - result_code:null")
-                                            reject("PUSH_TOKENIZE_ERROR", "Falha ao tokenizar por push - Token ID é null ou vazio - result_code:null")
+                                        // Logar todos os extras da intent
+                                        if (data != null) {
+                                            WalletLogger.d(TAG, "🔍 [GOOGLE] Intent extras encontrados:")
+                                            val extras = data.extras
+                                            if (extras != null) {
+                                                for (key in extras.keySet()) {
+                                                    val value = extras.get(key)
+                                                    WalletLogger.d(TAG, "  - $key: $value")
+                                                }
+                                            } else {
+                                                WalletLogger.d(TAG, "  - Nenhum extra encontrado na intent")
+                                            }
                                         } else {
-                                            WalletLogger.i(TAG, "Push tokenize OK - Token ID: $tokenId")
-                                            resolve(tokenId)
+                                            WalletLogger.d(TAG, "🔍 [GOOGLE] Intent data é null")
                                         }
+                                        
+                                        WalletLogger.i(TAG, "Push tokenize OK - Retornando resolve vazio")
+                                        resolve(null)
                                     }
                                     Activity.RESULT_CANCELED -> {
                                         val errorCodeName = ErrorCode.getErrorCodeName(TapAndPayStatusCodes.TAP_AND_PAY_USER_CANCELED_FLOW)

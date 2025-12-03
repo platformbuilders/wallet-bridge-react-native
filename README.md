@@ -187,7 +187,8 @@ const cardData = {
     lastDigits: '1234'
   }
 };
-const result = await GoogleWalletModule.addCardToWallet(cardData);
+const result: string | null = await GoogleWalletModule.addCardToWallet(cardData);
+// result pode ser null se o tokenId não estiver disponível
 
 // List tokens
 const tokens = await GoogleWalletModule.listTokens();

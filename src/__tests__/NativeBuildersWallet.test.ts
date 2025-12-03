@@ -134,13 +134,11 @@ describe('NativeBuildersWallet', () => {
           lastDigits: '1234',
         },
       };
-      (GoogleWalletModule.addCardToWallet as jest.Mock).mockResolvedValue(
-        'success',
-      );
+      (GoogleWalletModule.addCardToWallet as jest.Mock).mockResolvedValue(null);
 
       const result = await GoogleWalletModule.addCardToWallet(mockCardData);
 
-      expect(result).toBe('success');
+      expect(result).toBeNull();
       expect(GoogleWalletModule.addCardToWallet).toHaveBeenCalledWith(
         mockCardData,
       );

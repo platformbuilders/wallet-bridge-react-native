@@ -221,7 +221,9 @@ export interface GoogleWalletSpec {
     tokenServiceProvider: number,
     issuerTokenId: string,
   ): Promise<GoogleTokenInfo | null>;
-  addCardToWallet(cardData: GooglePushTokenizeRequestForCard): Promise<string>;
+  addCardToWallet(
+    cardData: GooglePushTokenizeRequestForCard,
+  ): Promise<string | null>;
   createWalletIfNeeded(): Promise<boolean>;
   listTokens(): Promise<GoogleTokenInfo[]>;
   getConstants(): GoogleWalletConstants;
