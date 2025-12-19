@@ -36,9 +36,8 @@ object WalletIntentProcessor {
         
         WalletLogger.d(TAG, "🔍 [CENTRAL] Processando intent - Action: $intentAction, Package: $packageName, CallingPackage: $callingPackage")
         
-        // Verificar se há dados EXTRA_TEXT (necessário para processamento)
-        val extraText = intent.getStringExtra(Intent.EXTRA_TEXT)
-        val hasExtras = !extraText.isNullOrEmpty() || (intent.extras != null && !intent.extras!!.isEmpty())
+        // Verificar se há extras na intent (usando safe call operator, mais idiomático em Kotlin)
+        val hasExtras = intent.extras?.isEmpty() == false
         val wasCalledForResult = activity.getCallingActivity() != null || callingPackage != null
         
         // Se tem extras e foi chamada via startActivityForResult, finalizar e recriar
