@@ -33,8 +33,11 @@ object WalletIntentProcessor {
         val intentAction = intent.action
         val packageName = intent.`package`
         val callingPackage = activity.callingPackage
+        val extraText = intent.getStringExtra(Intent.EXTRA_TEXT)
         
         WalletLogger.d(TAG, "🔍 [CENTRAL] Processando intent - Action: $intentAction, Package: $packageName, CallingPackage: $callingPackage")
+        WalletLogger.d(TAG, "🔍 [CENTRAL] EXTRA_TEXT: ${if (extraText.isNullOrEmpty()) "vazio/null" else "${extraText.length} caracteres - ${extraText.take(100)}${if (extraText.length > 100) "..." else ""}"}")
+        WalletLogger.d(TAG, "🔍 [CENTRAL] Extras: ${intent.extras}")
         
         // Verificar se há extras na intent (usando safe call operator, mais idiomático em Kotlin)
         val hasExtras = intent.extras?.isEmpty() == false
