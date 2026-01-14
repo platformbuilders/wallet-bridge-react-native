@@ -7,6 +7,7 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.builders.wallet.samsungpay.util.PartnerInfoHolder
 import com.builders.wallet.samsungpay.util.ErrorCode
@@ -185,8 +186,14 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     val listener = object : GetCardListener {
       override fun onSuccess(cardList: List<Card>) {
         WalletLogger.d(TAG, "onSuccess callback is called, list.size= ${cardList.size}")
-        val result = cardList.map { it.toSerializable() }
-        WalletLogger.i(TAG, "- cards - $result")
+        
+        // Converter lista de WritableMap para WritableArray (React Native requer WritableArray para arrays)
+        val result: WritableArray = Arguments.createArray()
+        cardList.forEach { card ->
+          result.pushMap(card.toSerializable())
+        }
+        
+        WalletLogger.i(TAG, "- cards - ${cardList.size} cards retornados")
         promise.resolve(result)
       }
 
