@@ -16,7 +16,7 @@ A React Native library that facilitates integration with digital wallets (Google
 | Aspect | Status |
 |---------|--------|
 | Development | ✅ Active |
-| Stable Version | 1.1.0 |
+| Stable Version | 1.1.1 |
 | Tests | ✅ 100% coverage |
 | Documentation | ✅ Complete |
 | iOS Support | 🚧 Planned |
