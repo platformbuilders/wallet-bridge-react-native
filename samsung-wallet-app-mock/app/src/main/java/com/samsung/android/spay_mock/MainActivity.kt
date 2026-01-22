@@ -156,15 +156,10 @@ class MainActivity : ComponentActivity() {
 
     private fun simulateSamsungApp2App() {
         try {
-            // Gerar dados simulados (Mastercard/Visa)
-            val simulatedJson = generateSamsungSimulatedData()
-            val simulatedData = android.util.Base64.encodeToString(
-                simulatedJson.toByteArray(Charsets.UTF_8),
-                android.util.Base64.NO_WRAP
-            )
+            // Gerar dados simulados com tokenReferenceId
+            val simulatedData = "9e4eeb4e-71af-4024-b3ff-05c7a2d4460d"
 
-            Log.d(TAG, "📋 [SAMSUNG] JSON gerado: $simulatedJson")
-            Log.d(TAG, "📋 [SAMSUNG] Base64 gerado: $simulatedData")
+            Log.d(TAG, "📋 [SAMSUNG] Simulated Data: $simulatedData")
 
             val intent = Intent(BuildConfig.SAMSUNG_TARGET_APP_ACTION).apply {
                 setPackage(BuildConfig.SAMSUNG_TARGET_APP_PACKAGE)
@@ -191,21 +186,6 @@ class MainActivity : ComponentActivity() {
                 resultCode = -1
             )
         }
-    }
-
-    private fun generateSamsungSimulatedData(): String {
-
-        val mastercardData = """
-        {
-            "paymentAppProviderId": "MASTERCARD_PROVIDER_123465",
-            "paymentAppInstanceId": "INSTANCE_1234",
-            "tokenUniqueReference": "TOKEN_1758556574675_98397",
-            "accountPanSuffix": "1234",
-            "accountExpiry": "12/25"
-        }
-        """.trimIndent()
-
-        return mastercardData
     }
 
     private fun clearResults() {
