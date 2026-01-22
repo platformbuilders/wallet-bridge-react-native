@@ -37,6 +37,7 @@ import com.google.android.gms_mock.ui.theme.GoogleWalletMockTheme
 class MainActivity : ComponentActivity() {
     companion object {
         private const val TAG = "GoogleWalletMock"
+        internal const val DEFAULT_SIMULATED_DATA = "9e4eeb4e-71af-4024-b3ff-05c7a2d4460d"
     }
 
     // Variável para controlar o estado do alerta
@@ -46,7 +47,7 @@ class MainActivity : ComponentActivity() {
     private var resultState by mutableStateOf(ResultState())
 
     // Estado do input de dados simulados
-    private var simulatedDataInput by mutableStateOf("9e4eeb4e-71af-4024-b3ff-05c7a2d4460d")
+    private var simulatedDataInput by mutableStateOf(DEFAULT_SIMULATED_DATA)
 
     data class AlertState(
         val show: Boolean = false,
@@ -423,7 +424,7 @@ fun ResultDisplay(
 fun App2AppSimulatorPreview() {
     GoogleWalletMockTheme {
         App2AppSimulator(
-            simulatedDataInput = "9e4eeb4e-71af-4024-b3ff-05c7a2d4460d",
+            simulatedDataInput = MainActivity.DEFAULT_SIMULATED_DATA,
             onSimulatedDataChange = { },
             onSimulateClick = { },
             onClearClick = { },
