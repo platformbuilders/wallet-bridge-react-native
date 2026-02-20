@@ -120,6 +120,26 @@ export interface GoogleWalletConstants {
   TAP_AND_PAY_ATTESTATION_ERROR: number;
   /** A API TapAndPay não pode ser chamada pelo aplicativo atual. Se você receber este erro, certifique-se de que está chamando a API usando um nome de pacote e impressão digital que adicionamos à nossa lista de permissões. */
   TAP_AND_PAY_UNAVAILABLE: number;
+  /** Falha ao salvar o FPAN como um cartão nos registros. */
+  TAP_AND_PAY_SAVE_CARD_ERROR: number;
+  /** O cartão não é elegível para tokenização. */
+  TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION: number;
+  /** A tokenização foi recusada pelo TSP (caminho vermelho). */
+  TAP_AND_PAY_TOKENIZATION_DECLINED: number;
+  /** Ocorreu um erro ao verificar a elegibilidade para Tap and Pay. */
+  TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR: number;
+  /** Não é possível chamar a API TapAndPay pelo aplicativo atual. */
+  TAP_AND_PAY_TOKENIZE_ERROR: number;
+  /** A tentativa de provisionamento foi bem-sucedida, mas precisa concluir a verificação extra (caminho amarelo).
+   * O Google Pay recomenda enfaticamente que os tokens de caminho amarelo não sejam provisionados por push. */
+  TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED: number;
+  /** O tempo limite para a entrega das credenciais de pagamento foi atingido. */
+  TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT: number;
+  /** A tentativa de provisionamento falhou porque o usuário cancelou intencionalmente o fluxo.
+   * É possível (embora raro) ainda conseguir um token se o usuário cancelar o fluxo mais tarde na tentativa. */
+  TAP_AND_PAY_USER_CANCELED_FLOW: number;
+  /** Falha tentativa de inscrição nos cartões virtuais. */
+  TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED: number;
 
   //GOGLE TOKEN STATE
   /** O token está ativo e disponível para pagamentos. */

@@ -26,7 +26,7 @@ object ErrorCode {
             CommonStatusCodes.CONNECTION_SUSPENDED_DURING_CALL -> "CONNECTION_SUSPENDED_DURING_CALL"
             CommonStatusCodes.RECONNECTION_TIMED_OUT_DURING_UPDATE -> "RECONNECTION_TIMED_OUT_DURING_UPDATE"
             CommonStatusCodes.RECONNECTION_TIMED_OUT -> "RECONNECTION_TIMED_OUT"
-            
+
             // TapAndPay Status Codes
             TapAndPayStatusCodes.TAP_AND_PAY_NO_ACTIVE_WALLET -> "TAP_AND_PAY_NO_ACTIVE_WALLET"
             TapAndPayStatusCodes.TAP_AND_PAY_TOKEN_NOT_FOUND -> "TAP_AND_PAY_TOKEN_NOT_FOUND"
@@ -42,11 +42,11 @@ object ErrorCode {
             TapAndPayStatusCodes.TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT -> "TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"
             TapAndPayStatusCodes.TAP_AND_PAY_USER_CANCELED_FLOW -> "TAP_AND_PAY_USER_CANCELED_FLOW"
             TapAndPayStatusCodes.TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED -> "TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED"
-            
+
             else -> "UNKNOWN_ERROR_$errorCode"
         }
     }
-    
+
     fun getErrorMessage(errorCode: Int): String {
         return when (errorCode) {
             // Common Status Codes - Mensagens amigáveis
@@ -69,7 +69,7 @@ object ErrorCode {
             CommonStatusCodes.CONNECTION_SUSPENDED_DURING_CALL -> "Conexão suspensa durante chamada"
             CommonStatusCodes.RECONNECTION_TIMED_OUT_DURING_UPDATE -> "Tempo de reconexão esgotado durante atualização"
             CommonStatusCodes.RECONNECTION_TIMED_OUT -> "Tempo de reconexão esgotado"
-            
+
             // TapAndPay Status Codes - Mensagens amigáveis
             TapAndPayStatusCodes.TAP_AND_PAY_NO_ACTIVE_WALLET -> "Nenhuma carteira ativa"
             TapAndPayStatusCodes.TAP_AND_PAY_TOKEN_NOT_FOUND -> "Token não encontrado"
@@ -85,7 +85,7 @@ object ErrorCode {
             TapAndPayStatusCodes.TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT -> "Tempo limite de entrega de credenciais"
             TapAndPayStatusCodes.TAP_AND_PAY_USER_CANCELED_FLOW -> "Usuário cancelou a operação"
             TapAndPayStatusCodes.TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED -> "Falha ao registrar cartões virtuais"
-            
+
             else -> "Erro desconhecido"
         }
     }
