@@ -13,12 +13,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +37,7 @@ import com.google.android.gms_mock.ui.theme.GoogleWalletMockTheme
 class MainActivity : ComponentActivity() {
     companion object {
         private const val TAG = "GoogleWalletMock"
+        internal const val DEFAULT_SIMULATED_DATA = "9e4eeb4e-71af-4024-b3ff-05c7a2d4460d"
     }
 
     // Variável para controlar o estado do alerta
@@ -39,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
     // Variável para controlar o estado do resultado na tela
     private var resultState by mutableStateOf(ResultState())
+
+    // Estado do input de dados simulados
+    private var simulatedDataInput by mutableStateOf(DEFAULT_SIMULATED_DATA)
 
     data class AlertState(
         val show: Boolean = false,
@@ -165,7 +174,9 @@ class MainActivity : ComponentActivity() {
             GoogleWalletMockTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     App2AppSimulator(
-                        onSimulateClick = { simulateApp2App() },
+                        simulatedDataInput = simulatedDataInput,
+                        onSimulatedDataChange = { simulatedDataInput = it },
+                        onSimulateClick = { simulateApp2App(simulatedDataInput) },
                         onClearClick = { clearResults() },
                         resultState = resultState,
                         modifier = Modifier.padding(innerPadding)
@@ -199,11 +210,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun simulateApp2App() {
+    private fun simulateApp2App(simulatedData: String) {
         try {
-            // Gerar dados simulados com tokenReferenceId
-            val simulatedData = "9e4eeb4e-71af-4024-b3ff-05c7a2d4460d"
-
             Log.d(TAG, "📋 [GOOGLE] Simulated Data: $simulatedData")
 
             val intent = Intent(BuildConfig.TARGET_APP_ACTION).apply {
@@ -238,6 +246,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun App2AppSimulator(
+  simulatedDataInput: String,
+  onSimulatedDataChange: (String) -> Unit,
   onSimulateClick: () -> Unit,
   onClearClick: () -> Unit,
   resultState: MainActivity.ResultState,
@@ -254,6 +264,27 @@ fun App2AppSimulator(
             text = "Google Wallet Mock",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
+        )
+
+        TextField(
+            value = simulatedDataInput,
+            onValueChange = onSimulatedDataChange,
+            label = { Text("Token Reference ID") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium,
+            trailingIcon = {
+                if (simulatedDataInput.isNotEmpty()) {
+                    IconButton(onClick = { onSimulatedDataChange("") }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Limpar"
+                        )
+                    }
+                }
+            }
         )
 
         Button(
@@ -393,6 +424,8 @@ fun ResultDisplay(
 fun App2AppSimulatorPreview() {
     GoogleWalletMockTheme {
         App2AppSimulator(
+            simulatedDataInput = MainActivity.DEFAULT_SIMULATED_DATA,
+            onSimulatedDataChange = { },
             onSimulateClick = { },
             onClearClick = { },
             resultState = MainActivity.ResultState()

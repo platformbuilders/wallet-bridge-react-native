@@ -5,15 +5,15 @@
 // que utilizam a biblioteca BuildersWallet
 
 import type {
-  GoogleTokenInfo,
-  GoogleTokenStatus,
-  GoogleWalletConstants,
-  GoogleWalletData,
+    GoogleTokenInfo,
+    GoogleTokenStatus,
+    GoogleWalletConstants,
+    GoogleWalletData,
 } from '../../types/google-wallet.types';
 import type {
-  SamsungCard,
-  SamsungWalletConstants,
-  SamsungWalletInfo,
+    SamsungCard,
+    SamsungWalletConstants,
+    SamsungWalletInfo,
 } from '../../types/samsung-wallet.types';
 
 // ============================================================================
@@ -50,6 +50,15 @@ export const mockGoogleWalletConstants: GoogleWalletConstants = {
   TAP_AND_PAY_INVALID_TOKEN_STATE: 3,
   TAP_AND_PAY_ATTESTATION_ERROR: 4,
   TAP_AND_PAY_UNAVAILABLE: 5,
+  TAP_AND_PAY_SAVE_CARD_ERROR: 6,
+  TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION: 7,
+  TAP_AND_PAY_TOKENIZATION_DECLINED: 8,
+  TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR: 9,
+  TAP_AND_PAY_TOKENIZE_ERROR: 10,
+  TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED: 11,
+  TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT: 12,
+  TAP_AND_PAY_USER_CANCELED_FLOW: 13,
+  TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED: 14,
 
   // Token States
   TOKEN_STATE_ACTIVE: 1,
@@ -119,6 +128,8 @@ export const mockGoogleWalletModule = {
   setActivationResult: jest.fn().mockResolvedValue(true),
   finishActivity: jest.fn().mockResolvedValue(true),
   openWallet: jest.fn().mockResolvedValue(true),
+  setLogListener: jest.fn().mockResolvedValue(true),
+  removeLogListener: jest.fn().mockResolvedValue(true),
 };
 
 // ============================================================================
@@ -257,6 +268,8 @@ export const mockSamsungWalletModule = {
   setActivationResult: jest.fn().mockResolvedValue(true),
   finishActivity: jest.fn().mockResolvedValue(true),
   openWallet: jest.fn().mockResolvedValue(true),
+  setLogListener: jest.fn().mockResolvedValue(true),
+  removeLogListener: jest.fn().mockResolvedValue(true),
 };
 
 // ============================================================================

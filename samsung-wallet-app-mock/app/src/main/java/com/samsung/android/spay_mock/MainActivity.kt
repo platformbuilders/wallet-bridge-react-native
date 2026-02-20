@@ -13,12 +13,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +37,7 @@ import com.samsung.android.spay_mock.ui.theme.SamsungwalletappmockTheme
 class MainActivity : ComponentActivity() {
     companion object {
         private const val TAG = "SamsungWalletMock"
+        internal const val DEFAULT_SIMULATED_DATA = "9e4eeb4e-71af-4024-b3ff-05c7a2d4460d"
     }
 
     // Estado de alerta
@@ -39,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
     // Estado de resultado Samsung
     private var samsungResultState by mutableStateOf(SamsungResultState())
+
+    // Estado do input de dados simulados
+    private var simulatedDataInput by mutableStateOf(DEFAULT_SIMULATED_DATA)
 
     data class AlertState(
         val show: Boolean = false,
@@ -154,17 +163,9 @@ class MainActivity : ComponentActivity() {
         return message.toString()
     }
 
-    private fun simulateSamsungApp2App() {
+    private fun simulateSamsungApp2App(simulatedData: String) {
         try {
-            // Gerar dados simulados (Mastercard/Visa)
-            val simulatedJson = generateSamsungSimulatedData()
-            val simulatedData = android.util.Base64.encodeToString(
-                simulatedJson.toByteArray(Charsets.UTF_8),
-                android.util.Base64.NO_WRAP
-            )
-
-            Log.d(TAG, "📋 [SAMSUNG] JSON gerado: $simulatedJson")
-            Log.d(TAG, "📋 [SAMSUNG] Base64 gerado: $simulatedData")
+            Log.d(TAG, "📋 [SAMSUNG] Simulated Data: $simulatedData")
 
             val intent = Intent(BuildConfig.SAMSUNG_TARGET_APP_ACTION).apply {
                 setPackage(BuildConfig.SAMSUNG_TARGET_APP_PACKAGE)
@@ -193,21 +194,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun generateSamsungSimulatedData(): String {
-
-        val mastercardData = """
-        {
-            "paymentAppProviderId": "MASTERCARD_PROVIDER_123465",
-            "paymentAppInstanceId": "INSTANCE_1234",
-            "tokenUniqueReference": "TOKEN_1758556574675_98397",
-            "accountPanSuffix": "1234",
-            "accountExpiry": "12/25"
-        }
-        """.trimIndent()
-
-        return mastercardData
-    }
-
     private fun clearResults() {
         samsungResultState = SamsungResultState()
         Log.d(TAG, "🧹 [SAMSUNG] Resultados limpos")
@@ -220,7 +206,9 @@ class MainActivity : ComponentActivity() {
             SamsungwalletappmockTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SamsungApp2AppSimulator(
-                        onSamsungSimulateClick = { simulateSamsungApp2App() },
+                        simulatedDataInput = simulatedDataInput,
+                        onSimulatedDataChange = { simulatedDataInput = it },
+                        onSamsungSimulateClick = { simulateSamsungApp2App(simulatedDataInput) },
                         onClearClick = { clearResults() },
                         samsungResultState = samsungResultState,
                         modifier = Modifier.padding(innerPadding)
@@ -246,6 +234,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SamsungApp2AppSimulator(
+  simulatedDataInput: String,
+  onSimulatedDataChange: (String) -> Unit,
   onSamsungSimulateClick: () -> Unit,
   onClearClick: () -> Unit,
   samsungResultState: MainActivity.SamsungResultState,
@@ -262,6 +252,27 @@ fun SamsungApp2AppSimulator(
             text = "Samsung Wallet Mock",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        TextField(
+            value = simulatedDataInput,
+            onValueChange = onSimulatedDataChange,
+            label = { Text("Token Reference ID") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium,
+            trailingIcon = {
+                if (simulatedDataInput.isNotEmpty()) {
+                    IconButton(onClick = { onSimulatedDataChange("") }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Limpar"
+                        )
+                    }
+                }
+            }
         )
 
         Button(
@@ -412,6 +423,8 @@ fun SamsungResultDisplay(
 fun SamsungApp2AppSimulatorPreview() {
     SamsungwalletappmockTheme {
         SamsungApp2AppSimulator(
+            simulatedDataInput = MainActivity.DEFAULT_SIMULATED_DATA,
+            onSimulatedDataChange = { },
             onSamsungSimulateClick = { },
             onClearClick = { },
             samsungResultState = MainActivity.SamsungResultState()

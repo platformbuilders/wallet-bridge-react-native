@@ -43,7 +43,7 @@ class GoogleWalletImplementation(
         try {
             // Inicializar TapAndPayClient diretamente (sem reflexão!)
             tapAndPayClient = TapAndPay.getClient(reactContext)
-            
+
             // Inicializar WalletOpener
             walletOpener = WalletOpener(reactContext)
 
@@ -74,7 +74,7 @@ class GoogleWalletImplementation(
                                         } else {
                                             WalletLogger.d(TAG, "🔍 [GOOGLE] Intent data é null")
                                         }
-                                        
+
                                         WalletLogger.i(TAG, "Push tokenize OK - Retornando resolve vazio")
                                         resolve(null)
                                     }
@@ -89,7 +89,7 @@ class GoogleWalletImplementation(
                                         val errorCodeName = ErrorCode.getErrorCodeName(resultCode)
                                         val message = ErrorCode.getErrorMessage(resultCode)
                                         val errorMessage = "$message ($errorCodeName) - result_code:$resultCode"
-                                        
+
                                         WalletLogger.w(TAG, "PUSH_TOKENIZE_ERROR: $errorMessage")
                                         reject("PUSH_TOKENIZE_ERROR", errorMessage)
                                     }
@@ -109,7 +109,7 @@ class GoogleWalletImplementation(
                                     val errorCodeName = ErrorCode.getErrorCodeName(resultCode)
                                     val message = ErrorCode.getErrorMessage(resultCode)
                                     val errorMessage = "$message ($errorCodeName) - result_code:$resultCode"
-                                    
+
                                     WalletLogger.w(TAG, "CREATE_WALLET_ERROR: $errorMessage")
                                     reject("CREATE_WALLET_ERROR", errorMessage)
                                 }
@@ -135,13 +135,13 @@ class GoogleWalletImplementation(
             WalletLogger.w(TAG, "❌ [GOOGLE] Android ${Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 9.0 (API ${MIN_ANDROID_VERSION})")
             return false
         }
-        
+
         // Verificar se o cliente TapAndPay está inicializado
         if (tapAndPayClient == null) {
             WalletLogger.w(TAG, "❌ [GOOGLE] Cliente TapAndPay não foi inicializado")
             return false
         }
-        
+
         WalletLogger.d(TAG, "✅ [GOOGLE] Android ${Build.VERSION.SDK_INT} suportado e SDK disponível")
         return true
     }
@@ -547,10 +547,10 @@ class GoogleWalletImplementation(
         try {
             intentListenerActive = true
             checkPendingDataFromMainActivity()
-            
+
             // Processar eventos de nenhuma intent pendentes
             GoogleWalletModule.processNoIntentReceivedEvent(reactContext)
-            
+
             promise.resolve(true)
         } catch (e: Exception) {
             WalletLogger.e(TAG, "SET_INTENT_LISTENER_ERROR: ${e.message}", e)
@@ -634,7 +634,7 @@ class GoogleWalletImplementation(
             val webUrl = GOOGLE_WALLET_PLAY_STORE_URL
 
             val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
-            
+
             if (success) {
                 WalletLogger.d(TAG, "✅ [GOOGLE] Wallet aberto com sucesso")
                 promise.resolve(true)
@@ -725,33 +725,33 @@ class GoogleWalletImplementation(
         try {
             // Verificar se há dados pendentes
             val hasData = hasPendingData()
-            
+
             if (hasData) {
                 WalletLogger.d(TAG, "✅ [GOOGLE] Dados pendentes encontrados")
-                
+
                 // Obter os dados pendentes sem limpar
                 val data = getPendingIntentDataWithoutClearing()
                 val action = getPendingIntentAction()
                 val callingPackage = getPendingCallingPackage()
-                
+
                 if (data != null && data.isNotEmpty()) {
                     WalletLogger.d(TAG, "📋 [GOOGLE] Processando dados pendentes: ${data.length} caracteres")
                     WalletLogger.d(TAG, "📋 [GOOGLE] Action: $action, CallingPackage: $callingPackage")
-                    
+
                     // Verificar se action e callingPackage estão disponíveis
                     if (action == null) {
                         WalletLogger.e(TAG, "❌ [GOOGLE] Action é null - não é possível processar intent")
                         return
                     }
-                    
+
                     if (callingPackage == null) {
                         WalletLogger.e(TAG, "❌ [GOOGLE] CallingPackage é null - não é possível processar intent")
                         return
                     }
-                    
+
                     // Processar os dados como um intent usando os valores reais
                     processWalletIntentData(data, action, callingPackage)
-                    
+
                     // Limpar dados após processamento bem-sucedido
                     clearPendingData()
                 } else {
@@ -772,18 +772,18 @@ class GoogleWalletImplementation(
         WalletLogger.d(TAG, "🔍 [GOOGLE] processWalletIntentData chamado")
         try {
             WalletLogger.d(TAG, "✅ [GOOGLE] Intent processado: $action")
-            
+
             // Determinar o tipo de intent baseado na action
             val intentType = if (action.endsWith(".action.ACTIVATE_TOKEN")) {
                 "ACTIVATE_TOKEN"
             } else {
                 "WALLET_INTENT"
             }
-            
+
             // Decodificar dados de base64 para string normal
             var decodedData = data
             var dataFormat = "raw"
-            
+
             try {
                 // Tentar decodificar como base64
                 val decodedBytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT)
@@ -795,22 +795,22 @@ class GoogleWalletImplementation(
                 WalletLogger.w(TAG, "⚠️ [GOOGLE] Não foi possível decodificar como base64, usando dados originais: ${e.message}")
                 dataFormat = "raw"
             }
-            
+
             val eventData = Arguments.createMap()
             eventData.putString("action", action)
             eventData.putString("type", intentType)
             eventData.putString("data", decodedData)
             eventData.putString("dataFormat", dataFormat)
             eventData.putString("callingPackage", callingPackage)
-            
+
             // Adicionar dados originais em base64 para referência
             eventData.putString("originalData", data)
-            
+
             WalletLogger.d(TAG, "🔍 [GOOGLE] Evento preparado - Action: $action, Type: $intentType, Format: $dataFormat")
-            
+
             // Enviar evento para React Native
             sendEventToReactNative("GoogleWalletIntentReceived", eventData)
-            
+
         } catch (e: Exception) {
             WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao processar dados da intent: ${e.message}", e)
         }
@@ -864,10 +864,10 @@ class GoogleWalletImplementation(
         private const val GOOGLE_WALLET_PACKAGE = "com.google.android.gms"
         private const val GOOGLE_WALLET_APP_PACKAGE = "com.google.android.apps.walletnfcrel"
         private val GOOGLE_WALLET_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$GOOGLE_WALLET_APP_PACKAGE&hl=pt_BR"
-        
+
         // Versão mínima do Android suportada pelo Google Wallet: Android 9.0 (Pie) - API level 28
         private const val MIN_ANDROID_VERSION = Build.VERSION_CODES.P
-        
+
         // Variáveis estáticas para armazenar dados da intent
         @Volatile
         private var pendingIntentData: String? = null
@@ -875,11 +875,11 @@ class GoogleWalletImplementation(
         private var pendingIntentAction: String? = null
         @Volatile
         private var pendingCallingPackage: String? = null
-        
+
         // Flag para indicar se há dados pendentes
         @Volatile
         private var hasPendingIntentData: Boolean = false
-        
+
         @JvmStatic
         fun getPendingIntentData(): String? {
             val data = pendingIntentData
@@ -892,16 +892,16 @@ class GoogleWalletImplementation(
             }
             return data
         }
-        
+
         @JvmStatic
         fun getPendingIntentAction(): String? = pendingIntentAction
-        
+
         @JvmStatic
         fun getPendingCallingPackage(): String? = pendingCallingPackage
-        
+
         @JvmStatic
         fun getPendingIntentDataWithoutClearing(): String? = pendingIntentData
-        
+
         @JvmStatic
         fun clearPendingData() {
             pendingIntentData = null
@@ -909,33 +909,33 @@ class GoogleWalletImplementation(
             pendingCallingPackage = null
             hasPendingIntentData = false
         }
-        
+
         @JvmStatic
         fun hasPendingData(): Boolean = hasPendingIntentData
 
         @JvmStatic
         fun processIntent(activity: Activity, intent: Intent) {
             WalletLogger.d(TAG, "🔍 [GOOGLE] processIntent chamado")
-            
+
             WalletLogger.d(TAG, "🔍 [GOOGLE] Intent encontrada: ${intent.action}")
-            
+
             // Verificar se é um intent do Google Pay/Wallet
             if (isGooglePayIntent(intent)) {
                 WalletLogger.d(TAG, "✅ [GOOGLE] Intent do Google Pay detectada")
-                
+
                 // Extrair dados da intent
                 val extraText = intent.getStringExtra(Intent.EXTRA_TEXT)
                 if (!extraText.isNullOrEmpty()) {
                     WalletLogger.d(TAG, "🔍 [GOOGLE] Dados EXTRA_TEXT encontrados: ${extraText.length} caracteres")
-                    
+
                     // Armazenar dados para processamento posterior
                     pendingIntentData = extraText
                     pendingIntentAction = intent.action
                     pendingCallingPackage = activity.callingPackage
                     hasPendingIntentData = true
-                    
+
                     WalletLogger.d(TAG, "✅ [GOOGLE] Dados armazenados para processamento - Action: ${intent.action}, CallingPackage: ${activity.callingPackage}")
-                    
+
                     // Limpar intent para evitar reprocessamento
                     activity.intent = Intent()
                 } else {
@@ -945,7 +945,7 @@ class GoogleWalletImplementation(
                 WalletLogger.d(TAG, "🔍 [GOOGLE] Intent não relacionada ao Google Pay")
             }
         }
-        
+
         /**
          * Verifica se uma intent é relacionada ao Google Pay/Wallet
          */
@@ -953,10 +953,10 @@ class GoogleWalletImplementation(
             val action = intent.action
 
             WalletLogger.d(TAG, "🔍 [GOOGLE] Verificando intent - Action: $action")
-            
+
             // Verificar action
             val isValidAction = action != null &&  action.endsWith(".action.ACTIVATE_TOKEN")
-            
+
             return isValidAction
         }
 
@@ -967,7 +967,7 @@ class GoogleWalletImplementation(
         fun isValidCallingPackage(activity: Activity): Boolean {
             val callingPackage = activity.callingPackage
             WalletLogger.d(TAG, "🔍 [GOOGLE] Chamador: $callingPackage")
-            
+
             return callingPackage != null && (callingPackage == GOOGLE_WALLET_PACKAGE || callingPackage == GOOGLE_WALLET_APP_PACKAGE)
         }
     }
