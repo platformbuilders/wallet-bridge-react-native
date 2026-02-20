@@ -7,12 +7,12 @@
 
 import type { GoogleActivationStatus } from './enums';
 import type {
-  GooglePushTokenizeRequestForCard,
-  GoogleTokenInfo,
-  GoogleTokenStatus,
-  GoogleWalletConstants,
-  GoogleWalletData,
-  GoogleWalletSpec,
+    GooglePushTokenizeRequestForCard,
+    GoogleTokenInfo,
+    GoogleTokenStatus,
+    GoogleWalletConstants,
+    GoogleWalletData,
+    GoogleWalletSpec,
 } from './types/google-wallet.types';
 
 // ============================================================================

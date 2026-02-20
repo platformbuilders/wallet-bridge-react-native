@@ -5,15 +5,15 @@
 // que utilizam a biblioteca BuildersWallet
 
 import type {
-  GoogleTokenInfo,
-  GoogleTokenStatus,
-  GoogleWalletConstants,
-  GoogleWalletData,
+    GoogleTokenInfo,
+    GoogleTokenStatus,
+    GoogleWalletConstants,
+    GoogleWalletData,
 } from '../../types/google-wallet.types';
 import type {
-  SamsungCard,
-  SamsungWalletConstants,
-  SamsungWalletInfo,
+    SamsungCard,
+    SamsungWalletConstants,
+    SamsungWalletInfo,
 } from '../../types/samsung-wallet.types';
 
 // ============================================================================
