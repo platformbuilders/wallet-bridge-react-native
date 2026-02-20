@@ -1193,14 +1193,10 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         constants["TAP_AND_PAY_SAVE_CARD_ERROR"] = 15019
         constants["TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION"] = 15021
         constants["TAP_AND_PAY_TOKENIZATION_DECLINED"] = 15022
-```kotlin
         constants["TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR"] = 15023 // Deprecated
-```
         constants["TAP_AND_PAY_TOKENIZE_ERROR"] = 15024
         constants["TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED"] = 15025
-```kotlin
         constants["TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"] = 15026 // Deprecated
-```
         constants["TAP_AND_PAY_USER_CANCELED_FLOW"] = 15027
         constants["TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED"] = 15028
 

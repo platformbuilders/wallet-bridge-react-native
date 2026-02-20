@@ -85,16 +85,12 @@ object ErrorCode {
             TapAndPayStatusCodes.TAP_AND_PAY_SAVE_CARD_ERROR -> "Erro ao salvar cartão"
             TapAndPayStatusCodes.TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION -> "Inelegível para tokenização"
             TapAndPayStatusCodes.TAP_AND_PAY_TOKENIZATION_DECLINED -> "Tokenização recusada"
-```kotlin
             @Suppress("DEPRECATION")
             TapAndPayStatusCodes.TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR -> "Erro ao verificar elegibilidade"
-```
             TapAndPayStatusCodes.TAP_AND_PAY_TOKENIZE_ERROR -> "Erro ao tokenizar"
             TapAndPayStatusCodes.TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED -> "Ativação do token necessária"
-```kotlin
             @Suppress("DEPRECATION")
             TapAndPayStatusCodes.TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT -> "Tempo limite de entrega de credenciais"
-```
             TapAndPayStatusCodes.TAP_AND_PAY_USER_CANCELED_FLOW -> "Usuário cancelou a operação"
             TapAndPayStatusCodes.TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED -> "Falha ao registrar cartões virtuais"
 
