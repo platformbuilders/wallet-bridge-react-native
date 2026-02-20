@@ -39,7 +39,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         private const val GOOGLE_WALLET_PACKAGE = "com.google.android.gms"
         private const val GOOGLE_WALLET_APP_PACKAGE = "com.google.android.apps.walletnfcrel"
         private val GOOGLE_WALLET_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$GOOGLE_WALLET_APP_PACKAGE&hl=pt_BR"
-        
+
         // Versão mínima do Android suportada pelo Google Wallet: Android 9.0 (Pie) - API level 28
         private const val MIN_ANDROID_VERSION = android.os.Build.VERSION_CODES.P
 
@@ -443,7 +443,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             WalletLogger.w(TAG, "❌ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 9.0 (API ${MIN_ANDROID_VERSION})")
             return false
         }
-        
+
         WalletLogger.d(TAG, "✅ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} suportado")
         return true
     }
@@ -466,14 +466,14 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
     override fun checkWalletAvailability(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] checkWalletAvailability chamado")
-        
+
         // Verificar versão mínima do Android (Android 9.0 - API level 28)
         if (android.os.Build.VERSION.SDK_INT < MIN_ANDROID_VERSION) {
             WalletLogger.w(TAG, "❌ [MOCK] Android ${android.os.Build.VERSION.SDK_INT} não suportado. Versão mínima requerida: Android 9.0 (API ${MIN_ANDROID_VERSION})")
             promise.resolve(false)
             return
         }
-        
+
         fetchFromLocalAPI(
             endpoint = "/wallet/availability",
             defaultResponse = { true },
@@ -675,11 +675,11 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         promise: Promise
     ) {
         WalletLogger.d(TAG, "🔍 [MOCK] isTokenized chamado - LastFour: $fpanLastFour, Network: $cardNetwork, Provider: $tokenServiceProvider")
-        
+
         if (!ensureWalletAvailable(promise, "isTokenized")) {
             return
         }
-        
+
         val endpoint = "/wallet/is-tokenized?lastFour=$fpanLastFour&network=$cardNetwork&provider=$tokenServiceProvider"
         fetchFromLocalAPI(
             endpoint = endpoint,
@@ -707,11 +707,11 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         promise: Promise
     ) {
         WalletLogger.d(TAG, "🔍 [MOCK] viewToken chamado - Provider: $tokenServiceProvider, TokenId: $issuerTokenId")
-        
+
         if (!ensureWalletAvailable(promise, "viewToken")) {
             return
         }
-        
+
         val endpoint = "/wallet/view-token?provider=$tokenServiceProvider&tokenId=$issuerTokenId"
         fetchFromLocalAPI(
             endpoint = endpoint,
@@ -781,7 +781,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             if (!ensureWalletAvailable(promise, "addCardToWallet")) {
                 return
             }
-            
+
             // Validar dados do cartão (mesmo que na implementação real)
             val validationError = validateCardData(cardData)
             if (validationError != null) {
@@ -913,11 +913,11 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
     override fun createWalletIfNeeded(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [MOCK] createWalletIfNeeded chamado")
-        
+
         if (!ensureWalletAvailable(promise, "createWalletIfNeeded")) {
             return
         }
-        
+
         fetchFromLocalAPI(
             endpoint = "/wallet/create",
             defaultResponse = { true },
@@ -1076,7 +1076,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
 
             // Verificar dados pendentes da MainActivity automaticamente
             checkPendingDataFromMainActivity()
-            
+
             // Processar eventos de nenhuma intent pendentes
             GoogleWalletModule.processNoIntentReceivedEvent(reactContext)
 
@@ -1193,10 +1193,14 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
         constants["TAP_AND_PAY_SAVE_CARD_ERROR"] = 15019
         constants["TAP_AND_PAY_INELIGIBLE_FOR_TOKENIZATION"] = 15021
         constants["TAP_AND_PAY_TOKENIZATION_DECLINED"] = 15022
-        constants["TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR"] = 15023
+```kotlin
+        constants["TAP_AND_PAY_CHECK_ELIGIBILITY_ERROR"] = 15023 // Deprecated
+```
         constants["TAP_AND_PAY_TOKENIZE_ERROR"] = 15024
         constants["TAP_AND_PAY_TOKEN_ACTIVATION_REQUIRED"] = 15025
-        constants["TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"] = 15026
+```kotlin
+        constants["TAP_AND_PAY_PAYMENT_CREDENTIALS_DELIVERY_TIMEOUT"] = 15026 // Deprecated
+```
         constants["TAP_AND_PAY_USER_CANCELED_FLOW"] = 15027
         constants["TAP_AND_PAY_ENROLL_FOR_VIRTUAL_CARDS_FAILED"] = 15028
 
@@ -1248,7 +1252,7 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             val webUrl = GOOGLE_WALLET_PLAY_STORE_URL
 
             val success = walletOpener!!.openWallet(packageName, appName, playStoreUrl, webUrl)
-            
+
             if (success) {
                 WalletLogger.d(TAG, "✅ [MOCK] Wallet aberto com sucesso")
                 promise.resolve(true)
