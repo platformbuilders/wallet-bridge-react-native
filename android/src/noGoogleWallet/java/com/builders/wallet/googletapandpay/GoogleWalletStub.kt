@@ -188,6 +188,11 @@ class GoogleWalletImplementation(
         // Stub não faz nada - apenas log
     }
 
+    override fun sendValidCallerNoIntentEvent() {
+        WalletLogger.d(TAG, "⚠️ [GOOGLE] sendValidCallerNoIntentEvent chamado (STUB)")
+        // Stub não faz nada - apenas log
+    }
+
     override fun setLogListener(promise: Promise) {
         WalletLogger.d(TAG, "🔍 [STUB] setLogListener chamado")
         try {

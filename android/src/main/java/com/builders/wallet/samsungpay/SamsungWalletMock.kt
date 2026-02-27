@@ -1049,6 +1049,9 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             
             // Processar eventos de nenhuma intent pendentes
             SamsungWalletModule.processNoIntentReceivedEvent(reactContext)
+
+            // Processar eventos de caller válido sem intent pendentes
+            SamsungWalletModule.processValidCallerNoIntentEvent(reactContext)
             
             promise.resolve(true)
         } catch (e: Exception) {
@@ -1256,6 +1259,16 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
             WalletLogger.d(TAG, "✅ [SAMSUNG] Evento de nenhuma intent enviado com sucesso")
         } catch (e: Exception) {
             WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+        }
+    }
+
+    override fun sendValidCallerNoIntentEvent() {
+        WalletLogger.d(TAG, "⚠️ [SAMSUNG] sendValidCallerNoIntentEvent chamado")
+        try {
+            sendEventToReactNative("SamsungWalletValidCallerNoIntentReceived", null)
+            WalletLogger.d(TAG, "✅ [SAMSUNG] Evento de caller válido sem intent enviado com sucesso")
+        } catch (e: Exception) {
+            WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento de caller válido sem intent: ${e.message}", e)
         }
     }
 

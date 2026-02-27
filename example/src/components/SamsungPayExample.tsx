@@ -41,6 +41,7 @@ function logSamsungWalletError(error: unknown, context?: string): string {
 // Interface para o useImperativeHandle
 export interface SamsungPayExampleRef {
   processSamsungWalletIntent: (walletEvent: SamsungWalletIntentEvent) => void;
+  handleValidCallerNoIntent: () => void;
 }
 
 export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
@@ -72,6 +73,9 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
       Record<string, any> | string | null
     >(null);
     const [isCheckingPendingData, setIsCheckingPendingData] = useState(false);
+
+    // Estado para indicar que a wallet chamou o app mas não enviou payload
+    const [validCallerNoIntent, setValidCallerNoIntent] = useState(false);
 
     // Opções de providers baseadas nas constantes do Samsung Wallet
     const providerOptions = [
@@ -333,9 +337,17 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
       }
     };
 
-    // Expor função para o componente pai através do useImperativeHandle
+    // Handler para quando wallet válida chama o app sem payload
+    const handleValidCallerNoIntent = (): void => {
+      console.log('⚠️ [SamsungWallet] Wallet válida chamou sem payload');
+      setValidCallerNoIntent(true);
+      setIntentResult(null);
+    };
+
+    // Expor funções para o componente pai através do useImperativeHandle
     useImperativeHandle(ref, () => ({
       processSamsungWalletIntent,
+      handleValidCallerNoIntent,
     }));
 
     // Configurar listener de intent automaticamente
@@ -721,7 +733,9 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
                 ? styles.intentStatusActive
                 : isCheckingPendingData
                   ? styles.intentStatusChecking
-                  : styles.intentStatusInactive,
+                  : validCallerNoIntent
+                    ? styles.intentStatusValidCallerNoIntent
+                    : styles.intentStatusInactive,
             ]}
           >
             <Text
@@ -731,14 +745,18 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
                   ? styles.intentStatusTextActive
                   : isCheckingPendingData
                     ? styles.intentStatusTextChecking
-                    : styles.intentStatusTextInactive,
+                    : validCallerNoIntent
+                      ? styles.intentStatusTextValidCallerNoIntent
+                      : styles.intentStatusTextInactive,
               ]}
             >
               {intentResult
                 ? '🎯 Intent Recebido'
                 : isCheckingPendingData
                   ? '🔍 Verificando Dados...'
-                  : '⏳ Aguardando Intent'}
+                  : validCallerNoIntent
+                    ? '⚠️ Wallet chamou sem payload'
+                    : '⏳ Aguardando Intent'}
             </Text>
           </View>
           <Text style={styles.intentStatusDescription}>
@@ -746,7 +764,9 @@ export const SamsungPayExample = forwardRef<SamsungPayExampleRef>(
               ? `Último intent recebido em ${new Date().toLocaleTimeString()}`
               : isCheckingPendingData
                 ? 'Verificando se há dados pendentes da MainActivity...'
-                : 'O app está escutando por intents do Samsung Pay'}
+                : validCallerNoIntent
+                  ? 'Samsung Pay iniciou o fluxo mas não enviou dados (possível retry)'
+                  : 'O app está escutando por intents do Samsung Pay'}
           </Text>
 
           {/* Seção de detalhes do intent quando disponível */}
@@ -1250,6 +1270,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
     borderColor: '#2196f3',
   },
+  intentStatusValidCallerNoIntent: {
+    backgroundColor: '#fff8e1',
+    borderColor: '#ff6f00',
+  },
   intentStatusText: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -1263,6 +1287,9 @@ const styles = StyleSheet.create({
   },
   intentStatusTextChecking: {
     color: '#1976d2',
+  },
+  intentStatusTextValidCallerNoIntent: {
+    color: '#e65100',
   },
   intentStatusDescription: {
     fontSize: 14,

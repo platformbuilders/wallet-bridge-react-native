@@ -1080,6 +1080,9 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             // Processar eventos de nenhuma intent pendentes
             GoogleWalletModule.processNoIntentReceivedEvent(reactContext)
 
+            // Processar eventos de caller válido sem intent pendentes
+            GoogleWalletModule.processValidCallerNoIntentEvent(reactContext)
+
             promise.resolve(true)
         } catch (e: Exception) {
             WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao ativar listener de intent: ${e.message}", e)
@@ -1269,6 +1272,16 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
             WalletLogger.d(TAG, "✅ [GOOGLE] Evento de nenhuma intent enviado com sucesso")
         } catch (e: Exception) {
             WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao enviar evento de nenhuma intent: ${e.message}", e)
+        }
+    }
+
+    override fun sendValidCallerNoIntentEvent() {
+        WalletLogger.d(TAG, "⚠️ [GOOGLE] sendValidCallerNoIntentEvent chamado")
+        try {
+            sendEventToReactNative("GoogleWalletValidCallerNoIntentReceived", null)
+            WalletLogger.d(TAG, "✅ [GOOGLE] Evento de caller válido sem intent enviado com sucesso")
+        } catch (e: Exception) {
+            WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao enviar evento de caller válido sem intent: ${e.message}", e)
         }
     }
 

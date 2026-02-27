@@ -16,6 +16,7 @@ export class GoogleWalletEventEmitter {
   private listeners: Map<string, (event: GoogleWalletIntentEvent) => void> =
     new Map();
   private noIntentListeners: Map<string, () => void> = new Map();
+  private validCallerNoIntentListeners: Map<string, () => void> = new Map();
   private logListeners: Map<string, (event: GoogleWalletLogEvent) => void> =
     new Map();
   private isIOS: boolean;
@@ -161,6 +162,54 @@ export class GoogleWalletEventEmitter {
   }
 
   /**
+   * Adiciona um listener para o evento de wallet válida que chamou o app sem payload
+   * Em iOS, retorna uma função vazia que não faz nada
+   * @param callback Função que será chamada quando a wallet chamar sem dados
+   * @returns Função para remover o listener
+   */
+  addValidCallerNoIntentListener(callback: () => void): () => void {
+    if (this.isIOS) {
+      console.warn(
+        '⚠️ [GoogleWalletEventEmitter] addValidCallerNoIntentListener chamado em iOS - operação ignorada',
+      );
+      return () => {};
+    }
+
+    const listenerId = `valid_caller_no_intent_listener_${Date.now()}_${Math.random()}`;
+
+    if (!this.eventEmitter) {
+      console.error(
+        '❌ [GoogleWalletEventEmitter] EventEmitter não está disponível',
+      );
+      return () => {};
+    }
+
+    this.validCallerNoIntentListeners.set(listenerId, callback);
+
+    const subscription = this.eventEmitter.addListener(
+      'GoogleWalletValidCallerNoIntentReceived',
+      () => {
+        console.log(
+          '⚠️ [GoogleWalletEventEmitter] Wallet válida chamou sem payload',
+        );
+        callback();
+      },
+    );
+
+    console.log(
+      `✅ [GoogleWalletEventEmitter] ValidCallerNoIntent Listener adicionado: ${listenerId}`,
+    );
+
+    return () => {
+      this.validCallerNoIntentListeners.delete(listenerId);
+      subscription.remove();
+      console.log(
+        `🧹 [GoogleWalletEventEmitter] ValidCallerNoIntent Listener removido: ${listenerId}`,
+      );
+    };
+  }
+
+  /**
    * Adiciona um listener para eventos de log do Google Wallet
    * Em iOS, retorna uma função vazia que não faz nada
    * @param callback Função que será chamada quando um log for recebido
@@ -218,6 +267,7 @@ export class GoogleWalletEventEmitter {
   removeAllListeners(): void {
     this.listeners.clear();
     this.noIntentListeners.clear();
+    this.validCallerNoIntentListeners.clear();
     this.logListeners.clear();
 
     // Em iOS, não tentar remover listeners do EventEmitter
@@ -231,6 +281,9 @@ export class GoogleWalletEventEmitter {
     if (this.eventEmitter) {
       this.eventEmitter.removeAllListeners('GoogleWalletIntentReceived');
       this.eventEmitter.removeAllListeners('GoogleWalletNoIntentReceived');
+      this.eventEmitter.removeAllListeners(
+        'GoogleWalletValidCallerNoIntentReceived',
+      );
       this.eventEmitter.removeAllListeners('WalletLog');
       console.log(
         '🧹 [GoogleWalletEventEmitter] Todos os listeners foram removidos',
@@ -250,7 +303,10 @@ export class GoogleWalletEventEmitter {
       return 0;
     }
     return (
-      this.listeners.size + this.noIntentListeners.size + this.logListeners.size
+      this.listeners.size +
+      this.noIntentListeners.size +
+      this.validCallerNoIntentListeners.size +
+      this.logListeners.size
     );
   }
 

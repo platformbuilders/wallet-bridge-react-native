@@ -10,6 +10,7 @@ import { usePromise } from '../utils/usePromise';
 export const useSamsungWalletListener = (
   onIntentReceived: (event: SamsungWalletIntentEvent) => void,
   onNoIntentReceived?: () => void,
+  onValidCallerNoIntentReceived?: () => void,
 ) => {
   const { loading, callPromise } = usePromise(
     SamsungWalletService.startWalletIntentListener,
@@ -44,6 +45,17 @@ export const useSamsungWalletListener = (
         })
       : () => {};
 
+    const removeValidCallerNoIntentListener = onValidCallerNoIntentReceived
+      ? SamsungWalletService.walletEventEmitter.addValidCallerNoIntentListener(
+          () => {
+            console.log(
+              '⚠️ [Hook] Valid caller no intent received from Samsung Wallet',
+            );
+            onValidCallerNoIntentReceived();
+          },
+        )
+      : () => {};
+
     return () => {
       try {
         // eslint-disable-next-line promise/prefer-await-to-then
@@ -51,6 +63,7 @@ export const useSamsungWalletListener = (
       } catch {}
       removeIntentListener();
       removeNoIntentListener();
+      removeValidCallerNoIntentListener();
     };
   }, []);
 

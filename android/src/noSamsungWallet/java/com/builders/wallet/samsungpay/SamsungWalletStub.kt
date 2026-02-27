@@ -200,6 +200,11 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     // Stub não faz nada - apenas log
   }
 
+  override fun sendValidCallerNoIntentEvent() {
+    WalletLogger.d(TAG, "⚠️ [SAMSUNG] sendValidCallerNoIntentEvent chamado (STUB)")
+    // Stub não faz nada - apenas log
+  }
+
   override fun setLogListener(promise: Promise) {
     WalletLogger.d(TAG, "🔍 [STUB] setLogListener chamado")
     try {
