@@ -16,6 +16,7 @@ export class SamsungWalletEventEmitter {
   private listeners: Map<string, (event: SamsungWalletIntentEvent) => void> =
     new Map();
   private noIntentListeners: Map<string, () => void> = new Map();
+  private validCallerNoIntentListeners: Map<string, () => void> = new Map();
   private logListeners: Map<string, (event: SamsungWalletLogEvent) => void> =
     new Map();
   private isIOS: boolean;
@@ -161,6 +162,54 @@ export class SamsungWalletEventEmitter {
   }
 
   /**
+   * Adiciona um listener para o evento de wallet válida que chamou o app sem payload
+   * Em iOS, retorna uma função vazia que não faz nada
+   * @param callback Função que será chamada quando a wallet chamar sem dados
+   * @returns Função para remover o listener
+   */
+  addValidCallerNoIntentListener(callback: () => void): () => void {
+    if (this.isIOS) {
+      console.warn(
+        '⚠️ [SamsungWalletEventEmitter] addValidCallerNoIntentListener chamado em iOS - operação ignorada',
+      );
+      return () => {};
+    }
+
+    const listenerId = `valid_caller_no_intent_listener_${Date.now()}_${Math.random()}`;
+
+    if (!this.eventEmitter) {
+      console.error(
+        '❌ [SamsungWalletEventEmitter] EventEmitter não está disponível',
+      );
+      return () => {};
+    }
+
+    this.validCallerNoIntentListeners.set(listenerId, callback);
+
+    const subscription = this.eventEmitter.addListener(
+      'SamsungWalletValidCallerNoIntentReceived',
+      () => {
+        console.log(
+          '⚠️ [SamsungWalletEventEmitter] Wallet válida chamou sem payload',
+        );
+        callback();
+      },
+    );
+
+    console.log(
+      `✅ [SamsungWalletEventEmitter] ValidCallerNoIntent Listener adicionado: ${listenerId}`,
+    );
+
+    return () => {
+      this.validCallerNoIntentListeners.delete(listenerId);
+      subscription.remove();
+      console.log(
+        `🧹 [SamsungWalletEventEmitter] ValidCallerNoIntent Listener removido: ${listenerId}`,
+      );
+    };
+  }
+
+  /**
    * Adiciona um listener para eventos de log do Samsung Wallet
    * Em iOS, retorna uma função vazia que não faz nada
    * @param callback Função que será chamada quando um log for recebido
@@ -218,6 +267,7 @@ export class SamsungWalletEventEmitter {
   removeAllListeners(): void {
     this.listeners.clear();
     this.noIntentListeners.clear();
+    this.validCallerNoIntentListeners.clear();
     this.logListeners.clear();
 
     // Em iOS, não tentar remover listeners do EventEmitter
@@ -231,6 +281,9 @@ export class SamsungWalletEventEmitter {
     if (this.eventEmitter) {
       this.eventEmitter.removeAllListeners('SamsungWalletIntentReceived');
       this.eventEmitter.removeAllListeners('SamsungWalletNoIntentReceived');
+      this.eventEmitter.removeAllListeners(
+        'SamsungWalletValidCallerNoIntentReceived',
+      );
       this.eventEmitter.removeAllListeners('WalletLog');
       console.log(
         '🧹 [SamsungWalletEventEmitter] Todos os listeners foram removidos',
@@ -250,7 +303,10 @@ export class SamsungWalletEventEmitter {
       return 0;
     }
     return (
-      this.listeners.size + this.noIntentListeners.size + this.logListeners.size
+      this.listeners.size +
+      this.noIntentListeners.size +
+      this.validCallerNoIntentListeners.size +
+      this.logListeners.size
     );
   }
 

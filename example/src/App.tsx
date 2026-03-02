@@ -201,6 +201,38 @@ export default function App(): React.JSX.Element {
         );
       });
 
+    // Listener para Google Wallet: caller válido sem payload
+    const removeGoogleValidCallerNoIntentListener =
+      googleEventEmitter.addValidCallerNoIntentListener(() => {
+        console.log(
+          '⚠️ [App] Google Wallet chamou o app mas não enviou payload'
+        );
+
+        // Navegar para o conteúdo do Google
+        setIsGooglePay(true);
+        flatListRef.current?.scrollToIndex({ index: 0, animated: true });
+
+        if (googlePayRef.current) {
+          googlePayRef.current.handleValidCallerNoIntent();
+        }
+      });
+
+    // Listener para Samsung Wallet: caller válido sem payload
+    const removeSamsungValidCallerNoIntentListener =
+      samsungEventEmitter.addValidCallerNoIntentListener(() => {
+        console.log(
+          '⚠️ [App] Samsung Pay chamou o app mas não enviou payload'
+        );
+
+        // Navegar para o conteúdo da Samsung
+        setIsGooglePay(false);
+        flatListRef.current?.scrollToIndex({ index: 1, animated: true });
+
+        if (samsungPayRef.current) {
+          samsungPayRef.current.handleValidCallerNoIntent();
+        }
+      });
+
     // Cleanup dos listeners
     return () => {
       console.log('🧹 [App] Removendo listeners das wallets...');
@@ -208,6 +240,8 @@ export default function App(): React.JSX.Element {
       removeSamsungListener();
       removeGoogleNoIntentListener();
       removeSamsungNoIntentListener();
+      removeGoogleValidCallerNoIntentListener();
+      removeSamsungValidCallerNoIntentListener();
       removeGoogleLogListener();
       removeSamsungLogListener();
 

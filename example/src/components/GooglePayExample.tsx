@@ -48,6 +48,7 @@ const handleGoogleWalletError = (error: unknown, context?: string): string => {
 // Interface para o useImperativeHandle
 export interface GooglePayExampleRef {
   processWalletIntent: (walletEvent: GoogleWalletIntentEvent) => void;
+  handleValidCallerNoIntent: () => void;
 }
 
 export const GooglePayExample = forwardRef<GooglePayExampleRef>(
@@ -68,6 +69,9 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
 
     // Estado para indicar se está verificando dados pendentes
     const [isCheckingPendingData, setIsCheckingPendingData] = useState(false);
+
+    // Estado para indicar que a wallet chamou o app mas não enviou payload
+    const [validCallerNoIntent, setValidCallerNoIntent] = useState(false);
 
     // Instanciar o GoogleWalletClient
     const googleWalletClient = GoogleWalletClient;
@@ -315,9 +319,17 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
       }
     };
 
-    // Expor função para o componente pai através do useImperativeHandle
+    // Handler para quando wallet válida chama o app sem payload
+    const handleValidCallerNoIntent = (): void => {
+      console.log('⚠️ [GoogleWallet] Wallet válida chamou sem payload');
+      setValidCallerNoIntent(true);
+      setIntentResult(null);
+    };
+
+    // Expor funções para o componente pai através do useImperativeHandle
     useImperativeHandle(ref, () => ({
       processWalletIntent,
+      handleValidCallerNoIntent,
     }));
 
     // Configurar listener de intent automaticamente
@@ -737,7 +749,9 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
                   ? styles.intentStatusActive
                   : isCheckingPendingData
                     ? styles.intentStatusChecking
-                    : styles.intentStatusInactive,
+                    : validCallerNoIntent
+                      ? styles.intentStatusValidCallerNoIntent
+                      : styles.intentStatusInactive,
               ]}
             >
               <Text
@@ -747,14 +761,18 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
                     ? styles.intentStatusTextActive
                     : isCheckingPendingData
                       ? styles.intentStatusTextChecking
-                      : styles.intentStatusTextInactive,
+                      : validCallerNoIntent
+                        ? styles.intentStatusTextValidCallerNoIntent
+                        : styles.intentStatusTextInactive,
                 ]}
               >
                 {intentResult
                   ? '🎯 Intent Recebido'
                   : isCheckingPendingData
                     ? '🔍 Verificando Dados...'
-                    : '⏳ Aguardando Intent'}
+                    : validCallerNoIntent
+                      ? '⚠️ Wallet chamou sem payload'
+                      : '⏳ Aguardando Intent'}
               </Text>
             </View>
             <Text style={styles.intentStatusDescription}>
@@ -762,7 +780,9 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
                 ? `Último intent recebido em ${new Date().toLocaleTimeString()}`
                 : isCheckingPendingData
                   ? 'Verificando se há dados pendentes da MainActivity...'
-                  : 'O app está escutando por intents da carteira do Google'}
+                  : validCallerNoIntent
+                    ? 'Google Wallet iniciou o fluxo mas não enviou dados (possível retry)'
+                    : 'O app está escutando por intents da carteira do Google'}
             </Text>
 
             {/* Seção de detalhes do intent quando disponível */}
@@ -1234,6 +1254,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
     borderColor: '#2196f3',
   },
+  intentStatusValidCallerNoIntent: {
+    backgroundColor: '#fff8e1',
+    borderColor: '#ff6f00',
+  },
   intentStatusText: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -1247,6 +1271,9 @@ const styles = StyleSheet.create({
   },
   intentStatusTextChecking: {
     color: '#1976d2',
+  },
+  intentStatusTextValidCallerNoIntent: {
+    color: '#e65100',
   },
   intentStatusDescription: {
     fontSize: 14,

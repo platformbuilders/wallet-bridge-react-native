@@ -29,6 +29,7 @@ interface GoogleWalletContract {
     fun finishActivity(promise: Promise)
     fun openWallet(promise: Promise)
     fun sendNoIntentReceivedEvent()
+    fun sendValidCallerNoIntentEvent()
     fun setLogListener(promise: Promise)
     fun removeLogListener(promise: Promise)
 }
