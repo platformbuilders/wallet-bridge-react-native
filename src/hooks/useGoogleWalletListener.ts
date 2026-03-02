@@ -10,6 +10,7 @@ import { usePromise } from '../utils/usePromise';
 export const useGoogleWalletListener = (
   onIntentReceived: (event: GoogleWalletIntentEvent) => void,
   onNoIntentReceived?: () => void,
+  onValidCallerNoIntentReceived?: () => void,
 ) => {
   const { loading, callPromise } = usePromise(
     GoogleWalletService.startIntentListener,
@@ -44,6 +45,17 @@ export const useGoogleWalletListener = (
         })
       : () => {};
 
+    const removeValidCallerNoIntentListener = onValidCallerNoIntentReceived
+      ? GoogleWalletService.walletEventEmitter.addValidCallerNoIntentListener(
+          () => {
+            console.log(
+              '⚠️ [Hook] Valid caller no intent received from Google Wallet',
+            );
+            onValidCallerNoIntentReceived();
+          },
+        )
+      : () => {};
+
     return () => {
       try {
         // eslint-disable-next-line promise/prefer-await-to-then
@@ -51,6 +63,7 @@ export const useGoogleWalletListener = (
       } catch {}
       removeIntentListener();
       removeNoIntentListener();
+      removeValidCallerNoIntentListener();
     };
   }, []);
 

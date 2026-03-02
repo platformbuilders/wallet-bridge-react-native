@@ -69,19 +69,13 @@ object WalletIntentProcessor {
     }
     
     /**
-     * Processa a intent internamente, identificando o tipo de wallet e encaminhando para o módulo correto
+     * Processa a intent internamente, identificando o tipo de wallet e encaminhando para o módulo correto.
+     * A verificação de caller válido ocorre ANTES da verificação de dados, permitindo diferenciar:
+     *   - Wallet válida com payload  → processIntent()
+     *   - Wallet válida sem payload  → setValidCallerNoIntentFlag()
+     *   - Nenhuma wallet reconhecida → setNoIntentReceivedFlag()
      */
     private fun processIntentInternal(activity: Activity, intent: Intent) {
-        // Verificar se há dados EXTRA_TEXT (necessário para processamento)
-        val extraText = intent.getStringExtra(Intent.EXTRA_TEXT)
-        if (extraText.isNullOrEmpty()) {
-            WalletLogger.d(TAG, "🔍 [CENTRAL] Nenhum dado EXTRA_TEXT encontrado - armazenando para processamento posterior")
-            // Armazenar para processamento posterior quando React Native estiver pronto
-            SamsungWalletModule.setNoIntentReceivedFlag()
-            GoogleWalletModule.setNoIntentReceivedFlag()
-            return
-        }
-        
         // Verificar configurações de mock
         val useGoogleMock = try {
             BuildConfig.GOOGLE_WALLET_USE_MOCK
@@ -89,32 +83,45 @@ object WalletIntentProcessor {
             WalletLogger.w(TAG, "🔧 [CENTRAL] GOOGLE_WALLET_USE_MOCK não definido, usando padrão: false")
             false
         }
-        
+
         val useSamsungMock = try {
             BuildConfig.SAMSUNG_WALLET_USE_MOCK
         } catch (e: Exception) {
             WalletLogger.w(TAG, "🔧 [CENTRAL] SAMSUNG_WALLET_USE_MOCK não definido, usando padrão: false")
             false
         }
-        
+
         WalletLogger.d(TAG, "🔧 [CENTRAL] Configurações de mock - Google: $useGoogleMock, Samsung: $useSamsungMock")
-        
-        // Identificar tipo de package e encaminhar para módulo correto
-        // Usar as funções isValidCallingPackage das implementações (mock ou real)
+
+        // Identificar caller ANTES de checar dados — permite diferenciar os três estados
+        val isSamsungCaller = if (useSamsungMock) SamsungWalletMock.isValidCallingPackage(activity)
+                              else SamsungWalletImplementation.isValidCallingPackage(activity)
+        val isGoogleCaller  = if (useGoogleMock) GoogleWalletMock.isValidCallingPackage(activity)
+                              else GoogleWalletImplementation.isValidCallingPackage(activity)
+
+        val extraText = intent.getStringExtra(Intent.EXTRA_TEXT)
+
         when {
-            // Verificar Samsung (mock ou real)
-            (if (useSamsungMock) SamsungWalletMock.isValidCallingPackage(activity) else SamsungWalletImplementation.isValidCallingPackage(activity)) -> {
-                WalletLogger.d(TAG, "✅ [CENTRAL] Package identificado como Samsung - encaminhando para SamsungWalletModule (${if (useSamsungMock) "MOCK" else "REAL"})")
-                SamsungWalletModule.processIntent(activity, intent)
+            isSamsungCaller -> {
+                if (extraText.isNullOrEmpty()) {
+                    WalletLogger.d(TAG, "⚠️ [CENTRAL] Samsung válida chamou o app, mas sem EXTRA_TEXT - armazenando ValidCallerNoIntent")
+                    SamsungWalletModule.setValidCallerNoIntentFlag()
+                } else {
+                    WalletLogger.d(TAG, "✅ [CENTRAL] Package identificado como Samsung com dados - encaminhando para SamsungWalletModule (${if (useSamsungMock) "MOCK" else "REAL"})")
+                    SamsungWalletModule.processIntent(activity, intent)
+                }
             }
-            // Verificar Google (mock ou real)
-            (if (useGoogleMock) GoogleWalletMock.isValidCallingPackage(activity) else GoogleWalletImplementation.isValidCallingPackage(activity)) -> {
-                WalletLogger.d(TAG, "✅ [CENTRAL] Package identificado como Google - encaminhando para GoogleWalletModule (${if (useGoogleMock) "MOCK" else "REAL"})")
-                GoogleWalletModule.processIntent(activity, intent)
+            isGoogleCaller -> {
+                if (extraText.isNullOrEmpty()) {
+                    WalletLogger.d(TAG, "⚠️ [CENTRAL] Google válida chamou o app, mas sem EXTRA_TEXT - armazenando ValidCallerNoIntent")
+                    GoogleWalletModule.setValidCallerNoIntentFlag()
+                } else {
+                    WalletLogger.d(TAG, "✅ [CENTRAL] Package identificado como Google com dados - encaminhando para GoogleWalletModule (${if (useGoogleMock) "MOCK" else "REAL"})")
+                    GoogleWalletModule.processIntent(activity, intent)
+                }
             }
             else -> {
-                WalletLogger.d(TAG, "🔍 [CENTRAL] Package não identificado como Samsung ou Google - armazenando para processamento posterior")
-                // Armazenar para processamento posterior quando React Native estiver pronto
+                WalletLogger.d(TAG, "🔍 [CENTRAL] Nenhuma wallet reconhecida como caller - armazenando NoIntent para processamento posterior")
                 SamsungWalletModule.setNoIntentReceivedFlag()
                 GoogleWalletModule.setNoIntentReceivedFlag()
             }

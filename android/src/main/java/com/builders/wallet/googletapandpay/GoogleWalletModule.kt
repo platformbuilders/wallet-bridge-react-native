@@ -151,9 +151,13 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
     const val NAME = "GoogleWallet"
     private const val TAG = "GoogleWallet"
 
-    // Flag para indicar que nenhuma intent foi recebida
+    // Flag para indicar que nenhuma intent foi recebida (app aberto sem wallet)
     @Volatile
     private var hasNoIntentReceivedFlag: Boolean = false
+
+    // Flag para indicar que uma wallet válida chamou o app, mas sem payload
+    @Volatile
+    private var hasValidCallerNoIntentFlag: Boolean = false
 
     @JvmStatic
     fun processIntent(activity: android.app.Activity, intent: android.content.Intent) {
@@ -186,9 +190,36 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
     @JvmStatic
     fun setNoIntentReceivedFlag() {
       hasNoIntentReceivedFlag = true
-      WalletLogger.d(TAG, "🔍 [STATIC] Flag de nenhuma intent definido")
+      WalletLogger.d(TAG, "🔍 [STATIC] Flag de nenhuma intent definido (app aberto sem wallet)")
     }
-    
+
+    @JvmStatic
+    fun setValidCallerNoIntentFlag() {
+      hasValidCallerNoIntentFlag = true
+      WalletLogger.d(TAG, "⚠️ [STATIC] Flag de caller válido sem intent definido (wallet chamou sem payload)")
+    }
+
+    @JvmStatic
+    fun processValidCallerNoIntentEvent(reactContext: ReactApplicationContext) {
+      if (hasValidCallerNoIntentFlag) {
+        WalletLogger.d(TAG, "⚠️ [STATIC] Processando evento de caller válido sem intent pendente")
+        try {
+          val module = reactContext.getNativeModule(GoogleWalletModule::class.java)
+          if (module != null) {
+            module.googleWalletImplementation.sendValidCallerNoIntentEvent()
+            WalletLogger.d(TAG, "✅ [STATIC] Evento de caller válido sem intent enviado com sucesso")
+          } else {
+            WalletLogger.e(TAG, "❌ [STATIC] Instância do GoogleWalletModule não encontrada.")
+          }
+        } catch (e: Exception) {
+          WalletLogger.e(TAG, "❌ [STATIC] Erro ao enviar evento de caller válido sem intent: ${e.message}", e)
+        } finally {
+          hasValidCallerNoIntentFlag = false
+          WalletLogger.d(TAG, "🧹 [STATIC] Flag de caller válido sem intent limpo")
+        }
+      }
+    }
+
     @JvmStatic
     fun processNoIntentReceivedEvent(reactContext: ReactApplicationContext) {
       if (hasNoIntentReceivedFlag) {
