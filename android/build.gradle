@@ -29,9 +29,9 @@ def getExtOrIntegerDefault(name) {
 // CONFIGURAÇÃO DE WALLETS CONDICIONAIS
 // ============================================
 // Verifica quais SDKs devem ser habilitados
-def googleWalletEnabled = project.hasProperty('GOOGLE_WALLET_ENABLED') ? 
+def googleWalletEnabled = project.hasProperty('GOOGLE_WALLET_ENABLED') ?
     project.property('GOOGLE_WALLET_ENABLED').toBoolean() : false
-def samsungWalletEnabled = project.hasProperty('SAMSUNG_WALLET_ENABLED') ? 
+def samsungWalletEnabled = project.hasProperty('SAMSUNG_WALLET_ENABLED') ?
     project.property('SAMSUNG_WALLET_ENABLED').toBoolean() : false
 
 println "================================================"
@@ -53,34 +53,34 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-    
+
     // Configurações para SDKs habilitados
     buildConfigField "boolean", "GOOGLE_WALLET_ENABLED", "${googleWalletEnabled}"
     buildConfigField "boolean", "SAMSUNG_WALLET_ENABLED", "${samsungWalletEnabled}"
-    
+
     // Configuração para Google Wallet Mock
-    buildConfigField "boolean", "GOOGLE_WALLET_USE_MOCK", 
-      project.hasProperty('GOOGLE_WALLET_USE_MOCK') ? 
-        project.property('GOOGLE_WALLET_USE_MOCK') : 
+    buildConfigField "boolean", "GOOGLE_WALLET_USE_MOCK",
+      project.hasProperty('GOOGLE_WALLET_USE_MOCK') ?
+        project.property('GOOGLE_WALLET_USE_MOCK') :
         "false"
-    
-    buildConfigField "String", "GOOGLE_WALLET_MOCK_API_URL", 
-      project.hasProperty('GOOGLE_WALLET_MOCK_API_URL') ? 
-        "\"${project.property('GOOGLE_WALLET_MOCK_API_URL')}\"" : 
+
+    buildConfigField "String", "GOOGLE_WALLET_MOCK_API_URL",
+      project.hasProperty('GOOGLE_WALLET_MOCK_API_URL') ?
+        "\"${project.property('GOOGLE_WALLET_MOCK_API_URL')}\"" :
         "\"\""
-    
+
     // Configuração para Samsung Wallet Mock
-    buildConfigField "boolean", "SAMSUNG_WALLET_USE_MOCK", 
-      project.hasProperty('SAMSUNG_WALLET_USE_MOCK') ? 
-        project.property('SAMSUNG_WALLET_USE_MOCK') : 
+    buildConfigField "boolean", "SAMSUNG_WALLET_USE_MOCK",
+      project.hasProperty('SAMSUNG_WALLET_USE_MOCK') ?
+        project.property('SAMSUNG_WALLET_USE_MOCK') :
         "false"
-    
-    buildConfigField "String", "SAMSUNG_WALLET_MOCK_API_URL", 
-      project.hasProperty('SAMSUNG_WALLET_MOCK_API_URL') ? 
-        "\"${project.property('SAMSUNG_WALLET_MOCK_API_URL')}\"" : 
+
+    buildConfigField "String", "SAMSUNG_WALLET_MOCK_API_URL",
+      project.hasProperty('SAMSUNG_WALLET_MOCK_API_URL') ?
+        "\"${project.property('SAMSUNG_WALLET_MOCK_API_URL')}\"" :
         "\"\""
   }
-  
+
 
   buildTypes {
     release {
@@ -103,7 +103,7 @@ android {
   sourceSets {
     main {
       java.srcDirs = ['src/main/java', 'generated/java', 'generated/jni']
-      
+
       // Adiciona source sets condicionalmente baseado na configuração
       if (googleWalletEnabled) {
         // Usa implementação LIMPA (sem reflexão) quando SDK está habilitado
@@ -114,7 +114,7 @@ android {
         java.srcDirs += 'src/noGoogleWallet/java'
         println "⚠️ Usando GoogleWalletStub source set (sem SDK)"
       }
-      
+
       if (samsungWalletEnabled) {
         // Usa implementação LIMPA (sem reflexão) quando SDK está habilitado
         java.srcDirs += 'src/samsungWallet/java'
@@ -138,11 +138,11 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  
+
   // ============================================
   // DEPENDÊNCIAS CONDICIONAIS
   // ============================================
-  
+
   // Adiciona Google Play Services Tap and Pay condicionalmente
   if (googleWalletEnabled) {
     implementation 'com.google.android.gms:play-services-tapandpay:+'
@@ -156,10 +156,10 @@ dependencies {
     // Tenta encontrar o JAR na pasta libs do projeto
     def libsPath = "${rootProject.projectDir}/libs"
     def libsDir = new File(libsPath)
-    
+
     def samsungPayJar = null
     def samsungPayVersion = "desconhecida"
-    
+
     if (libsDir.exists() && libsDir.isDirectory()) {
       // Procura por arquivos que comecem com "samsungpay_" e terminem com ".jar"
       def jarFiles = libsDir.listFiles(new FilenameFilter() {
@@ -167,7 +167,7 @@ dependencies {
           return name.startsWith("samsungpay_") && name.endsWith(".jar")
         }
       })
-      
+
       if (jarFiles && jarFiles.length > 0) {
         samsungPayJar = jarFiles[0]
         // Extrai a versão do nome do arquivo
@@ -176,7 +176,7 @@ dependencies {
         if (versionMatch) {
           samsungPayVersion = versionMatch[0][1]
         }
-        
+
         implementation files(samsungPayJar)
         println "✅ Samsung Pay SDK v${samsungPayVersion} incluído"
       } else {
