@@ -13,12 +13,23 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/platformbuilders/wallet-bridge-react-native.git", :tag => "#{s.version}" }
 
-  s.source_files = "ios/**/*.{h,m,mm,cpp}"
+  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.private_header_files = "ios/**/*.h"
 
+  # ios/AppleWallet/ é Swift, exceto a ponte AppleWallet.h/.mm: RCT_EXPORT_MODULE
+  # e RCT_EXPORT_METHOD são macros Objective-C. O .mm importa o header Swift
+  # gerado (wallet_bridge_react_native-Swift.h), o que exige DEFINES_MODULE.
+  s.swift_version = "5.0"
+  s.pod_target_xcconfig = { "DEFINES_MODULE" => "YES" }
+
+  # PassKit: Apple Pay in-app provisioning. UIKit: apresentação de view
+  # controllers e abertura da Wallet. WatchConnectivity: passes do Watch pareado.
+  s.frameworks = "PassKit", "UIKit", "WatchConnectivity"
+
   # Dependencies
+  # Sem React-CoreModules: nada no módulo usa, e um pod Swift estático não pode
+  # depender de pod sem module map (o CocoaPods recusa a integração).
   s.dependency "React-Core"
-  s.dependency "React-CoreModules"
 
   install_modules_dependencies(s)
 end
