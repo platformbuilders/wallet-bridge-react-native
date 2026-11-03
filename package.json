@@ -58,14 +58,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/platformbuilders/wallet-bridge.git"
+    "url": "git+https://github.com/platformbuilders/wallet-bridge-react-native.git"
   },
   "author": "neijrbuilders <nei.vitor@platformbuilders.io> (https://github.com/neijrbuilders)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/platformbuilders/wallet-bridge/issues"
+    "url": "https://github.com/platformbuilders/wallet-bridge-react-native/issues"
   },
-  "homepage": "https://github.com/platformbuilders/wallet-bridge#readme",
+  "homepage": "https://github.com/platformbuilders/wallet-bridge-react-native#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
