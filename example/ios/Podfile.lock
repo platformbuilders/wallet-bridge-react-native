@@ -2311,9 +2311,34 @@ PODS:
     - React-utils (= 0.81.0)
     - SocketRocket
   - SocketRocket (0.7.1)
-  - wallet-bridge-react-native (0.1.0):
+  - wallet-bridge-react-native (1.3.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
     - React-Core
-    - React-CoreModules
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2619,9 +2644,9 @@ SPEC CHECKSUMS:
   ReactCodegen: a55799cae416c387aeaae3aabc1bc0289ac19cee
   ReactCommon: 116d6ee71679243698620d8cd9a9042541e44aa6
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
-  wallet-bridge-react-native: 254cc5bf4d8f5a7a6494e9e4698e1cd293f62ce8
+  wallet-bridge-react-native: bd84e69917770bc383c0cbb06d09dcac5894a2ef
   Yoga: 00013dd9cde63a2d98e8002fcc4f5ddb66c10782
 
-PODFILE CHECKSUM: 6810f71978c2b05d59ec7335641741daf513d184
+PODFILE CHECKSUM: 70566bc2d78bbc6f88b0b115d05def354c1672f0
 
 COCOAPODS: 1.16.2

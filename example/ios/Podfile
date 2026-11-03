@@ -33,5 +33,14 @@ target 'BuildersWalletExample' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # fmt 11.0.2 (RN 0.81) não compila em C++20 com o clang do Xcode 26
+    # (erro de consteval em format-inl.h). Em C++17 o consteval fica desligado.
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'fmt'
+      target.build_configurations.each do |build_config|
+        build_config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+      end
+    end
   end
 end

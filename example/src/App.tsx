@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from 'react-native-safe-area-context';
 import { FlatList, View, Dimensions } from 'react-native';
 import { AnimatedToggleButton } from './components/AnimatedToggleButton';
 import {
@@ -280,8 +283,11 @@ export default function App(): React.JSX.Element {
     index,
   });
 
+  // SafeAreaView lê os insets do provider. Sem ele o conteúdo sobe para baixo
+  // da status bar.
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Botão animado para alternar entre Google Pay e Samsung Pay */}
       <AnimatedToggleButton isGooglePay={isGooglePay} onToggle={handleToggle} />
 
@@ -308,6 +314,7 @@ export default function App(): React.JSX.Element {
           }, 100);
         }}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
