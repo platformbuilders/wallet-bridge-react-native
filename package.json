@@ -45,6 +45,7 @@
     "pkg:example": "./scripts/change-android-package-name-app-example.sh --package-name=com.example.wallet",
     "pkg:custom": "./scripts/change-android-package-name-app-example.sh",
     "build:app-example": "./scripts/build-android-example.sh",
+    "build:app-example:ios": "./scripts/build-ios-example.sh",
     "build:google-wallet-mock": "./scripts/build-android-google-wallet-mock.sh",
     "build:samsung-wallet-mock": "./scripts/build-android-samsung-wallet-mock.sh",
     "log:google-wallet": "./scripts/quick-log-google-wallet.sh",

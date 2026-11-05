@@ -5,6 +5,13 @@
 
 set -e  # Para o script se algum comando falhar
 
+# --ios: delega para o build iOS, repassando as demais flags
+# (ex.: yarn build:app-example --ios --device "iPhone 17")
+if [ "$1" = "--ios" ]; then
+  shift
+  exec "$(dirname "$0")/build-ios-example.sh" "$@"
+fi
+
 echo "🚀 Iniciando build do app Android example..."
 
 # Navega para o diretório raiz do repositório (relativo ao script)
