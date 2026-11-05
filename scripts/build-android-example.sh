@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script para buildar o app Android example
-# Executa: yalc publish -> yalc update -> limpa cache Android -> yarn android
+# Executa: yarn install -> limpa cache Android -> yarn android
 
 set -e  # Para o script se algum comando falhar
 
@@ -14,17 +14,11 @@ fi
 
 echo "🚀 Iniciando build do app Android example..."
 
-# Navega para o diretório raiz do repositório (relativo ao script)
-echo "📦 Publicando com yalc no diretório raiz..."
-cd "$(dirname "$0")/.." # volta para a pasta raiz do projeto
-yalc publish
+# A lib entra no example pelo `root: '..'` do example/react-native.config.js
+# (autolinking), então não precisa de yalc.
+cd "$(dirname "$0")/../example"
 
-# Navega para o diretório example
-echo "🔄 Atualizando dependências com yalc no diretório example..."
-cd example
-yalc update
-
-# Instala as dependências após o yalc update
+# Instala as dependências
 echo "📥 Instalando dependências..."
 yarn install
 
