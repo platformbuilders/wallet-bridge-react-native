@@ -31,7 +31,9 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace react-native-builders-wallet-example",
+    "example": "yarn workspace @platformbuilders/wallet-bridge-react-native-example",
+    "start:example": "yarn example start",
+    "start:example:clean": "yarn example start --reset-cache",
     "build": "bob build",
     "test": "jest",
     "lint": "yarn typecheck && eslint 'src/**/*.{js,jsx,ts,tsx}' --fix --cache",
