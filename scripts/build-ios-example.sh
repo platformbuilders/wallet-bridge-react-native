@@ -57,11 +57,16 @@ fi
 if [ "$SKIP_PODS" = false ]; then
   echo "📦 Instalando pods..."
   cd ios
+  # Prefere o CocoaPods do Gemfile (mesma versão que o run-ios usa) e cai no
+  # global só se não houver Bundler.
   if [ -f ../Gemfile ] && command -v bundle >/dev/null 2>&1; then
     bundle install
     bundle exec pod install
-  else
+  elif command -v pod >/dev/null 2>&1; then
     pod install
+  else
+    echo "❌ CocoaPods não encontrado. Instale com: brew install cocoapods"
+    exit 1
   fi
   cd ..
 fi
