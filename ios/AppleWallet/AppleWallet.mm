@@ -9,24 +9,27 @@
 #import "wallet_bridge_react_native-Swift.h"
 #endif
 
-// Ponte RN do módulo Apple: converte JS ↔ provider e repassa delegate → evento.
-// Sem regra de negócio — toda lógica fica no provider Swift.
+// Ponte RN do módulo Apple (TurboModule): converte JS ↔ provider e repassa
+// delegate → evento. Sem regra de negócio — toda lógica fica no provider Swift.
+// A interface vem do codegen (src/specs/NativeAppleWallet.ts); o registro do
+// módulo vem do `codegenConfig.ios.modulesProvider` do package.json.
 
-/// Teto da fila de eventos emitidos antes do JS assinar. Se o JS nunca assinar,
-/// não vale segurar histórico — só o suficiente para um cold start.
+/// Teto da fila de eventos emitidos antes do JS se ligar ao módulo. Só o
+/// suficiente para um cold start.
 static NSUInteger const kPendingEventLimit = 32;
 
 @interface AppleWallet () <AppleWalletProviderDelegate>
 @property (nonatomic, strong) id<AppleWalletProviding> provider;
-@property (nonatomic, assign) BOOL hasListeners;
 @property (nonatomic, assign) BOOL logListenerActive;
-/// Eventos emitidos antes do JS assinar. Ver -emit:body:
+/// Eventos emitidos antes de o JS ligar o emitter. Ver -emitLog:
 @property (nonatomic, strong) NSMutableArray<NSDictionary *> *pendingEvents;
 @end
 
 @implementation AppleWallet
 
-RCT_EXPORT_MODULE()
++ (NSString *)moduleName {
+  return @"AppleWallet";
+}
 
 - (instancetype)init {
   self = [super init];
@@ -47,45 +50,37 @@ RCT_EXPORT_MODULE()
   return dispatch_get_main_queue();
 }
 
-#pragma mark - RCTEventEmitter
-
-- (NSArray<NSString *> *)supportedEvents {
-  return @[ AWConst.eventLog ];
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+    (const facebook::react::ObjCTurboModule::InitParams &)params {
+  return std::make_shared<facebook::react::NativeAppleWalletSpecJSI>(params);
 }
 
-- (void)startObserving {
-  self.hasListeners = YES;
+#pragma mark - Eventos
 
-  // Cold start: um evento pode nascer antes do JS montar e assinar. Sem o flush
-  // ele se perderia.
+- (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper {
+  [super setEventEmitterCallback:eventEmitterCallbackWrapper];
+
+  // Cold start: um evento pode nascer antes de o JS ligar o emitter. Sem o
+  // flush ele se perderia.
   if (self.pendingEvents.count == 0) return;
 
   NSArray<NSDictionary *> *queued = [self.pendingEvents copy];
   [self.pendingEvents removeAllObjects];
-  for (NSDictionary *entry in queued) {
-    [self sendEventWithName:entry[@"name"] body:entry[@"body"]];
+  for (NSDictionary *body in queued) {
+    [self emitOnLog:body];
   }
 }
 
-- (void)stopObserving {
-  self.hasListeners = NO;
-}
-
-- (void)emit:(NSString *)name body:(nullable id)body {
-  if (self.hasListeners) {
-    [self sendEventWithName:name body:body];
+- (void)emitLog:(NSDictionary *)body {
+  if (_eventEmitterCallback) {
+    [self emitOnLog:body];
     return;
   }
-
-  // Enfileira em vez de descartar. `body` pode ser nil (evento sem payload),
-  // então o dicionário o omite e o flush entrega nil de volta.
-  NSMutableDictionary *entry = [@{@"name" : name} mutableCopy];
-  if (body) entry[@"body"] = body;
 
   if (self.pendingEvents.count >= kPendingEventLimit) {
     [self.pendingEvents removeObjectAtIndex:0];
   }
-  [self.pendingEvents addObject:entry];
+  [self.pendingEvents addObject:body];
 }
 
 #pragma mark - AppleWalletProviderDelegate
@@ -93,46 +88,42 @@ RCT_EXPORT_MODULE()
 - (void)provider:(id<AppleWalletProviding>)provider didLog:(AWLogEvent *)event {
   // Igual a Google/Samsung: log só sobe para o JS depois de setLogListener().
   if (!self.logListenerActive) return;
-  [self emit:AWConst.eventLog body:[event toDictionary]];
+  [self emitLog:[event toDictionary]];
 }
 
 #pragma mark - Utilitários
 
-RCT_EXPORT_METHOD(getEnvironment:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-{
+- (void)getEnvironment:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
   resolve(self.provider.environment);
 }
 
-RCT_EXPORT_METHOD(openWallet:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-{
+- (void)openWallet:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
   resolve(@([self.provider openWallet]));
 }
 
-RCT_EXPORT_METHOD(setLogListener:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-{
+- (void)setLogListener:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
   self.logListenerActive = YES;
   resolve(@(YES));
 }
 
-RCT_EXPORT_METHOD(removeLogListener:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-{
+- (void)removeLogListener:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
   self.logListenerActive = NO;
   resolve(@(YES));
 }
 
 #pragma mark - Constantes
 
-- (NSDictionary *)constantsToExport {
-  return @{
-    @"PROVISIONING_ENTITLEMENT" : AWConst.provisioningEntitlement,
-    @"APPLE_LEAF_CERT_OID" : AWConst.appleLeafCertOID,
-    @"WALLET_URL_SCHEME" : AWConst.walletURLScheme,
-    @"EVENT_LOG" : AWConst.eventLog,
-  };
+- (facebook::react::ModuleConstants<JS::NativeAppleWallet::Constants>)constantsToExport {
+  return [self getConstants];
+}
+
+- (facebook::react::ModuleConstants<JS::NativeAppleWallet::Constants>)getConstants {
+  return facebook::react::typedConstants<JS::NativeAppleWallet::Constants>({
+      .PROVISIONING_ENTITLEMENT = AWConst.provisioningEntitlement,
+      .APPLE_LEAF_CERT_OID = AWConst.appleLeafCertOID,
+      .WALLET_URL_SCHEME = AWConst.walletURLScheme,
+      .EVENT_LOG = AWConst.eventLog,
+  });
 }
 
 @end

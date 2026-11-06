@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
-  NativeEventEmitter,
-  NativeModules,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-
-const { AppleWallet } = NativeModules;
+import AppleWallet, {
+  type AppleWalletLogEvent,
+} from '../../../src/specs/NativeAppleWallet';
 
 type TestResult = {
   moduleFound: boolean;
@@ -19,7 +18,7 @@ type TestResult = {
   error?: string;
 };
 
-type LogEntry = { level: string; tag: string; message: string };
+type LogEntry = AppleWalletLogEvent;
 
 export function AppleWalletExample(): React.JSX.Element {
   const [result, setResult] = useState<TestResult | null>(null);
@@ -30,18 +29,16 @@ export function AppleWalletExample(): React.JSX.Element {
   useEffect(() => {
     if (!AppleWallet) return undefined;
 
-    const emitter = new NativeEventEmitter(AppleWallet);
-    const eventName =
-      AppleWallet.getConstants?.().EVENT_LOG ?? 'AppleWalletLog';
-    const subscription = emitter.addListener(eventName, (payload) => {
-      const event = payload as LogEntry;
+    const module = AppleWallet;
+    // Evento do codegen (EventEmitter na spec), sem NativeEventEmitter.
+    const subscription = module.onLog((event) => {
       setLogs((current) => [event, ...current].slice(0, 20));
     });
-    AppleWallet.setLogListener().catch(() => undefined);
+    module.setLogListener().catch(() => undefined);
 
     return () => {
       subscription.remove();
-      AppleWallet.removeLogListener().catch(() => undefined);
+      module.removeLogListener().catch(() => undefined);
     };
   }, []);
 
@@ -53,7 +50,7 @@ export function AppleWalletExample(): React.JSX.Element {
 
     setRunning(true);
     try {
-      const constants = AppleWallet.getConstants?.() ?? {};
+      const constants = AppleWallet.getConstants();
       const environment: string = await AppleWallet.getEnvironment();
       const openWallet: boolean = await AppleWallet.openWallet();
       setResult({ moduleFound: true, constants, environment, openWallet });

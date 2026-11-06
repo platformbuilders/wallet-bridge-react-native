@@ -16,9 +16,10 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.private_header_files = "ios/**/*.h"
 
-  # ios/AppleWallet/ é Swift, exceto a ponte AppleWallet.h/.mm: RCT_EXPORT_MODULE
-  # e RCT_EXPORT_METHOD são macros Objective-C. O .mm importa o header Swift
-  # gerado (wallet_bridge_react_native-Swift.h), o que exige DEFINES_MODULE.
+  # ios/AppleWallet/ é Swift, exceto a ponte AppleWallet.h/.mm: o TurboModule
+  # implementa a spec ObjC++ gerada pelo codegen (BuildersWalletSpec). O .mm
+  # importa o header Swift gerado (wallet_bridge_react_native-Swift.h), o que
+  # exige DEFINES_MODULE.
   s.swift_version = "5.0"
   s.pod_target_xcconfig = { "DEFINES_MODULE" => "YES" }
 

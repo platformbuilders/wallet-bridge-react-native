@@ -1,9 +1,9 @@
-#import <React/RCTBridgeModule.h>
-#import <React/RCTEventEmitter.h>
+#import <BuildersWalletSpec/BuildersWalletSpec.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface AppleWallet : RCTEventEmitter <RCTBridgeModule>
+// TurboModule gerado pelo codegen a partir de src/specs/NativeAppleWallet.ts.
+@interface AppleWallet : NativeAppleWalletSpecBase <NativeAppleWalletSpec>
 @end
 
 NS_ASSUME_NONNULL_END

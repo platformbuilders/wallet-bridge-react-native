@@ -45,6 +45,7 @@ final class RealAppleWalletProvider: NSObject, AppleWalletProviding {
             log("WARN", "Não foi possível abrir o app Wallet neste device.")
             return false
         }
+        log("INFO", "Abrindo o app Wallet.")
         DispatchQueue.main.async {
             UIApplication.shared.open(url)
         }
