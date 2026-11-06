@@ -1,5 +1,7 @@
 package com.builders.wallet.samsungpay
 
+import android.app.Activity
+import android.content.Intent
 import com.builders.wallet.WalletLogger
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
@@ -229,8 +231,24 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
     }
   }
 
+  override fun openWallet(promise: Promise) {
+    promise.reject(
+      "SDK_NOT_ENABLED",
+      "Samsung Wallet SDK não está habilitado neste build. Configure SAMSUNG_WALLET_ENABLED=true no Gradle."
+    )
+  }
+
   companion object {
     private const val TAG = "SamsungWallet"
+
+    @JvmStatic
+    fun processIntent(activity: Activity, intent: Intent) {
+      WalletLogger.w(TAG, "Samsung Wallet não está habilitado - processIntent ignorado")
+    }
+
+    // Sem SDK não há caller do Samsung Pay a validar.
+    @JvmStatic
+    fun isValidCallingPackage(activity: Activity): Boolean = false
   }
 }
 

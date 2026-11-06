@@ -217,6 +217,13 @@ class GoogleWalletImplementation(
         }
     }
 
+    override fun openWallet(promise: Promise) {
+        promise.reject(
+            "SDK_NOT_ENABLED",
+            "Google Wallet SDK não está habilitado neste build. Configure GOOGLE_WALLET_ENABLED=true no Gradle."
+        )
+    }
+
     companion object {
         private const val TAG = "GoogleWallet"
         
@@ -224,6 +231,10 @@ class GoogleWalletImplementation(
         fun processIntent(activity: Activity, intent: Intent) {
             WalletLogger.w(TAG, "Google Wallet não está habilitado - processIntent ignorado")
         }
+
+        // Sem SDK não há caller do Google Wallet a validar.
+        @JvmStatic
+        fun isValidCallingPackage(activity: Activity): Boolean = false
     }
 }
 
