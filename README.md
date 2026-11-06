@@ -28,18 +28,20 @@ A React Native library that facilitates integration with digital wallets (Google
 
 | Technology | Minimum Version | Recommended |
 |------------|---------------|-------------|
-| Node.js | 18.0.0 | 20.x |
-| React Native | 0.70.6 | 0.81.0 |
-| React | 18.1.0 | 19.1.0 |
-| Android SDK | API 23 | API 33+ |
+| Node.js | 20.19.4 | 22.x |
+| React Native | 0.76.0 | 0.86.x |
+| React | 18.0.0 | 19.2.x |
+| Java (Android build) | 17 | 17 |
+| Android SDK | API 24 | API 36 |
+
+> ⚠️ **New Architecture is required.** Starting with 2.0.0 the library targets the React Native New Architecture only. Apps on React Native 0.76–0.81 must keep `newArchEnabled=true` (Android) and `RCT_NEW_ARCH_ENABLED=1` (iOS). Apps that still run the legacy architecture should stay on the 1.x line.
 
 ### Tested Versions
 
-The library has been tested with:
+The example app is built and tested with:
 
-- ✅ React Native 0.70.6 - 0.81.0
-- ✅ React 18.1.0 - 19.1.0
-- ✅ Android API 23-34
+- ✅ React Native 0.86.3 / React 19.2.3 (New Architecture enabled)
+- ✅ Android API 36, Java 17
 
 ---
 
