@@ -1,16 +1,17 @@
 package com.builders.wallet.samsungpay
 
-import com.facebook.react.ReactPackage
+import com.builders.wallet.turboModuleInfo
+import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.uimanager.ViewManager
+import com.facebook.react.module.model.ReactModuleInfoProvider
 
-class SamsungWalletPackage : ReactPackage {
-  override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-    return listOf(SamsungWalletModule(reactContext))
-  }
+/** Registra só o SamsungWallet como TurboModule. */
+class SamsungWalletPackage : BaseReactPackage() {
+  override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? =
+    if (name == SamsungWalletModule.NAME) SamsungWalletModule(reactContext) else null
 
-  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
-    return emptyList()
+  override fun getReactModuleInfoProvider() = ReactModuleInfoProvider {
+    mapOf(SamsungWalletModule.NAME to turboModuleInfo(SamsungWalletModule.NAME, SamsungWalletModule::class.java.name))
   }
 }

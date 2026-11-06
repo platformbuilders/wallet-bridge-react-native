@@ -2,22 +2,31 @@ package com.builders.wallet.samsungpay
 
 import com.builders.wallet.WalletLogger
 import com.builders.wallet.BuildConfig
+import com.builders.wallet.NativeSamsungWalletSpec
+import com.builders.wallet.WalletEvents
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.Callback
 import com.facebook.react.module.annotations.ReactModule
 
 @ReactModule(name = SamsungWalletModule.NAME)
 class SamsungWalletModule(reactContext: ReactApplicationContext) :
-  ReactContextBaseJavaModule(reactContext) {
+  NativeSamsungWalletSpec(reactContext) {
 
   // Lê configuração de mock do BuildConfig (variável de ambiente do Gradle)
   init {
     // Inicializar WalletLogger com o contexto
     WalletLogger.initialize(reactContext)
+
+    // TurboModule: eventos saem pelos EventEmitter gerados pelo codegen.
+    WalletEvents.registerSamsung(object : WalletEvents.Sink {
+      override fun emitIntentReceived(data: WritableMap) = emitOnIntentReceived(data)
+      override fun emitNoIntentReceived() = emitOnNoIntentReceived()
+      override fun emitValidCallerNoIntentReceived() = emitOnValidCallerNoIntentReceived()
+      override fun emitLog(data: WritableMap) = emitOnLog(data)
+    })
   }
 
   private val useMock: Boolean by lazy {
@@ -42,38 +51,31 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  @ReactMethod
-  fun init(serviceId: String, promise: Promise) {
+  override fun init(serviceId: String, promise: Promise) {
     samsungWalletImplementation.init(serviceId, promise)
   }
 
-  @ReactMethod
-  fun getSamsungPayStatus(promise: Promise) {
+  override fun getSamsungPayStatus(promise: Promise) {
     samsungWalletImplementation.getSamsungPayStatus(promise)
   }
 
-  @ReactMethod
-  fun goToUpdatePage() {
+  override fun goToUpdatePage() {
     samsungWalletImplementation.goToUpdatePage()
   }
 
-  @ReactMethod
-  fun activateSamsungPay() {
+  override fun activateSamsungPay() {
     samsungWalletImplementation.activateSamsungPay()
   }
 
-  @ReactMethod
-  fun getAllCards(promise: Promise) {
+  override fun getAllCards(promise: Promise) {
     samsungWalletImplementation.getAllCards(promise)
   }
 
-  @ReactMethod
-  fun getWalletInfo(promise: Promise) {
+  override fun getWalletInfo(promise: Promise) {
     samsungWalletImplementation.getWalletInfo(promise)
   }
 
-  @ReactMethod
-  fun addCard(
+  override fun addCard(
     payload: String,
     issuerId: String,
     tokenizationProvider: String,
@@ -83,47 +85,39 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     samsungWalletImplementation.addCard(payload, issuerId, tokenizationProvider, cardType, promise)
   }
 
-  @ReactMethod
-  fun checkWalletAvailability(promise: Promise) {
+  override fun checkWalletAvailability(promise: Promise) {
     samsungWalletImplementation.checkWalletAvailability(promise)
   }
 
-  @ReactMethod
-  fun setIntentListener(promise: Promise) {
+  override fun setIntentListener(promise: Promise) {
     samsungWalletImplementation.setIntentListener(promise)
   }
 
-  @ReactMethod
-  fun removeIntentListener(promise: Promise) {
+  override fun removeIntentListener(promise: Promise) {
     samsungWalletImplementation.removeIntentListener(promise)
   }
 
-  @ReactMethod
-  fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
+  override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
     samsungWalletImplementation.setActivationResult(status, activationCode, promise)
   }
 
-  @ReactMethod
-  fun finishActivity(promise: Promise) {
+  override fun finishActivity(promise: Promise) {
     samsungWalletImplementation.finishActivity(promise)
   }
 
-  @ReactMethod
-  fun openWallet(promise: Promise) {
+  override fun openWallet(promise: Promise) {
     samsungWalletImplementation.openWallet(promise)
   }
 
-  @ReactMethod
-  fun setLogListener(promise: Promise) {
+  override fun setLogListener(promise: Promise) {
     samsungWalletImplementation.setLogListener(promise)
   }
 
-  @ReactMethod
-  fun removeLogListener(promise: Promise) {
+  override fun removeLogListener(promise: Promise) {
     samsungWalletImplementation.removeLogListener(promise)
   }
 
-  override fun getConstants(): MutableMap<String, Any> {
+  override fun getTypedExportedConstants(): Map<String, Any> {
     val constants = samsungWalletImplementation.getConstants().toMutableMap()
 
     // Adicionar informações de configuração
@@ -133,9 +127,6 @@ class SamsungWalletModule(reactContext: ReactApplicationContext) :
     return constants
   }
 
-  override fun getName(): String {
-    return NAME
-  }
 
   companion object {
     const val NAME = "SamsungWallet"

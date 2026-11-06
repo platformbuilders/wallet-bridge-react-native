@@ -1,6 +1,8 @@
-import { NativeModules, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { GoogleWalletIOS } from './google-wallet.ios';
 import { SamsungWalletIOS } from './samsung-wallet.ios';
+import GoogleWallet from './specs/NativeGoogleWallet';
+import SamsungWallet from './specs/NativeSamsungWallet';
 import type { GoogleWalletSpec, SamsungWalletSpec } from './types/index';
 
 // Re-exporta todos os types
@@ -11,8 +13,6 @@ export * from './event-emitters/index';
 // ============================================================================
 // MÓDULOS ESPECÍFICOS
 // ============================================================================
-
-const { GoogleWallet, SamsungWallet } = NativeModules;
 
 // Verificação de disponibilidade dos módulos
 if (!GoogleWallet) {
@@ -28,11 +28,13 @@ if (!SamsungWallet) {
 }
 
 // Exporta os módulos específicos
-export const GoogleWalletModule = Platform.select({
+// A spec do codegen tipa retornos como `Object`; o contrato público continua
+// sendo GoogleWalletSpec / SamsungWalletSpec.
+export const GoogleWalletModule = Platform.select<unknown>({
   ios: GoogleWalletIOS,
   android: GoogleWallet,
 }) as GoogleWalletSpec;
-export const SamsungWalletModule = Platform.select({
+export const SamsungWalletModule = Platform.select<unknown>({
   ios: SamsungWalletIOS,
   android: SamsungWallet,
 }) as SamsungWalletSpec;

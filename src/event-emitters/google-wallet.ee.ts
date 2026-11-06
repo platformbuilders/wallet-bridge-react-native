@@ -5,14 +5,20 @@
 // Este arquivo contém uma versão do GoogleWalletEventEmitter
 // que funciona apenas em dispositivos Android.
 
-import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
+import { type EventSubscription, Platform } from 'react-native';
+import NativeGoogleWallet, {
+  type Spec as NativeGoogleWalletSpec,
+} from '../specs/NativeGoogleWallet';
 import {
   type GoogleWalletIntentEvent,
   type GoogleWalletLogEvent,
 } from '../types/google-wallet.types';
 
 export class GoogleWalletEventEmitter {
-  private eventEmitter: NativeEventEmitter | null = null;
+  // TurboModule: os eventos vêm dos EventEmitter da spec (onIntentReceived,
+  // onLog...), sem NativeEventEmitter.
+  private eventEmitter: NativeGoogleWalletSpec | null = null;
+  private subscriptions: Set<EventSubscription> = new Set();
   private listeners: Map<string, (event: GoogleWalletIntentEvent) => void> =
     new Map();
   private noIntentListeners: Map<string, () => void> = new Map();
@@ -34,9 +40,9 @@ export class GoogleWalletEventEmitter {
 
     try {
       // Verificar se o módulo está disponível (apenas em Android)
-      const GoogleWalletModule = NativeModules.GoogleWallet;
+      const GoogleWalletModule = NativeGoogleWallet;
       if (GoogleWalletModule) {
-        this.eventEmitter = new NativeEventEmitter(GoogleWalletModule);
+        this.eventEmitter = GoogleWalletModule;
         console.log(
           '✅ [GoogleWalletEventEmitter] EventEmitter inicializado com sucesso',
         );
@@ -84,16 +90,15 @@ export class GoogleWalletEventEmitter {
     this.listeners.set(listenerId, callback);
 
     // Criar o listener do NativeEventEmitter
-    const subscription = this.eventEmitter.addListener(
-      'GoogleWalletIntentReceived',
-      (event: any) => {
+    const subscription = this.track(
+      this.eventEmitter.onIntentReceived((event) => {
         const walletEvent = event as GoogleWalletIntentEvent;
         console.log(
           '🎯 [GoogleWalletEventEmitter] Intent recebido:',
           walletEvent,
         );
         callback(walletEvent);
-      },
+      }),
     );
 
     console.log(
@@ -103,7 +108,7 @@ export class GoogleWalletEventEmitter {
     // Retornar função de cleanup
     return () => {
       this.listeners.delete(listenerId);
-      subscription.remove();
+      this.untrack(subscription);
       console.log(
         `🧹 [GoogleWalletEventEmitter] Listener removido: ${listenerId}`,
       );
@@ -139,12 +144,11 @@ export class GoogleWalletEventEmitter {
     this.noIntentListeners.set(listenerId, callback);
 
     // Criar o listener do NativeEventEmitter
-    const subscription = this.eventEmitter.addListener(
-      'GoogleWalletNoIntentReceived',
-      () => {
+    const subscription = this.track(
+      this.eventEmitter.onNoIntentReceived(() => {
         console.log('🎯 [GoogleWalletEventEmitter] Nenhuma intent recebida');
         callback();
-      },
+      }),
     );
 
     console.log(
@@ -154,7 +158,7 @@ export class GoogleWalletEventEmitter {
     // Retornar função de cleanup
     return () => {
       this.noIntentListeners.delete(listenerId);
-      subscription.remove();
+      this.untrack(subscription);
       console.log(
         `🧹 [GoogleWalletEventEmitter] NoIntent Listener removido: ${listenerId}`,
       );
@@ -186,14 +190,13 @@ export class GoogleWalletEventEmitter {
 
     this.validCallerNoIntentListeners.set(listenerId, callback);
 
-    const subscription = this.eventEmitter.addListener(
-      'GoogleWalletValidCallerNoIntentReceived',
-      () => {
+    const subscription = this.track(
+      this.eventEmitter.onValidCallerNoIntentReceived(() => {
         console.log(
           '⚠️ [GoogleWalletEventEmitter] Wallet válida chamou sem payload',
         );
         callback();
-      },
+      }),
     );
 
     console.log(
@@ -202,7 +205,7 @@ export class GoogleWalletEventEmitter {
 
     return () => {
       this.validCallerNoIntentListeners.delete(listenerId);
-      subscription.remove();
+      this.untrack(subscription);
       console.log(
         `🧹 [GoogleWalletEventEmitter] ValidCallerNoIntent Listener removido: ${listenerId}`,
       );
@@ -238,12 +241,11 @@ export class GoogleWalletEventEmitter {
     this.logListeners.set(listenerId, callback);
 
     // Criar o listener do NativeEventEmitter
-    const subscription = this.eventEmitter.addListener(
-      'WalletLog',
-      (event: any) => {
+    const subscription = this.track(
+      this.eventEmitter.onLog((event) => {
         const logEvent = event as GoogleWalletLogEvent;
         callback(logEvent);
-      },
+      }),
     );
 
     console.log(
@@ -253,11 +255,21 @@ export class GoogleWalletEventEmitter {
     // Retornar função de cleanup
     return () => {
       this.logListeners.delete(listenerId);
-      subscription.remove();
+      this.untrack(subscription);
       console.log(
         `🧹 [GoogleWalletEventEmitter] Log Listener removido: ${listenerId}`,
       );
     };
+  }
+
+  private track(subscription: EventSubscription): EventSubscription {
+    this.subscriptions.add(subscription);
+    return subscription;
+  }
+
+  private untrack(subscription: EventSubscription): void {
+    subscription.remove();
+    this.subscriptions.delete(subscription);
   }
 
   /**
@@ -279,12 +291,8 @@ export class GoogleWalletEventEmitter {
     }
 
     if (this.eventEmitter) {
-      this.eventEmitter.removeAllListeners('GoogleWalletIntentReceived');
-      this.eventEmitter.removeAllListeners('GoogleWalletNoIntentReceived');
-      this.eventEmitter.removeAllListeners(
-        'GoogleWalletValidCallerNoIntentReceived',
-      );
-      this.eventEmitter.removeAllListeners('WalletLog');
+      this.subscriptions.forEach((subscription) => subscription.remove());
+      this.subscriptions.clear();
       console.log(
         '🧹 [GoogleWalletEventEmitter] Todos os listeners foram removidos',
       );

@@ -4,7 +4,6 @@ import android.content.pm.ApplicationInfo
 import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.modules.core.DeviceEventManagerModule
 import java.lang.reflect.Method
 
 /**
@@ -118,9 +117,7 @@ object WalletLogger {
                 eventData.putString("stackTrace", throwable.stackTraceToString())
             }
 
-            reactContext!!
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-                .emit("WalletLog", eventData)
+            WalletEvents.emit(WalletEvents.LOG, eventData)
         } catch (e: Exception) {
             // Se falhar ao enviar evento, ignorar silenciosamente
             // (não queremos criar loop de erros)

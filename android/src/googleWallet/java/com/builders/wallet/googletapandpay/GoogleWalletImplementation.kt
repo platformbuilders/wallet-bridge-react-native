@@ -1,5 +1,6 @@
 package com.builders.wallet.googletapandpay
 
+import com.builders.wallet.WalletEvents
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
@@ -822,9 +823,7 @@ class GoogleWalletImplementation(
     private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
             WalletLogger.d(TAG, "🔍 [GOOGLE] Enviando evento para React Native: $eventName")
-            reactContext
-                .getJSModule(com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-                .emit(eventName, eventData)
+            WalletEvents.emit(eventName, eventData)
             WalletLogger.d(TAG, "✅ [GOOGLE] Evento enviado com sucesso")
         } catch (e: Exception) {
             WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao enviar evento para React Native: ${e.message}", e)
