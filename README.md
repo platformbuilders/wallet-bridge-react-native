@@ -159,6 +159,14 @@ If you configure `GOOGLE_WALLET_MOCK_API_URL` or `SAMSUNG_WALLET_MOCK_API_URL` i
 
 ## 🎯 Basic Usage
 
+### Enums
+
+Enums are exported from the package root and from the `src/enums` subpath, which only loads the enums (no native module access):
+
+```javascript
+import { GoogleActivationStatus, SamsungActivationStatus } from '@platformbuilders/wallet-bridge-react-native/src/enums';
+```
+
 ### Google Pay
 
 ```javascript
