@@ -20,12 +20,20 @@
       "types": "./lib/typescript/src/enums/index.d.ts",
       "default": "./lib/module/enums/index.js"
     },
+    "./testing": {
+      "source": "./src/testing/index.ts",
+      "types": "./lib/typescript/src/testing/index.d.ts",
+      "default": "./lib/module/testing/index.js"
+    },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "enums": [
         "./lib/typescript/src/enums/index.d.ts"
+      ],
+      "testing": [
+        "./lib/typescript/src/testing/index.d.ts"
       ]
     }
   },
@@ -169,7 +177,8 @@
     },
     "ios": {
       "modulesProvider": {
-        "AppleWallet": "AppleWallet"
+        "AppleWallet": "AppleWallet",
+        "AppleWalletMock": "AppleWalletMock"
       }
     }
   },

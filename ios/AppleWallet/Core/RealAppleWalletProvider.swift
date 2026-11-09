@@ -3,11 +3,15 @@
 // ============================================================================
 // Classe base. As features entram como extensions nas pastas Provisioning/,
 // Verification/ e Passes/; o estado que elas compartilham fica aqui, porque
-// extension não guarda propriedade armazenada.
+// extension não guarda propriedade armazenada. O estado é `internal` (não
+// `private`) para as extensions em outros arquivos o alcançarem; o header
+// Swift gerado só expõe o que é `public`.
 //
 // REGRA: nunca fingir sucesso. Ou faz de verdade, ou falha com o erro real.
+// REGRA: log sem dado de cartão (PAN, DPAN, FPANID, sufixos, payloads).
 
 import Foundation
+import PassKit
 import UIKit
 
 final class RealAppleWalletProvider: NSObject, AppleWalletProviding {
@@ -26,10 +30,29 @@ final class RealAppleWalletProvider: NSObject, AppleWalletProviding {
         #endif
     }
 
-    // MARK: - Log
+    // MARK: - Estado do provisioning em andamento
 
-    /// Log de diagnóstico: só em build Debug, como o `WalletLogger` do Android,
-    /// que suprime logs (console e evento para o JS) fora de builds debuggable.
+    /// Handler entregue pelo PassKit no passo 1; guardado até o passo 2
+    /// chegar do emissor. É o que amarra as duas metades do handshake.
+    var pendingRequestHandler: ((PKAddPaymentPassRequest) -> Void)?
+    var pendingRequestId: String?
+    var pendingController: PKAddPaymentPassViewController?
+
+    func clearPending() {
+        pendingRequestId = nil
+        pendingRequestHandler = nil
+        pendingController = nil
+    }
+
+    // MARK: - Apple Watch
+
+    /// Criado no primeiro uso: ativar a WCSession à toa interferiria em um
+    /// app que tenha a própria integração com o Watch.
+    lazy var watchSession = WatchSession()
+
+    // MARK: - Log e eventos
+
+    /// Log de diagnóstico: só em build Debug, como o `WalletLogger` do Android.
     func log(_ level: String, _ message: String) {
         #if DEBUG
         NSLog("[%@][%@] %@", Self.tag, level, message)
@@ -38,6 +61,10 @@ final class RealAppleWalletProvider: NSObject, AppleWalletProviding {
             didLog: AWLogEvent(level: level, tag: Self.tag, message: message)
         )
         #endif
+    }
+
+    func emit(_ event: AWProvisioningResultEvent) {
+        delegate?.provider(self, didUpdateProvisioning: event)
     }
 
     // MARK: - Utilitários

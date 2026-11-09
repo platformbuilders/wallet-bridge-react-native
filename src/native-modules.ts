@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import type { Spec as NativeAppleWalletSpec } from './specs/NativeAppleWallet';
+import type { Spec as NativeAppleWalletMockSpec } from './specs/NativeAppleWalletMock';
 import type { Spec as NativeGoogleWalletSpec } from './specs/NativeGoogleWallet';
 import type { Spec as NativeSamsungWalletSpec } from './specs/NativeSamsungWallet';
 
@@ -27,6 +28,20 @@ export const getNativeAppleWallet = (): NativeAppleWalletSpec | null => {
   if (!nativeModule) warnUnavailable('AppleWallet');
   return nativeModule;
 };
+
+/**
+ * TurboModule de controle do mock do Apple Wallet, ou `null` fora do iOS /
+ * sem o módulo. Sem aviso: o módulo só é usado pelo entrypoint de testes.
+ */
+export const getNativeAppleWalletMock =
+  (): NativeAppleWalletMockSpec | null => {
+    if (Platform.OS !== 'ios') return null;
+    return (
+      (
+        require('./specs/NativeAppleWalletMock') as typeof import('./specs/NativeAppleWalletMock')
+      ).default ?? null
+    );
+  };
 
 /** TurboModule do Google Wallet, ou `null` fora do Android / sem o módulo. */
 export const getNativeGoogleWallet = (): NativeGoogleWalletSpec | null => {

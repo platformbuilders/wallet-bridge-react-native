@@ -1,0 +1,457 @@
+// ============================================================================
+// APPLE WALLET MOCK — IMPLEMENTAÇÃO (só Debug)
+// ============================================================================
+// Implementa AppleWalletProviding inteiro, sem PassKit. Existe porque, sem o
+// entitlement de provisioning, a sheet da Apple não abre (e no Simulator não
+// há Secure Element): o PassKit em si precisa ser substituível para testar.
+//
+// Apresenta uma sheet look-alike (com badge MOCK) que fica na tela durante o
+// handshake, como a da Apple. Nada aqui é compilado em Release.
+
+#if DEBUG
+
+import Foundation
+import UIKit
+
+final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
+    AppleWalletMockControlling
+{
+    private static let tag = "AppleWallet-Mock"
+
+    weak var delegate: AppleWalletProviderDelegate?
+
+    var implementationName: String { AWConst.implementationMock }
+
+    var environment: String {
+        #if targetEnvironment(simulator)
+        return "ios-simulator"
+        #else
+        return "ios-device"
+        #endif
+    }
+
+    // MARK: - Configuração
+
+    private(set) var scenario: AWScenario = .happyPush
+    /// Latência simulada das transições, em ms.
+    private(set) var latencyMs = 800
+    /// Prazo para o emissor responder o passo 2, em ms. A Apple documenta
+    /// 20 s para o handler do PassKit.
+    private(set) var hostTimeoutMs = 20_000
+    private var primaryAccountIdentifiers = MockProvisioningFixtures
+        .defaultPrimaryAccountIdentifiers()
+
+    // MARK: - Estado
+
+    private var passes: [AWPaymentPass] = []
+    private var pendingRequestId: String?
+    private var pendingStage: AWStatus = .idle
+    private var pendingConfig: AWProvisioningRequestConfig?
+    private var pendingIncludesWatch = false
+    private var hostTimeoutWork: DispatchWorkItem?
+    private weak var pendingSheet: MockAddPassSheetController?
+
+    // MARK: - Log e eventos
+
+    private func log(_ level: String, _ message: String) {
+        NSLog("[%@][%@] %@", Self.tag, level, message)
+        delegate?.provider(
+            self,
+            didLog: AWLogEvent(level: level, tag: Self.tag, message: message)
+        )
+    }
+
+    /// Em estado terminal a sheet fecha ANTES de o evento chegar ao JS: duas
+    /// transições ao mesmo tempo (dismiss da sheet + `Modal` do RN) deixam uma
+    /// janela invisível engolindo os toques.
+    private func emit(_ event: AWProvisioningResultEvent) {
+        guard event.status.isTerminal, let sheet = pendingSheet else {
+            delegate?.provider(self, didUpdateProvisioning: event)
+            return
+        }
+        pendingSheet = nil
+        sheet.dismissSheet { [weak self] in
+            guard let self else { return }
+            self.delegate?.provider(self, didUpdateProvisioning: event)
+        }
+    }
+
+    private func afterLatency(_ block: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + .milliseconds(latencyMs),
+            execute: block
+        )
+    }
+
+    // MARK: - Provisioning
+
+    func canAddCard(primaryAccountIdentifier: String?) -> AWCanAddCardResult {
+        switch scenario {
+        case .entitlementMissing:
+            return AWCanAddCardResult(
+                canAdd: false,
+                reason: .entitlementMissing,
+                message: "[MOCK] Entitlement \(AWConst.provisioningEntitlement) ausente."
+            )
+        case .noSecureElement:
+            return AWCanAddCardResult(
+                canAdd: false,
+                reason: .noSecureElement,
+                message: "[MOCK] Device sem Secure Element."
+            )
+        default:
+            break
+        }
+
+        let existing = primaryAccountIdentifier.flatMap { identifier in
+            passes
+                .sorted { !$0.isRemote && $1.isRemote }
+                .first { $0.primaryAccountIdentifier == identifier }
+        }
+
+        if let existing {
+            if existing.activationState == .requiresActivation
+                || existing.activationState == .activating
+            {
+                return AWCanAddCardResult(
+                    canAdd: false,
+                    reason: .requiresActivation,
+                    message: "[MOCK] Cartão já está na Wallet, pendente de ativação.",
+                    deviceAccountIdentifier: existing.deviceAccountIdentifier
+                )
+            }
+            return AWCanAddCardResult(
+                canAdd: false,
+                reason: .alreadyAdded,
+                message: "[MOCK] Cartão já está na Wallet.",
+                deviceAccountIdentifier: existing.deviceAccountIdentifier
+            )
+        }
+
+        if scenario == .alreadyAdded {
+            return AWCanAddCardResult(
+                canAdd: false,
+                reason: .alreadyAdded,
+                message: "[MOCK] Cartão já está na Wallet."
+            )
+        }
+
+        return AWCanAddCardResult(
+            canAdd: true,
+            reason: .available,
+            message: "[MOCK] Device apto a adicionar cartão à Apple Wallet."
+        )
+    }
+
+    func startInAppProvisioning(config: AWProvisioningRequestConfig) throws -> String {
+        if pendingRequestId != nil {
+            let message = "Já existe um provisioning em andamento."
+            log("ERROR", message)
+            throw AWError.make(.alreadyInProgress, message)
+        }
+
+        let availability = canAddCard(
+            primaryAccountIdentifier: config.primaryAccountIdentifier
+        )
+        guard availability.canAddCard else {
+            log("ERROR", "Bloqueado: \(availability.reason.rawValue)")
+            throw AWError.make(availability.reason.errorCode, availability.message)
+        }
+
+        let requestId = UUID().uuidString
+        pendingRequestId = requestId
+        pendingConfig = config
+        pendingStage = .presenting
+        pendingIncludesWatch = false
+
+        log("INFO", "startInAppProvisioning(\(requestId)) — sheet mock.")
+        emit(AWProvisioningResultEvent(requestId: requestId, status: .presenting))
+
+        if scenario == .userCanceled {
+            afterLatency { [weak self] in
+                self?.finishCanceled(
+                    requestId: requestId,
+                    errorCode: .userCanceled,
+                    message: "Usuário cancelou a adição do cartão."
+                )
+            }
+            return requestId
+        }
+
+        let allowWatch = scenario.hasWatch
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let sheet = MockAddPassSheetController(
+                config: config,
+                allowDeviceSelection: allowWatch
+            ) { [weak self] outcome, includeWatch in
+                guard let self else { return }
+                switch outcome {
+                case .canceled:
+                    self.finishCanceled(
+                        requestId: requestId,
+                        errorCode: .userCanceled,
+                        message: "Usuário fechou a sheet."
+                    )
+                case .confirmed:
+                    self.proceedToHandshake(requestId: requestId, includeWatch: includeWatch)
+                }
+            }
+            sheet.modalPresentationStyle = .formSheet
+            self.pendingSheet = sheet
+            self.presentWhenReady(sheet) { [weak self] in
+                guard let self else { return }
+                self.pendingSheet = nil
+                self.log("ERROR", "Não foi possível apresentar a sheet; seguindo sem ela.")
+                self.proceedToHandshake(requestId: requestId, includeWatch: false)
+            }
+        }
+
+        return requestId
+    }
+
+    private func proceedToHandshake(requestId: String, includeWatch: Bool) {
+        guard pendingRequestId == requestId else { return }
+        pendingIncludesWatch = includeWatch
+
+        afterLatency { [weak self] in
+            guard let self, self.pendingRequestId == requestId else { return }
+            let certificates = MockProvisioningFixtures.certificatesEvent(requestId: requestId)
+            self.pendingStage = .awaitingHost
+            self.log("INFO", "Passo 1 concluído (\(requestId)). Aguardando o emissor.")
+            self.pendingSheet?.showProgress("Aguardando o emissor…")
+            self.delegate?.provider(self, didReceiveCertificates: certificates)
+            self.emit(AWProvisioningResultEvent(requestId: requestId, status: .awaitingHost))
+            self.armHostTimeout(requestId: requestId)
+        }
+    }
+
+    private func armHostTimeout(requestId: String) {
+        hostTimeoutWork?.cancel()
+        let timeout = scenario == .hostTimeout ? min(hostTimeoutMs, 3_000) : hostTimeoutMs
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.pendingRequestId == requestId else { return }
+            let message = "Emissor não respondeu em \(timeout) ms."
+            self.log("ERROR", message)
+            self.clearPending()
+            let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
+            event.errorCode = .hostTimeout
+            event.errorMessage = message
+            self.emit(event)
+        }
+        hostTimeoutWork = work
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + .milliseconds(timeout),
+            execute: work
+        )
+    }
+
+    func submitProvisioningData(payload: AWSecurePayload) throws {
+        guard let requestId = pendingRequestId, pendingStage == .awaitingHost,
+              let config = pendingConfig
+        else {
+            let message = "Nenhum provisioning aguardando o passo 2. "
+                + "Chame startInAppProvisioning antes."
+            log("ERROR", message)
+            throw AWError.make(.notInProgress, message)
+        }
+
+        // HOST_TIMEOUT: o emissor "não respondeu"; o passo 2 é ignorado e o
+        // timeout armado encerra o fluxo.
+        if scenario == .hostTimeout {
+            log("WARN", "Cenário HOST_TIMEOUT: passo 2 ignorado.")
+            return
+        }
+
+        let includeWatch = pendingIncludesWatch
+        hostTimeoutWork?.cancel()
+        hostTimeoutWork = nil
+        pendingStage = .submitting
+        pendingSheet?.showProgress("Adicionando à Wallet…")
+        emit(AWProvisioningResultEvent(requestId: requestId, status: .submitting))
+
+        let decodes = Data(base64Encoded: payload.encryptedPassData) != nil
+            && Data(base64Encoded: payload.ephemeralPublicKey) != nil
+            && Data(base64Encoded: payload.activationData) != nil
+        let invalidReason: String? =
+            scenario == .invalidActivationData
+            ? "activationData rejeitado pelo PassKit (cenário)."
+            : (decodes ? nil : "Payload do passo 2 não é Base64 válido.")
+
+        afterLatency { [weak self] in
+            guard let self, self.pendingRequestId == requestId else { return }
+
+            if let invalidReason {
+                self.log("ERROR", invalidReason)
+                self.clearPending()
+                let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
+                event.errorCode = .invalidSecurePayload
+                event.errorMessage = invalidReason
+                self.emit(event)
+                return
+            }
+
+            let pass = MockProvisioningFixtures.provisionedPass(config: config, deviceType: .phone)
+            self.passes.append(pass)
+            var additional: [AWPaymentPass] = []
+            if includeWatch {
+                let watchPass = MockProvisioningFixtures.provisionedPass(
+                    config: config,
+                    deviceType: .watch
+                )
+                watchPass.primaryAccountIdentifier = pass.primaryAccountIdentifier
+                self.passes.append(watchPass)
+                additional.append(watchPass)
+            }
+
+            self.clearPending()
+            self.log("INFO", "Cartão adicionado à Wallet (\(requestId)).")
+            let event = AWProvisioningResultEvent(requestId: requestId, status: .added)
+            event.pass = pass
+            event.additionalPasses = additional
+            self.emit(event)
+        }
+    }
+
+    func cancelProvisioning() -> Bool {
+        guard let requestId = pendingRequestId else {
+            log("WARN", "cancelProvisioning() sem provisioning em andamento.")
+            return false
+        }
+        finishCanceled(
+            requestId: requestId,
+            errorCode: .systemCanceled,
+            message: "Provisioning cancelado pelo app."
+        )
+        return true
+    }
+
+    private func finishCanceled(requestId: String, errorCode: AWErrorCode, message: String) {
+        guard pendingRequestId == requestId else { return }
+        log("WARN", message)
+        clearPending()
+        let event = AWProvisioningResultEvent(requestId: requestId, status: .canceled)
+        event.errorCode = errorCode
+        event.errorMessage = message
+        emit(event)
+    }
+
+    private func clearPending() {
+        hostTimeoutWork?.cancel()
+        hostTimeoutWork = nil
+        pendingRequestId = nil
+        pendingConfig = nil
+        pendingIncludesWatch = false
+        pendingStage = .idle
+    }
+
+    // MARK: - Passes
+
+    func listPasses() -> [AWPaymentPass] {
+        log("INFO", "listPasses() → \(passes.count) pass(es).")
+        return passes
+    }
+
+    func isCardTokenized(primaryAccountIdentifier: String) -> Bool {
+        passes.contains { $0.primaryAccountIdentifier == primaryAccountIdentifier }
+    }
+
+    var isWatchPaired: Bool { scenario.hasWatch }
+
+    // MARK: - Verification
+
+    func activatePass(
+        deviceAccountIdentifier: String,
+        activationData: String,
+        completion: @escaping (Bool, NSError?) -> Void
+    ) {
+        guard Data(base64Encoded: activationData) != nil else {
+            completion(
+                false,
+                AWError.make(.invalidSecurePayload, "activationData não é Base64 válido.")
+            )
+            return
+        }
+
+        guard let pass = passes.first(where: {
+            $0.deviceAccountIdentifier == deviceAccountIdentifier
+        }) else {
+            let message = "Nenhum pass com esse deviceAccountIdentifier na Wallet."
+            log("ERROR", message)
+            completion(false, AWError.make(.passNotFound, message))
+            return
+        }
+
+        log("INFO", "activatePass() — ativando.")
+        let fails = scenario == .activationFailed
+        afterLatency { [weak self] in
+            if fails {
+                self?.log("ERROR", "Ativação falhou (cenário).")
+                completion(false, AWError.make(.activationFailed, "[MOCK] Ativação recusada."))
+                return
+            }
+            pass.activationState = .activated
+            self?.log("INFO", "Pass ativado.")
+            completion(true, nil)
+        }
+    }
+
+    // MARK: - Utilitários
+
+    func openWallet() -> Bool {
+        log("INFO", "openWallet() simulado.")
+        return true
+    }
+
+    // MARK: - AppleWalletMockControlling
+
+    func configure(_ config: [String: Any]) -> [String: Any] {
+        if let ids = config["primaryAccountIdentifiers"] as? [String], !ids.isEmpty {
+            primaryAccountIdentifiers = ids
+        }
+        if let value = config["latencyMs"] as? NSNumber {
+            latencyMs = max(0, value.intValue)
+        }
+        if let value = config["hostTimeoutMs"] as? NSNumber {
+            hostTimeoutMs = max(0, value.intValue)
+        }
+        if let raw = config["scenario"] as? String, let parsed = AWScenario(rawValue: raw) {
+            scenario = parsed
+            clearPending()
+            passes = MockProvisioningFixtures.seed(
+                for: parsed,
+                primaryAccountIdentifiers: primaryAccountIdentifiers
+            )
+            log("INFO", "Cenário: \(raw) (\(passes.count) pass(es) semeado(s)).")
+        }
+        return stateSnapshot()
+    }
+
+    func reset() {
+        pendingSheet?.dismissSheet()
+        pendingSheet = nil
+        clearPending()
+        scenario = .happyPush
+        latencyMs = 800
+        hostTimeoutMs = 20_000
+        primaryAccountIdentifiers = MockProvisioningFixtures.defaultPrimaryAccountIdentifiers()
+        passes.removeAll()
+        log("INFO", "Mock resetado.")
+    }
+
+    func stateSnapshot() -> [String: Any] {
+        [
+            "implementation": AWConst.implementationMock,
+            "scenario": scenario.rawValue,
+            "scenarios": AWScenario.allCases.map(\.rawValue),
+            "latencyMs": latencyMs,
+            "hostTimeoutMs": hostTimeoutMs,
+            "isWatchPaired": isWatchPaired,
+            "passes": passes.map { $0.toDictionary() },
+            "pendingRequestId": pendingRequestId ?? NSNull(),
+            "pendingStage": pendingStage.rawValue,
+        ]
+    }
+}
+
+#endif
