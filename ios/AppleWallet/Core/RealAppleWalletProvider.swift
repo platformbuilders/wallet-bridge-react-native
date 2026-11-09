@@ -28,12 +28,16 @@ final class RealAppleWalletProvider: NSObject, AppleWalletProviding {
 
     // MARK: - Log
 
+    /// Log de diagnóstico: só em build Debug, como o `WalletLogger` do Android,
+    /// que suprime logs (console e evento para o JS) fora de builds debuggable.
     func log(_ level: String, _ message: String) {
+        #if DEBUG
         NSLog("[%@][%@] %@", Self.tag, level, message)
         delegate?.provider(
             self,
             didLog: AWLogEvent(level: level, tag: Self.tag, message: message)
         )
+        #endif
     }
 
     // MARK: - Utilitários
