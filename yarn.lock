@@ -2259,7 +2259,7 @@ __metadata:
     typescript: ^5.8.3
   peerDependencies:
     react: ">=18"
-    react-native: ">=0.76"
+    react-native: ">=0.80"
   languageName: unknown
   linkType: soft
 
