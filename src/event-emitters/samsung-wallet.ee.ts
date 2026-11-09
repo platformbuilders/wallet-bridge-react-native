@@ -6,9 +6,8 @@
 // que funciona apenas em dispositivos Android.
 
 import { type EventSubscription, Platform } from 'react-native';
-import NativeSamsungWallet, {
-  type Spec as NativeSamsungWalletSpec,
-} from '../specs/NativeSamsungWallet';
+import { getNativeSamsungWallet } from '../native-modules';
+import type { Spec as NativeSamsungWalletSpec } from '../specs/NativeSamsungWallet';
 import {
   type SamsungWalletIntentEvent,
   type SamsungWalletLogEvent,
@@ -16,8 +15,8 @@ import {
 
 export class SamsungWalletEventEmitter {
   // TurboModule: os eventos vêm dos EventEmitter da spec (onIntentReceived,
-  // onLog...), sem NativeEventEmitter.
-  private eventEmitter: NativeSamsungWalletSpec | null = null;
+  // onLog...), sem NativeEventEmitter. O módulo é resolvido no primeiro uso,
+  // não no construtor (o service cria o emitter no import da lib).
   private subscriptions: Set<EventSubscription> = new Set();
   private listeners: Map<string, (event: SamsungWalletIntentEvent) => void> =
     new Map();
@@ -29,34 +28,10 @@ export class SamsungWalletEventEmitter {
 
   constructor() {
     this.isIOS = Platform.OS === 'ios';
+  }
 
-    // Em iOS, não inicializar o EventEmitter
-    if (this.isIOS) {
-      console.warn(
-        '⚠️ [SamsungWalletEventEmitter] iOS detectado - EventEmitter desabilitado',
-      );
-      return;
-    }
-
-    try {
-      // Verificar se o módulo está disponível (apenas em Android)
-      const SamsungWalletModule = NativeSamsungWallet;
-      if (SamsungWalletModule) {
-        this.eventEmitter = SamsungWalletModule;
-        console.log(
-          '✅ [SamsungWalletEventEmitter] EventEmitter inicializado com sucesso',
-        );
-      } else {
-        console.warn(
-          '⚠️ [SamsungWalletEventEmitter] Módulo SamsungWallet não está disponível',
-        );
-      }
-    } catch (error) {
-      console.error(
-        '❌ [SamsungWalletEventEmitter] Erro ao inicializar EventEmitter:',
-        error,
-      );
-    }
+  private get eventEmitter(): NativeSamsungWalletSpec | null {
+    return this.isIOS ? null : getNativeSamsungWallet();
   }
 
   /**
@@ -92,12 +67,8 @@ export class SamsungWalletEventEmitter {
     // Criar o listener do NativeEventEmitter
     const subscription = this.track(
       this.eventEmitter.onIntentReceived((event) => {
-        const walletEvent = event as SamsungWalletIntentEvent;
-        console.log(
-          '🎯 [SamsungWalletEventEmitter] Intent recebido:',
-          walletEvent,
-        );
-        callback(walletEvent);
+        // Não logar o evento: ele carrega dados de provisionamento.
+        callback(event as SamsungWalletIntentEvent);
       }),
     );
 

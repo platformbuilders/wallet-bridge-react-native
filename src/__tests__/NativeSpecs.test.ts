@@ -1,3 +1,5 @@
+export {};
+
 const loadSpec = (specPath: string, registered: unknown) => {
   const get = jest.fn().mockReturnValue(registered);
   const getEnforcing = jest.fn();

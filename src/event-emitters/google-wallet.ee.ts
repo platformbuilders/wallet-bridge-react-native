@@ -6,9 +6,8 @@
 // que funciona apenas em dispositivos Android.
 
 import { type EventSubscription, Platform } from 'react-native';
-import NativeGoogleWallet, {
-  type Spec as NativeGoogleWalletSpec,
-} from '../specs/NativeGoogleWallet';
+import { getNativeGoogleWallet } from '../native-modules';
+import type { Spec as NativeGoogleWalletSpec } from '../specs/NativeGoogleWallet';
 import {
   type GoogleWalletIntentEvent,
   type GoogleWalletLogEvent,
@@ -16,8 +15,8 @@ import {
 
 export class GoogleWalletEventEmitter {
   // TurboModule: os eventos vêm dos EventEmitter da spec (onIntentReceived,
-  // onLog...), sem NativeEventEmitter.
-  private eventEmitter: NativeGoogleWalletSpec | null = null;
+  // onLog...), sem NativeEventEmitter. O módulo é resolvido no primeiro uso,
+  // não no construtor (o service cria o emitter no import da lib).
   private subscriptions: Set<EventSubscription> = new Set();
   private listeners: Map<string, (event: GoogleWalletIntentEvent) => void> =
     new Map();
@@ -29,34 +28,10 @@ export class GoogleWalletEventEmitter {
 
   constructor() {
     this.isIOS = Platform.OS === 'ios';
+  }
 
-    // Em iOS, não inicializar o EventEmitter
-    if (this.isIOS) {
-      console.warn(
-        '⚠️ [GoogleWalletEventEmitter] iOS detectado - EventEmitter desabilitado',
-      );
-      return;
-    }
-
-    try {
-      // Verificar se o módulo está disponível (apenas em Android)
-      const GoogleWalletModule = NativeGoogleWallet;
-      if (GoogleWalletModule) {
-        this.eventEmitter = GoogleWalletModule;
-        console.log(
-          '✅ [GoogleWalletEventEmitter] EventEmitter inicializado com sucesso',
-        );
-      } else {
-        console.warn(
-          '⚠️ [GoogleWalletEventEmitter] Módulo GoogleWallet não está disponível',
-        );
-      }
-    } catch (error) {
-      console.error(
-        '❌ [GoogleWalletEventEmitter] Erro ao inicializar EventEmitter:',
-        error,
-      );
-    }
+  private get eventEmitter(): NativeGoogleWalletSpec | null {
+    return this.isIOS ? null : getNativeGoogleWallet();
   }
 
   /**
@@ -92,12 +67,8 @@ export class GoogleWalletEventEmitter {
     // Criar o listener do NativeEventEmitter
     const subscription = this.track(
       this.eventEmitter.onIntentReceived((event) => {
-        const walletEvent = event as GoogleWalletIntentEvent;
-        console.log(
-          '🎯 [GoogleWalletEventEmitter] Intent recebido:',
-          walletEvent,
-        );
-        callback(walletEvent);
+        // Não logar o evento: ele carrega dados de provisionamento.
+        callback(event as GoogleWalletIntentEvent);
       }),
     );
 
