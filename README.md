@@ -64,7 +64,7 @@ The same applies to Samsung Wallet (`useSamsungWalletListener`, `useSamsungWalle
 Other changes:
 
 - Peer dependencies are `react >= 18` and `react-native >= 0.80` with the New Architecture enabled.
-- Enums can be imported from `@platformbuilders/wallet-bridge-react-native/src/enums` without a `patch-package` patch.
+- Enums can be imported from `@platformbuilders/wallet-bridge-react-native/enums` without a `patch-package` patch. The `/src/enums` path used with the 1.x patch keeps working.
 
 ### Tested Versions
 
@@ -191,10 +191,10 @@ If you configure `GOOGLE_WALLET_MOCK_API_URL` or `SAMSUNG_WALLET_MOCK_API_URL` i
 
 ### Enums
 
-Enums are exported from the package root and from the `src/enums` subpath, which only loads the enums (no native module access):
+Enums are exported from the package root and from the `enums` subpath, which only loads the enums (no native module access). `src/enums` is kept as an alias for apps that used the 1.x patch:
 
 ```javascript
-import { GoogleActivationStatus, SamsungActivationStatus } from '@platformbuilders/wallet-bridge-react-native/src/enums';
+import { GoogleActivationStatus, SamsungActivationStatus } from '@platformbuilders/wallet-bridge-react-native/enums';
 ```
 
 ### Google Pay

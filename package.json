@@ -10,12 +10,24 @@
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
+    "./enums": {
+      "source": "./src/enums/index.ts",
+      "types": "./lib/typescript/src/enums/index.d.ts",
+      "default": "./lib/module/enums/index.js"
+    },
     "./src/enums": {
       "source": "./src/enums/index.ts",
       "types": "./lib/typescript/src/enums/index.d.ts",
       "default": "./lib/module/enums/index.js"
     },
     "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "enums": [
+        "./lib/typescript/src/enums/index.d.ts"
+      ]
+    }
   },
   "files": [
     "src",
