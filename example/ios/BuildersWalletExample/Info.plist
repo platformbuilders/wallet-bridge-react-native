@@ -22,6 +22,19 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<!-- URL do In-App Verification: o apple-wallet-app-mock (no papel da
+	     Wallet) abre builderswalletexample://apple-wallet/verify?... -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.builders.wallet.example</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>builderswalletexample</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSApplicationQueriesSchemes</key>
