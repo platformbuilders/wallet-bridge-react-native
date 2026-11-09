@@ -14,15 +14,10 @@
 // A interface vem do codegen (src/specs/NativeAppleWallet.ts); o registro do
 // módulo vem do `codegenConfig.ios.modulesProvider` do package.json.
 
-/// Teto da fila de eventos emitidos antes do JS se ligar ao módulo. Só o
-/// suficiente para um cold start.
-static NSUInteger const kPendingEventLimit = 32;
-
 @interface AppleWallet () <AppleWalletProviderDelegate>
 @property (nonatomic, strong) id<AppleWalletProviding> provider;
-@property (nonatomic, assign) BOOL logListenerActive;
-/// Eventos emitidos antes de o JS ligar o emitter. Ver -emitLog:
-@property (nonatomic, strong) NSMutableArray<NSDictionary *> *pendingEvents;
+/// Eventos de log a caminho do JS (fila de cold start fica no Swift).
+@property (nonatomic, strong) AWEventBuffer *logEvents;
 @end
 
 @implementation AppleWallet
@@ -34,7 +29,7 @@ static NSUInteger const kPendingEventLimit = 32;
 - (instancetype)init {
   self = [super init];
   if (self) {
-    _pendingEvents = [NSMutableArray array];
+    _logEvents = [[AWEventBuffer alloc] initWithLimit:32];
     _provider = [AppleWalletProviderFactory defaultProvider];
     _provider.delegate = self;
   }
@@ -60,35 +55,18 @@ static NSUInteger const kPendingEventLimit = 32;
 - (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper {
   [super setEventEmitterCallback:eventEmitterCallbackWrapper];
 
-  // Cold start: um evento pode nascer antes de o JS ligar o emitter. Sem o
-  // flush ele se perderia.
-  if (self.pendingEvents.count == 0) return;
-
-  NSArray<NSDictionary *> *queued = [self.pendingEvents copy];
-  [self.pendingEvents removeAllObjects];
-  for (NSDictionary *body in queued) {
-    [self emitOnLog:body];
-  }
-}
-
-- (void)emitLog:(NSDictionary *)body {
-  if (_eventEmitterCallback) {
-    [self emitOnLog:body];
-    return;
-  }
-
-  if (self.pendingEvents.count >= kPendingEventLimit) {
-    [self.pendingEvents removeObjectAtIndex:0];
-  }
-  [self.pendingEvents addObject:body];
+  // O JS ligou o emitter: a fila entrega o que nasceu antes (cold start).
+  __weak AppleWallet *weakSelf = self;
+  [self.logEvents attach:^(NSDictionary *body) {
+    [weakSelf emitOnLog:body];
+  }];
 }
 
 #pragma mark - AppleWalletProviderDelegate
 
 - (void)provider:(id<AppleWalletProviding>)provider didLog:(AWLogEvent *)event {
-  // Igual a Google/Samsung: log só sobe para o JS depois de setLogListener().
-  if (!self.logListenerActive) return;
-  [self emitLog:[event toDictionary]];
+  // Igual a Google/Samsung: só sobe para o JS depois de setLogListener().
+  [self.logEvents push:[event toDictionary]];
 }
 
 #pragma mark - Utilitários
@@ -102,12 +80,12 @@ static NSUInteger const kPendingEventLimit = 32;
 }
 
 - (void)setLogListener:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
-  self.logListenerActive = YES;
+  self.logEvents.enabled = YES;
   resolve(@(YES));
 }
 
 - (void)removeLogListener:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
-  self.logListenerActive = NO;
+  self.logEvents.enabled = NO;
   resolve(@(YES));
 }
 
