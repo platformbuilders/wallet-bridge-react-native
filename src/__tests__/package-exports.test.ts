@@ -39,7 +39,20 @@ describe('package.json exports', () => {
       expect.objectContaining({
         GoogleActivationStatus: expect.any(Object),
         SamsungActivationStatus: expect.any(Object),
+        ApplePassActivationState: expect.any(Object),
+        AppleWalletErrorCode: expect.any(Object),
       }),
     );
+  });
+
+  it('exposes the ./testing subpath for the Apple Wallet mock control', () => {
+    expect(pkg.exports['./testing']).toEqual({
+      source: './src/testing/index.ts',
+      types: './lib/typescript/src/testing/index.d.ts',
+      default: './lib/module/testing/index.js',
+    });
+    expect(pkg.typesVersions?.['*']?.testing).toEqual([
+      './lib/typescript/src/testing/index.d.ts',
+    ]);
   });
 });

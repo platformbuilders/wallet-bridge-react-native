@@ -3,9 +3,14 @@ import type { AppleWalletSpec } from '../types/apple-wallet.types';
 import { CardStatus } from '../types/common.types';
 
 // Checagem em tempo de compilação (yarn typecheck): o TurboModule do Apple
-// cumpre o contrato público AppleWalletSpec.
-const asPublicAppleContract = (spec: NativeAppleWalletSpec): AppleWalletSpec =>
-  spec;
+// expõe exatamente os métodos do contrato público AppleWalletSpec. Os tipos
+// de retorno diferem de propósito (o codegen tipa objetos como `Object` e
+// enums como `string`), como em Google/Samsung.
+type Exactly<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+const sameAppleMethods: Exactly<
+  Exclude<keyof NativeAppleWalletSpec, 'getConstants'>,
+  Exclude<keyof AppleWalletSpec, 'getConstants'>
+> = true;
 
 describe('Types and Enums', () => {
   describe('CardStatus', () => {
@@ -44,8 +49,8 @@ describe('Types and Enums', () => {
   });
 
   describe('AppleWalletSpec', () => {
-    it('is implemented by the Apple TurboModule spec', () => {
-      expect(typeof asPublicAppleContract).toBe('function');
+    it('has the same methods as the Apple TurboModule spec', () => {
+      expect(sameAppleMethods).toBe(true);
     });
   });
 });

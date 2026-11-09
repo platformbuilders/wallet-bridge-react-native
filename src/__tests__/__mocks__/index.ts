@@ -4,6 +4,15 @@
 // Este arquivo exporta todos os mocks necessários para testar aplicações
 // que utilizam a biblioteca BuildersWallet
 
+import {
+  AppleCanAddCardReason,
+  AppleDeviceType,
+  ApplePassActivationState,
+} from '../../enums/apple-wallet.enum';
+import type {
+  ApplePaymentPass,
+  AppleWalletConstants,
+} from '../../types/apple-wallet.types';
 import type {
   GoogleTokenInfo,
   GoogleTokenStatus,
@@ -273,6 +282,90 @@ export const mockSamsungWalletModule = {
 };
 
 // ============================================================================
+// MOCKS DO APPLE WALLET
+// ============================================================================
+// Dados falsos: o mesmo cartão (FPANID) no iPhone (ativo) e no Apple Watch
+// (pendente), com DPANIDs distintos, e um segundo cartão pendente.
+
+export const mockAppleWalletConstants: AppleWalletConstants = {
+  PROVISIONING_ENTITLEMENT: 'com.apple.developer.payment-pass-provisioning',
+  APPLE_LEAF_CERT_OID: '1.2.840.113635.100.6.39',
+  WALLET_URL_SCHEME: 'shoebox://',
+  EVENT_LOG: 'AppleWalletLog',
+};
+
+const mockApplePass = (
+  overrides: Partial<ApplePaymentPass>,
+): ApplePaymentPass => ({
+  primaryAccountIdentifier: 'FAKE_FPANID_1',
+  primaryAccountNumberSuffix: '1111',
+  deviceAccountIdentifier: 'FAKE_DPANID_1_PHONE',
+  deviceAccountNumberSuffix: '9001',
+  serialNumber: 'FAKE_SERIAL_1_PHONE',
+  passTypeIdentifier: 'pass.com.builders.wallet.mock',
+  passActivationState: ApplePassActivationState.ACTIVATED,
+  deviceType: AppleDeviceType.PHONE,
+  isRemote: false,
+  deviceName: 'iPhone',
+  localizedDescription: 'Cartão 1',
+  ...overrides,
+});
+
+export const mockApplePhonePass = mockApplePass({});
+
+export const mockAppleWatchPass = mockApplePass({
+  deviceAccountIdentifier: 'FAKE_DPANID_1_WATCH',
+  deviceAccountNumberSuffix: '9002',
+  serialNumber: 'FAKE_SERIAL_1_WATCH',
+  passActivationState: ApplePassActivationState.REQUIRES_ACTIVATION,
+  deviceType: AppleDeviceType.WATCH,
+  isRemote: true,
+  deviceName: 'Apple Watch',
+});
+
+export const mockApplePendingPass = mockApplePass({
+  primaryAccountIdentifier: 'FAKE_FPANID_2',
+  primaryAccountNumberSuffix: '2222',
+  deviceAccountIdentifier: 'FAKE_DPANID_2_PHONE',
+  deviceAccountNumberSuffix: '9003',
+  serialNumber: 'FAKE_SERIAL_2_PHONE',
+  passActivationState: ApplePassActivationState.REQUIRES_ACTIVATION,
+  localizedDescription: 'Cartão 2',
+});
+
+export const mockApplePasses: ApplePaymentPass[] = [
+  mockApplePhonePass,
+  mockAppleWatchPass,
+  mockApplePendingPass,
+];
+
+const mockAppleSubscription = () => ({ remove: jest.fn() });
+
+export const mockAppleWalletModule = {
+  getConstants: jest.fn().mockReturnValue(mockAppleWalletConstants),
+  getEnvironment: jest.fn().mockResolvedValue('ios-simulator'),
+  openWallet: jest.fn().mockResolvedValue(true),
+  checkWalletAvailability: jest.fn().mockResolvedValue(true),
+  canAddCard: jest.fn().mockResolvedValue({
+    canAdd: true,
+    reason: AppleCanAddCardReason.AVAILABLE,
+    message: 'Device apto a adicionar cartão à Apple Wallet.',
+  }),
+  startInAppProvisioning: jest.fn().mockResolvedValue('FAKE_REQUEST_ID'),
+  submitProvisioningData: jest.fn().mockResolvedValue(true),
+  cancelProvisioning: jest.fn().mockResolvedValue(true),
+  listPasses: jest.fn().mockResolvedValue(mockApplePasses),
+  isCardTokenized: jest.fn().mockResolvedValue(false),
+  isWatchPaired: jest.fn().mockResolvedValue(true),
+  activatePass: jest.fn().mockResolvedValue(true),
+  setLogListener: jest.fn().mockResolvedValue(true),
+  removeLogListener: jest.fn().mockResolvedValue(true),
+  onProvisioningCertificates: jest.fn(mockAppleSubscription),
+  onProvisioningResult: jest.fn(mockAppleSubscription),
+  onLog: jest.fn(mockAppleSubscription),
+};
+
+// ============================================================================
 // MOCKS DOS EVENT EMITTERS
 // ============================================================================
 
@@ -295,6 +388,7 @@ export const mockSamsungWalletEventEmitter = {
 // ============================================================================
 
 const mockTurboModules: Record<string, unknown> = {
+  AppleWallet: mockAppleWalletModule,
   GoogleWallet: mockGoogleWalletModule,
   SamsungWallet: mockSamsungWalletModule,
 };
@@ -334,6 +428,13 @@ export const resetAllMocks = () => {
 
   // Reset Samsung Wallet mocks
   Object.values(mockSamsungWalletModule).forEach((mock) => {
+    if (jest.isMockFunction(mock)) {
+      mock.mockClear();
+    }
+  });
+
+  // Reset Apple Wallet mocks
+  Object.values(mockAppleWalletModule).forEach((mock) => {
     if (jest.isMockFunction(mock)) {
       mock.mockClear();
     }
