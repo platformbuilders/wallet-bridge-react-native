@@ -386,7 +386,7 @@ function DebugPanel() {
 | `onLogReceived(log)` | Called for each native log event |
 | `options.enabled` | Optional, default `true`. When `false`, nothing is subscribed and native logging is not started |
 
-Returns `{ isListeningLogs }`, which is `true` while native logging is being started.
+Returns `{ isListeningLogs }`, which is `true` while native logging is active (after the native listener starts, until the hook is disabled or unmounted).
 
 ### useSamsungWalletListener
 

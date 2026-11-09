@@ -9,6 +9,7 @@ let mockEffects: Effect[] = [];
 // Refs persistem entre "renders" pela ordem de chamada, como no React.
 const mockRefs: { current: unknown }[] = [];
 let mockRefIndex = 0;
+const mockSetters: jest.Mock[] = [];
 
 jest.mock('react', () => ({
   useEffect: (effect: Effect) => {
@@ -19,7 +20,11 @@ jest.mock('react', () => ({
     mockRefs[index] ??= { current: value };
     return mockRefs[index];
   },
-  useState: (value: unknown) => [value, jest.fn()],
+  useState: (value: unknown) => {
+    const setter = jest.fn();
+    mockSetters.push(setter);
+    return [value, setter];
+  },
 }));
 
 const mockCalls: string[] = [];
@@ -93,6 +98,7 @@ describe('wallet listener hooks', () => {
     mockEffects = [];
     mockRefs.length = 0;
     mockCalls.length = 0;
+    mockSetters.length = 0;
     mockReactNative.Platform.OS = 'android';
   });
 
@@ -175,6 +181,25 @@ describe('wallet listener hooks', () => {
 
       cleanup?.();
       expect(mockCalls).toContain(`${prefix}:removeLogListener`);
+    },
+  );
+
+  it.each([
+    ['google', useGoogleWalletLogListener],
+    ['samsung', useSamsungWalletLogListener],
+  ] as const)(
+    '%s: isListeningLogs reflete o log nativo ligado',
+    async (_prefix, useLogListener) => {
+      useLogListener(jest.fn());
+      const [setIsListeningLogs] = mockSetters;
+      const [cleanup] = runEffects();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(setIsListeningLogs).toHaveBeenLastCalledWith(true);
+
+      cleanup?.();
+      expect(setIsListeningLogs).toHaveBeenLastCalledWith(false);
     },
   );
 });

@@ -7,7 +7,8 @@ import type { GoogleWalletLogEvent } from '../types/google-wallet.types';
 /**
  * Escuta os logs nativos do Google Wallet (Android; no-op nas outras
  * plataformas). Registra o listener JS antes de ligar o log no nativo e
- * desliga tudo ao desmontar.
+ * desliga tudo ao desmontar. `isListeningLogs` fica `true` enquanto o log
+ * nativo estiver ligado.
  *
  * Use `options.enabled` para não assinar o log quando não for necessário
  * (ex.: `enabled: !isProduction`).
@@ -31,14 +32,14 @@ export const useGoogleWalletLogListener = (
 
     let mounted = true;
     const startLogListener = async () => {
-      setIsListeningLogs(true);
-      await GoogleWalletService.startLogListener();
-      if (mounted) setIsListeningLogs(false);
+      const started = await GoogleWalletService.startLogListener();
+      if (mounted) setIsListeningLogs(started);
     };
     void startLogListener();
 
     return () => {
       mounted = false;
+      setIsListeningLogs(false);
       removeLogListener();
       void GoogleWalletService.stopLogListener();
     };
