@@ -4,9 +4,9 @@ import {
   TurboModuleRegistry,
 } from 'react-native';
 
-// Alias local em vez de `CodegenTypes.EventEmitter` direto na Spec: o codegen
-// do RN 0.76–0.79 só reconhece o identificador `EventEmitter` (sem namespace),
-// e a lib suporta react-native >=0.76.
+// `CodegenTypes` só é exportado por `react-native` a partir da 0.80 (piso da
+// lib). Alias local para o codegen ver o identificador `EventEmitter` sem
+// namespace.
 type EventEmitter<T> = CodegenTypes.EventEmitter<T>;
 
 export type AppleWalletLogEvent = {

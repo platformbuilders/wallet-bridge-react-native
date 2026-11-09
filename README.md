@@ -29,12 +29,12 @@ A React Native library that facilitates integration with digital wallets (Google
 | Technology | Minimum Version | Recommended |
 |------------|---------------|-------------|
 | Node.js | 20.19.4 | 22.x |
-| React Native | 0.76.0 | 0.86.x |
+| React Native | 0.80.0 | 0.86.x |
 | React | 18.0.0 | 19.2.x |
 | Java (Android build) | 17 | 17 |
 | Android SDK | API 24 | API 36 |
 
-> ⚠️ **New Architecture is required.** Starting with 2.0.0 the library targets the React Native New Architecture only. Apps on React Native 0.76–0.81 must keep `newArchEnabled=true` (Android) and `RCT_NEW_ARCH_ENABLED=1` (iOS). Apps that still run the legacy architecture should stay on the 1.x line.
+> ⚠️ **New Architecture is required.** Starting with 2.0.0 the library targets the React Native New Architecture only. Apps on React Native 0.80–0.81 must keep `newArchEnabled=true` (Android) and `RCT_NEW_ARCH_ENABLED=1` (iOS). Apps that still run the legacy architecture should stay on the 1.x line.
 
 ### Migrating from 1.x
 
@@ -63,7 +63,7 @@ The same applies to Samsung Wallet (`useSamsungWalletListener`, `useSamsungWalle
 
 Other changes:
 
-- Peer dependencies are `react >= 18` and `react-native >= 0.76` with the New Architecture enabled.
+- Peer dependencies are `react >= 18` and `react-native >= 0.80` with the New Architecture enabled.
 - Enums can be imported from `@platformbuilders/wallet-bridge-react-native/src/enums` without a `patch-package` patch.
 
 ### Tested Versions

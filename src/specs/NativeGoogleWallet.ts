@@ -4,10 +4,10 @@ import {
   TurboModuleRegistry,
 } from 'react-native';
 
-// Aliases locais em vez de `CodegenTypes.*` direto na Spec: o codegen do
-// RN 0.76–0.79 só reconhece o identificador `EventEmitter` (sem namespace), e a
-// lib suporta react-native >=0.76. Inteiros vão como `number` (double no
-// nativo) pelo mesmo motivo: o módulo Kotlin converte com toInt().
+// `CodegenTypes` só é exportado por `react-native` a partir da 0.80 (piso da
+// lib). Alias local para o codegen ver o identificador `EventEmitter` sem
+// namespace. Inteiros vão como `number` (double no nativo, sem `Int32`): o
+// módulo Kotlin converte com toInt().
 type EventEmitter<T> = CodegenTypes.EventEmitter<T>;
 
 export type GoogleWalletIntentEvent = {
