@@ -988,8 +988,11 @@ class SamsungWalletMock(private val reactContext: com.facebook.react.bridge.Reac
     private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
             WalletLogger.d(TAG, "🔍 [SAMSUNG] Enviando evento para React Native: $eventName")
-            WalletEvents.emit(eventName, eventData)
-            WalletLogger.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
+            if (WalletEvents.emit(eventName, eventData)) {
+              WalletLogger.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
+            } else {
+              WalletLogger.w(TAG, "⚠️ [SAMSUNG] Evento $eventName descartado: módulo não registrado")
+            }
         } catch (e: Exception) {
             WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento para React Native: ${e.message}", e)
         }

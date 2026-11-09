@@ -14,18 +14,23 @@ import com.facebook.react.module.annotations.ReactModule
 class GoogleWalletModule(reactContext: ReactApplicationContext) :
   NativeGoogleWalletSpec(reactContext) {
 
+  // TurboModule: eventos saem pelos EventEmitter gerados pelo codegen.
+  // O WalletEvents guarda só uma referência fraca ao sink; este campo o mantém
+  // vivo enquanto o módulo existir (sem ele, o GC descartaria o sink e os
+  // eventos seriam perdidos sem aviso).
+  private val eventSink = object : WalletEvents.Sink {
+    override fun emitIntentReceived(data: WritableMap) = emitOnIntentReceived(data)
+    override fun emitNoIntentReceived() = emitOnNoIntentReceived()
+    override fun emitValidCallerNoIntentReceived() = emitOnValidCallerNoIntentReceived()
+    override fun emitLog(data: WritableMap) = emitOnLog(data)
+  }
+
   // Lê configuração de mock do BuildConfig (variável de ambiente do Gradle)
   init {
     // Inicializar WalletLogger com o contexto
     WalletLogger.initialize(reactContext)
 
-    // TurboModule: eventos saem pelos EventEmitter gerados pelo codegen.
-    WalletEvents.registerGoogle(object : WalletEvents.Sink {
-      override fun emitIntentReceived(data: WritableMap) = emitOnIntentReceived(data)
-      override fun emitNoIntentReceived() = emitOnNoIntentReceived()
-      override fun emitValidCallerNoIntentReceived() = emitOnValidCallerNoIntentReceived()
-      override fun emitLog(data: WritableMap) = emitOnLog(data)
-    })
+    WalletEvents.registerGoogle(eventSink)
   }
 
   private val useMock: Boolean by lazy {

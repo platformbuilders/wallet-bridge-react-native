@@ -235,8 +235,11 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
             WalletLogger.d(TAG, "🔍 [GOOGLE] Enviando evento para React Native: $eventName")
-            WalletEvents.emit(eventName, eventData)
-            WalletLogger.d(TAG, "✅ [GOOGLE] Evento enviado com sucesso")
+            if (WalletEvents.emit(eventName, eventData)) {
+              WalletLogger.d(TAG, "✅ [GOOGLE] Evento enviado com sucesso")
+            } else {
+              WalletLogger.w(TAG, "⚠️ [GOOGLE] Evento $eventName descartado: módulo não registrado")
+            }
         } catch (e: Exception) {
             WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao enviar evento para React Native: ${e.message}", e)
         }
