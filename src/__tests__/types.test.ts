@@ -1,4 +1,11 @@
+import type { Spec as NativeAppleWalletSpec } from '../specs/NativeAppleWallet';
+import type { AppleWalletSpec } from '../types/apple-wallet.types';
 import { CardStatus } from '../types/common.types';
+
+// Checagem em tempo de compilação (yarn typecheck): o TurboModule do Apple
+// cumpre o contrato público AppleWalletSpec.
+const asPublicAppleContract = (spec: NativeAppleWalletSpec): AppleWalletSpec =>
+  spec;
 
 describe('Types and Enums', () => {
   describe('CardStatus', () => {
@@ -33,6 +40,12 @@ describe('Types and Enums', () => {
       expect(walletData).toHaveProperty('walletAccountID');
       expect(typeof walletData.deviceID).toBe('string');
       expect(typeof walletData.walletAccountID).toBe('string');
+    });
+  });
+
+  describe('AppleWalletSpec', () => {
+    it('is implemented by the Apple TurboModule spec', () => {
+      expect(typeof asPublicAppleContract).toBe('function');
     });
   });
 });

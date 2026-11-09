@@ -1,8 +1,9 @@
 // Testa o carregamento sob demanda dos TurboModules (native-modules.ts) e o
-// Proxy que expõe GoogleWalletModule / SamsungWalletModule.
+// Proxy que expõe AppleWalletModule / GoogleWalletModule / SamsungWalletModule.
 import { mockReactNative } from './__mocks__/index';
 
 const SPECS = {
+  Apple: '../specs/NativeAppleWallet',
   Google: '../specs/NativeGoogleWallet',
   Samsung: '../specs/NativeSamsungWallet',
 } as const;
@@ -123,3 +124,78 @@ describe.each([
     });
   },
 );
+
+describe('native-modules: Apple', () => {
+  it('returns null outside iOS without loading the spec', () => {
+    mockReactNative.Platform.OS = 'android';
+    const { loaded, specLoads } = load<NativeModules>('../native-modules', {
+      Apple: { getConstants: jest.fn() },
+    });
+
+    expect(loaded.getNativeAppleWallet()).toBeNull();
+    expect(specLoads).toEqual([]);
+  });
+
+  it('returns the TurboModule on iOS', () => {
+    mockReactNative.Platform.OS = 'ios';
+    const nativeModule = { getConstants: jest.fn() };
+    const { loaded } = load<NativeModules>('../native-modules', {
+      Apple: nativeModule,
+    });
+
+    expect(loaded.getNativeAppleWallet()).toBe(nativeModule);
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('returns null and warns only once when the module is missing', () => {
+    mockReactNative.Platform.OS = 'ios';
+    const { loaded } = load<NativeModules>('../native-modules', {});
+
+    expect(loaded.getNativeAppleWallet()).toBeNull();
+    expect(loaded.getNativeAppleWallet()).toBeNull();
+    expect(console.warn).toHaveBeenCalledTimes(1);
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('AppleWallet native module is not available'),
+    );
+  });
+});
+
+describe('NativeBuildersWallet: AppleWalletModule proxy', () => {
+  it('does not load the TurboModule on import', () => {
+    mockReactNative.Platform.OS = 'ios';
+    const { specLoads } = load<Bridge>('../NativeBuildersWallet', {
+      Apple: { openWallet: jest.fn() },
+    });
+
+    expect(specLoads).toEqual([]);
+  });
+
+  it('forwards method calls to the TurboModule on iOS', async () => {
+    mockReactNative.Platform.OS = 'ios';
+    const openWallet = jest.fn().mockResolvedValue(true);
+    const { loaded } = load<Bridge>('../NativeBuildersWallet', {
+      Apple: { openWallet },
+    });
+
+    await expect(loaded.AppleWalletModule.openWallet()).resolves.toBe(true);
+    expect(openWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the stub outside iOS', async () => {
+    mockReactNative.Platform.OS = 'android';
+    const openWallet = jest.fn();
+    const { loaded, specLoads } = load<Bridge>('../NativeBuildersWallet', {
+      Apple: { openWallet },
+    });
+
+    await expect(loaded.AppleWalletModule.openWallet()).resolves.toBe(false);
+    await expect(loaded.AppleWalletModule.getEnvironment()).resolves.toBe(
+      'android',
+    );
+    const listener = jest.fn();
+    const subscription = loaded.AppleWalletModule.onLog(listener);
+    expect(() => subscription.remove()).not.toThrow();
+    expect(openWallet).not.toHaveBeenCalled();
+    expect(specLoads).toEqual([]);
+  });
+});

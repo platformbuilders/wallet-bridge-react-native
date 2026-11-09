@@ -1,11 +1,17 @@
 import { Platform } from 'react-native';
+import { AppleWalletAndroid } from './apple-wallet.android';
 import { GoogleWalletIOS } from './google-wallet.ios';
 import {
+  getNativeAppleWallet,
   getNativeGoogleWallet,
   getNativeSamsungWallet,
 } from './native-modules';
 import { SamsungWalletIOS } from './samsung-wallet.ios';
-import type { GoogleWalletSpec, SamsungWalletSpec } from './types/index';
+import type {
+  AppleWalletSpec,
+  GoogleWalletSpec,
+  SamsungWalletSpec,
+} from './types/index';
 
 // Re-exporta todos os types
 export * from './types/index';
@@ -38,4 +44,9 @@ export const GoogleWalletModule = lazyModule<GoogleWalletSpec>(() =>
 
 export const SamsungWalletModule = lazyModule<SamsungWalletSpec>(() =>
   Platform.OS === 'ios' ? SamsungWalletIOS : getNativeSamsungWallet(),
+);
+
+// Só existe no iOS; nas outras plataformas responde pelo stub.
+export const AppleWalletModule = lazyModule<AppleWalletSpec>(() =>
+  Platform.OS === 'ios' ? getNativeAppleWallet() : AppleWalletAndroid,
 );

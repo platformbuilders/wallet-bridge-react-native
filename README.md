@@ -262,6 +262,26 @@ const tokens = await SamsungWalletModule.listTokens();
 > - **Google Pay:** Accepts object with `address` and `card`
 > - **Samsung Pay:** Accepts separate parameters (`payload`, `issuerId`, etc.)
 
+### Apple Wallet (iOS)
+
+`AppleWalletModule` is available on iOS. On other platforms it answers through a stub (`openWallet()` resolves `false`, no log events).
+
+```typescript
+import { AppleWalletModule } from '@platformbuilders/wallet-bridge-react-native';
+
+const environment = await AppleWalletModule.getEnvironment(); // 'ios-device' | 'ios-simulator'
+const opened = await AppleWalletModule.openWallet();
+
+// Diagnostic logs are only emitted in Debug builds
+const subscription = AppleWalletModule.onLog((log) => debugLogStore.add(log));
+await AppleWalletModule.setLogListener();
+// ...
+subscription.remove();
+await AppleWalletModule.removeLogListener();
+```
+
+In-App Provisioning methods will be added to this module in a future release.
+
 ### App2App (Manual Provisioning)
 
 ```javascript

@@ -8,6 +8,7 @@ export * from './services/index';
 
 // Re-exporta os módulos específicos
 export {
+  AppleWalletModule,
   GoogleWalletModule,
   SamsungWalletModule,
 } from './NativeBuildersWallet';
