@@ -5,15 +5,15 @@
 // que utilizam a biblioteca BuildersWallet
 
 import type {
-    GoogleTokenInfo,
-    GoogleTokenStatus,
-    GoogleWalletConstants,
-    GoogleWalletData,
+  GoogleTokenInfo,
+  GoogleTokenStatus,
+  GoogleWalletConstants,
+  GoogleWalletData,
 } from '../../types/google-wallet.types';
 import type {
-    SamsungCard,
-    SamsungWalletConstants,
-    SamsungWalletInfo,
+  SamsungCard,
+  SamsungWalletConstants,
+  SamsungWalletInfo,
 } from '../../types/samsung-wallet.types';
 
 // ============================================================================
@@ -294,10 +294,20 @@ export const mockSamsungWalletEventEmitter = {
 // MOCKS DO REACT NATIVE
 // ============================================================================
 
+const mockTurboModules: Record<string, unknown> = {
+  GoogleWallet: mockGoogleWalletModule,
+  SamsungWallet: mockSamsungWalletModule,
+};
+
 export const mockReactNative = {
   NativeModules: {
     GoogleWallet: mockGoogleWalletModule,
     SamsungWallet: mockSamsungWalletModule,
+  },
+  // Os módulos são TurboModules: as specs (src/specs) buscam pelo registry.
+  TurboModuleRegistry: {
+    get: jest.fn((name: string) => mockTurboModules[name] ?? null),
+    getEnforcing: jest.fn((name: string) => mockTurboModules[name]),
   },
   Platform: {
     OS: 'ios',

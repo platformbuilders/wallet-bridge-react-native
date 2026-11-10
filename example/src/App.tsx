@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlatList, View, Dimensions } from 'react-native';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from 'react-native-safe-area-context';
+import { FlatList, View, Dimensions, Platform } from 'react-native';
 import { AnimatedToggleButton } from './components/AnimatedToggleButton';
+import { AppleWalletExample } from './components/AppleWalletExample';
 import {
   GooglePayExample,
   type GooglePayExampleRef,
@@ -21,7 +25,22 @@ import {
   type SamsungWalletLogEvent,
 } from '@platformbuilders/wallet-bridge-react-native';
 
+// iOS mostra só a Apple Wallet; Google e Samsung são exclusivos do Android.
 export default function App(): React.JSX.Element {
+  if (Platform.OS === 'ios') {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+          <AppleWalletExample />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  return <AndroidWalletsApp />;
+}
+
+function AndroidWalletsApp(): React.JSX.Element {
   const [isGooglePay, setIsGooglePay] = useState(true);
 
   // Refs para os componentes
@@ -280,8 +299,11 @@ export default function App(): React.JSX.Element {
     index,
   });
 
+  // SafeAreaView lê os insets do provider. Sem ele o conteúdo sobe para baixo
+  // da status bar.
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Botão animado para alternar entre Google Pay e Samsung Pay */}
       <AnimatedToggleButton isGooglePay={isGooglePay} onToggle={handleToggle} />
 
@@ -308,6 +330,7 @@ export default function App(): React.JSX.Element {
           }, 100);
         }}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }

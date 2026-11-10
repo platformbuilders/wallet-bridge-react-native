@@ -28,18 +28,50 @@ A React Native library that facilitates integration with digital wallets (Google
 
 | Technology | Minimum Version | Recommended |
 |------------|---------------|-------------|
-| Node.js | 18.0.0 | 20.x |
-| React Native | 0.70.6 | 0.81.0 |
-| React | 18.1.0 | 19.1.0 |
-| Android SDK | API 23 | API 33+ |
+| Node.js | 20.19.4 | 22.x |
+| React Native | 0.80.0 | 0.86.x |
+| React | 18.0.0 | 19.2.x |
+| Java (Android build) | 17 | 17 |
+| Android SDK | API 24 | API 36 |
+
+> ⚠️ **New Architecture is required.** Starting with 2.0.0 the library targets the React Native New Architecture only. Apps on React Native 0.80–0.81 must keep `newArchEnabled=true` (Android) and `RCT_NEW_ARCH_ENABLED=1` (iOS). Apps that still run the legacy architecture should stay on the 1.x line.
+
+### Migrating from 1.x
+
+The native modules are TurboModules in 2.0.0. Method names, constants, event names and event payloads did not change, but **events are no longer emitted through `RCTDeviceEventEmitter`**. Listeners registered directly with `DeviceEventEmitter` or `NativeEventEmitter` stop receiving App2App intents and logs:
+
+```typescript
+// ❌ 1.x: no longer receives anything in 2.0.0
+DeviceEventEmitter.addListener('GoogleWalletIntentReceived', handleIntent);
+DeviceEventEmitter.addListener('WalletLog', handleLog);
+```
+
+Use the library hooks (recommended) or the service event emitters instead:
+
+```typescript
+// ✅ 2.0.0: hooks (register the listeners before the pending intent is requested)
+useGoogleWalletListener(handleIntent, handleNoIntent, handleValidCallerNoIntent);
+useGoogleWalletLogListener(handleLog, { enabled: __DEV__ });
+
+// ✅ 2.0.0: event emitter, outside React
+const removeListener =
+  GoogleWalletService.walletEventEmitter.addIntentListener(handleIntent);
+await GoogleWalletService.startIntentListener();
+```
+
+The same applies to Samsung Wallet (`useSamsungWalletListener`, `useSamsungWalletLogListener`, `SamsungWalletService.walletEventEmitter`).
+
+Other changes:
+
+- Peer dependencies are `react >= 18` and `react-native >= 0.80` with the New Architecture enabled.
+- Enums can be imported from `@platformbuilders/wallet-bridge-react-native/enums` without a `patch-package` patch. The `/src/enums` path used with the 1.x patch keeps working.
 
 ### Tested Versions
 
-The library has been tested with:
+The example app is built and tested with:
 
-- ✅ React Native 0.70.6 - 0.81.0
-- ✅ React 18.1.0 - 19.1.0
-- ✅ Android API 23-34
+- ✅ React Native 0.86.3 / React 19.2.3 (New Architecture enabled)
+- ✅ Android API 36, Java 17
 
 ---
 
@@ -157,6 +189,14 @@ If you configure `GOOGLE_WALLET_MOCK_API_URL` or `SAMSUNG_WALLET_MOCK_API_URL` i
 
 ## 🎯 Basic Usage
 
+### Enums
+
+Enums are exported from the package root and from the `enums` subpath, which only loads the enums (no native module access). `src/enums` is kept as an alias for apps that used the 1.x patch:
+
+```javascript
+import { GoogleActivationStatus, SamsungActivationStatus } from '@platformbuilders/wallet-bridge-react-native/enums';
+```
+
 ### Google Pay
 
 ```javascript
@@ -222,15 +262,32 @@ const tokens = await SamsungWalletModule.listTokens();
 > - **Google Pay:** Accepts object with `address` and `card`
 > - **Samsung Pay:** Accepts separate parameters (`payload`, `issuerId`, etc.)
 
+### Apple Wallet (iOS)
+
+`AppleWalletModule` is available on iOS. On other platforms it answers through a stub (`openWallet()` resolves `false`, no log events).
+
+```typescript
+import { AppleWalletModule } from '@platformbuilders/wallet-bridge-react-native';
+
+const environment = await AppleWalletModule.getEnvironment(); // 'ios-device' | 'ios-simulator'
+const opened = await AppleWalletModule.openWallet();
+
+// Diagnostic logs are only emitted in Debug builds
+const subscription = AppleWalletModule.onLog((log) => debugLogStore.add(log));
+await AppleWalletModule.setLogListener();
+// ...
+subscription.remove();
+await AppleWalletModule.removeLogListener();
+```
+
+In-App Provisioning methods will be added to this module in a future release.
+
 ### App2App (Manual Provisioning)
 
 ```javascript
 import { GoogleWalletModule, GoogleWalletEventEmitter } from '@platformbuilders/wallet-bridge-react-native';
 
-// Activate listener
-await GoogleWalletModule.setIntentListener();
-
-// Listen to events
+// Listen to events first: setIntentListener delivers the pending intent
 const eventEmitter = new GoogleWalletEventEmitter();
 const removeListener = eventEmitter.addIntentListener((event) => {
   if (event.type === 'ACTIVATE_TOKEN') {
@@ -238,6 +295,9 @@ const removeListener = eventEmitter.addIntentListener((event) => {
     // Process activation
   }
 });
+
+// Then activate the listener
+await GoogleWalletModule.setIntentListener();
 
 // Set result
 await GoogleWalletModule.setActivationResult('approved', 'ACTIVATION_CODE');
@@ -280,33 +340,51 @@ cd ios && pod install
 
 The library provides custom hooks to facilitate integration in React components.
 
+All hooks are no-ops outside Android.
+
+> 🔒 Intent events carry provisioning data. Never log, persist or send them to analytics: hand them to your provisioning flow only.
+
 ### useGoogleWalletListener
 
-Hook to manage Google Wallet intent listeners.
+Hook to handle Google Wallet App2App intents.
 
 ```typescript
 import { useGoogleWalletListener } from '@platformbuilders/wallet-bridge-react-native';
 
-function MyComponent() {
-  useGoogleWalletListener((event) => {
-    if (event.type === 'ACTIVATE_TOKEN') {
-      console.log('Token ativado:', event);
-    }
-  });
+function App() {
+  const { isCheckingPendingData } = useGoogleWalletListener(
+    (event) => {
+      if (event.type === 'ACTIVATE_TOKEN') {
+        startManualProvisioning(event);
+      }
+    },
+    () => clearWalletFlow(), // optional: the app was opened without an intent
+    () => showNoIntentError(), // optional: valid caller, but no intent data
+    { enabled: isGoogleWalletEnabled }, // optional, default true
+  );
 
   return <View>...</View>;
 }
 ```
 
-**Features:**
+| Parameter | Description |
+|-----------|-------------|
+| `onIntentReceived(event)` | Called with the intent that opened the app |
+| `onNoIntentReceived()` | Optional. The app was opened without a wallet intent |
+| `onValidCallerNoIntentReceived()` | Optional. The caller is a valid wallet, but no intent data arrived |
+| `options.enabled` | Optional, default `true`. When `false`, nothing is subscribed and the native listener is not started |
 
-- Automatically starts/stops listener on mount/unmount
-- Cleans up resources on unmount
-- Type-safe with TypeScript
+Returns `{ isCheckingPendingData }`, which is `true` while the pending intent is being requested from the native side.
+
+**Behavior:**
+
+- Registers the JS listeners **before** `setIntentListener`, so the pending intent that opened the app is not lost
+- Always calls the latest callbacks, without subscribing again on every render
+- Removes the listeners and calls `removeIntentListener` on unmount
 
 ### useGoogleWalletLogListener
 
-Hook to capture Google Wallet logs.
+Hook to capture Google Wallet diagnostic logs. Keep it disabled in production builds.
 
 ```typescript
 import { useGoogleWalletLogListener } from '@platformbuilders/wallet-bridge-react-native';
@@ -314,21 +392,29 @@ import { useGoogleWalletLogListener } from '@platformbuilders/wallet-bridge-reac
 function DebugPanel() {
   const [logs, setLogs] = useState([]);
 
-  useGoogleWalletLogListener((log) => {
-    setLogs(prev => [...prev, log]);
-  });
+  useGoogleWalletLogListener(
+    (log) => setLogs((prev) => [...prev, log]),
+    { enabled: __DEV__ },
+  );
 
   return <LogView logs={logs} />;
 }
 ```
 
+| Parameter | Description |
+|-----------|-------------|
+| `onLogReceived(log)` | Called for each native log event |
+| `options.enabled` | Optional, default `true`. When `false`, nothing is subscribed and native logging is not started |
+
+Returns `{ isListeningLogs }`, which is `true` while native logging is active (after the native listener starts, until the hook is disabled or unmounted).
+
 ### useSamsungWalletListener
 
-Similar to `useGoogleWalletListener`, but for Samsung Wallet.
+Same signature and behavior as `useGoogleWalletListener`, for Samsung Wallet App2App intents.
 
 ### useSamsungWalletLogListener
 
-Similar to `useGoogleWalletLogListener`, but for Samsung Wallet.
+Same signature and behavior as `useGoogleWalletLogListener`, for Samsung Wallet logs.
 
 ---
 
@@ -351,16 +437,17 @@ Similar to `useGoogleWalletLogListener`, but for Samsung Wallet.
 ### Log Listeners Usage
 
 ```typescript
+// Listen to logs via EventEmitter (before activating)
+const logEmitter = new GoogleWalletEventEmitter();
+const removeLogListener = logEmitter.addLogListener((log) => {
+  debugLogStore.add(log); // your dev-only log viewer
+});
+
 // Activate logging
 await GoogleWalletModule.setLogListener();
 
-// Listen to logs via EventEmitter
-const logEmitter = new GoogleWalletEventEmitter();
-logEmitter.addLogListener((log) => {
-  console.log('[Google Wallet]', log);
-});
-
 // Deactivate when not needed
+removeLogListener();
 await GoogleWalletModule.removeLogListener();
 ```
 
@@ -379,19 +466,15 @@ Logs include:
 
 ### Enable Detailed Logs
 
-For development, activate log listeners:
+For development, enable the log hooks only in debug builds and send the logs to a dev-only viewer:
 
 ```typescript
-// At the beginning of the app (App.tsx)
-if (__DEV__) {
-  GoogleWalletModule.setLogListener();
-  SamsungWalletModule.setLogListener();
-
-  // Display logs in console
-  GoogleWalletService.walletEventEmitter.addLogListener(console.log);
-  SamsungWalletService.walletEventEmitter.addLogListener(console.log);
-}
+// At the root of the app (App.tsx)
+useGoogleWalletLogListener(debugLogStore.add, { enabled: __DEV__ });
+useSamsungWalletLogListener(debugLogStore.add, { enabled: __DEV__ });
 ```
+
+Native logs go through `WalletLogger`, which is suppressed in non-debuggable builds. Do not forward wallet events or logs to the console, crash reporting or analytics in production.
 
 ---
 

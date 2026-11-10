@@ -2,21 +2,35 @@ package com.builders.wallet.googletapandpay
 
 import com.builders.wallet.WalletLogger
 import com.builders.wallet.BuildConfig
+import com.builders.wallet.NativeGoogleWalletSpec
+import com.builders.wallet.WalletEvents
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 
 @ReactModule(name = GoogleWalletModule.NAME)
 class GoogleWalletModule(reactContext: ReactApplicationContext) :
-  ReactContextBaseJavaModule(reactContext) {
+  NativeGoogleWalletSpec(reactContext) {
+
+  // TurboModule: eventos saem pelos EventEmitter gerados pelo codegen.
+  // O WalletEvents guarda só uma referência fraca ao sink; este campo o mantém
+  // vivo enquanto o módulo existir (sem ele, o GC descartaria o sink e os
+  // eventos seriam perdidos sem aviso).
+  private val eventSink = object : WalletEvents.Sink {
+    override fun emitIntentReceived(data: WritableMap) = emitOnIntentReceived(data)
+    override fun emitNoIntentReceived() = emitOnNoIntentReceived()
+    override fun emitValidCallerNoIntentReceived() = emitOnValidCallerNoIntentReceived()
+    override fun emitLog(data: WritableMap) = emitOnLog(data)
+  }
 
   // Lê configuração de mock do BuildConfig (variável de ambiente do Gradle)
   init {
     // Inicializar WalletLogger com o contexto
     WalletLogger.initialize(reactContext)
+
+    WalletEvents.registerGoogle(eventSink)
   }
 
   private val useMock: Boolean by lazy {
@@ -41,98 +55,83 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  @ReactMethod
-  fun checkWalletAvailability(promise: Promise) {
+  override fun checkWalletAvailability(promise: Promise) {
     googleWalletImplementation.checkWalletAvailability(promise)
   }
 
-  @ReactMethod
-  fun getSecureWalletInfo(promise: Promise) {
+  override fun getSecureWalletInfo(promise: Promise) {
     googleWalletImplementation.getSecureWalletInfo(promise)
   }
 
-  @ReactMethod
-  fun getTokenStatus(tokenServiceProvider: Int, tokenReferenceId: String, promise: Promise) {
-    googleWalletImplementation.getTokenStatus(tokenServiceProvider, tokenReferenceId, promise)
+  // Inteiros chegam como Double: a spec usa `number` (ver src/specs).
+  override fun getTokenStatus(tokenServiceProvider: Double, tokenReferenceId: String, promise: Promise) {
+    googleWalletImplementation.getTokenStatus(tokenServiceProvider.toInt(), tokenReferenceId, promise)
   }
 
-  @ReactMethod
-  fun getEnvironment(promise: Promise) {
+  override fun getEnvironment(promise: Promise) {
     googleWalletImplementation.getEnvironment(promise)
   }
 
-  @ReactMethod
-  fun isTokenized(
+  override fun isTokenized(
     fpanLastFour: String,
-    cardNetwork: Int,
-    tokenServiceProvider: Int,
+    cardNetwork: Double,
+    tokenServiceProvider: Double,
     promise: Promise
   ) {
-    googleWalletImplementation.isTokenized(fpanLastFour, cardNetwork, tokenServiceProvider, promise)
+    googleWalletImplementation.isTokenized(fpanLastFour, cardNetwork.toInt(), tokenServiceProvider.toInt(), promise)
   }
 
-  @ReactMethod
-  fun viewToken(
-    tokenServiceProvider: Int,
+  override fun viewToken(
+    tokenServiceProvider: Double,
     issuerTokenId: String,
     promise: Promise
   ) {
-    googleWalletImplementation.viewToken(tokenServiceProvider, issuerTokenId, promise)
+    googleWalletImplementation.viewToken(tokenServiceProvider.toInt(), issuerTokenId, promise)
   }
 
-  @ReactMethod
-  fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
+  override fun addCardToWallet(cardData: ReadableMap, promise: Promise) {
     googleWalletImplementation.addCardToWallet(cardData, promise)
   }
 
-  @ReactMethod
-  fun createWalletIfNeeded(promise: Promise) {
+  override fun createWalletIfNeeded(promise: Promise) {
     googleWalletImplementation.createWalletIfNeeded(promise)
   }
 
-  @ReactMethod
-  fun listTokens(promise: Promise) {
+  override fun listTokens(promise: Promise) {
     googleWalletImplementation.listTokens(promise)
   }
 
-  @ReactMethod
-  fun setIntentListener(promise: Promise) {
+  override fun setIntentListener(promise: Promise) {
     googleWalletImplementation.setIntentListener(promise)
   }
 
-  @ReactMethod
-  fun removeIntentListener(promise: Promise) {
+  override fun removeIntentListener(promise: Promise) {
     googleWalletImplementation.removeIntentListener(promise)
   }
 
-  @ReactMethod
-  fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
+  override fun setActivationResult(status: String, activationCode: String?, promise: Promise) {
     googleWalletImplementation.setActivationResult(status, activationCode, promise)
   }
 
-  @ReactMethod
-  fun finishActivity(promise: Promise) {
+  override fun finishActivity(promise: Promise) {
     googleWalletImplementation.finishActivity(promise)
   }
 
-  @ReactMethod
-  fun openWallet(promise: Promise) {
+  override fun openWallet(promise: Promise) {
     googleWalletImplementation.openWallet(promise)
   }
 
-  @ReactMethod
-  fun setLogListener(promise: Promise) {
+  override fun setLogListener(promise: Promise) {
     googleWalletImplementation.setLogListener(promise)
   }
 
-  @ReactMethod
-  fun removeLogListener(promise: Promise) {
+  override fun removeLogListener(promise: Promise) {
     googleWalletImplementation.removeLogListener(promise)
   }
 
 
 
-  override fun getConstants(): MutableMap<String, Any> {
+  override fun getTypedExportedConstants(): Map<String, Any> {
     val constants = googleWalletImplementation.getConstants().toMutableMap()
 
     // Adicionar informações de configuração
@@ -143,9 +142,6 @@ class GoogleWalletModule(reactContext: ReactApplicationContext) :
   }
 
 
-  override fun getName(): String {
-    return NAME
-  }
 
   companion object {
     const val NAME = "GoogleWallet"

@@ -1,5 +1,6 @@
 package com.builders.wallet.googletapandpay
 
+import com.builders.wallet.WalletEvents
 import android.app.Activity
 import android.content.Intent
 import com.builders.wallet.WalletLogger
@@ -10,7 +11,6 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
-import com.facebook.react.modules.core.DeviceEventManagerModule
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -235,10 +235,11 @@ class GoogleWalletMock(private val reactContext: ReactApplicationContext) : Goog
     private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
         try {
             WalletLogger.d(TAG, "🔍 [GOOGLE] Enviando evento para React Native: $eventName")
-            reactContext
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-                .emit(eventName, eventData)
-            WalletLogger.d(TAG, "✅ [GOOGLE] Evento enviado com sucesso")
+            if (WalletEvents.emit(eventName, eventData)) {
+              WalletLogger.d(TAG, "✅ [GOOGLE] Evento enviado com sucesso")
+            } else {
+              WalletLogger.w(TAG, "⚠️ [GOOGLE] Evento $eventName descartado: módulo não registrado")
+            }
         } catch (e: Exception) {
             WalletLogger.e(TAG, "❌ [GOOGLE] Erro ao enviar evento para React Native: ${e.message}", e)
         }

@@ -1,5 +1,6 @@
 package com.builders.wallet.samsungpay
 
+import com.builders.wallet.WalletEvents
 import android.os.Build
 import android.os.Bundle
 import com.builders.wallet.WalletLogger
@@ -719,10 +720,11 @@ class SamsungWalletImplementation(private val reactContext: ReactApplicationCont
   private fun sendEventToReactNative(eventName: String, eventData: WritableMap?) {
     try {
       WalletLogger.d(TAG, "🔍 [SAMSUNG] Enviando evento para React Native: $eventName")
-      reactContext
-        .getJSModule(com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-        .emit(eventName, eventData)
-      WalletLogger.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
+      if (WalletEvents.emit(eventName, eventData)) {
+        WalletLogger.d(TAG, "✅ [SAMSUNG] Evento enviado com sucesso")
+      } else {
+        WalletLogger.w(TAG, "⚠️ [SAMSUNG] Evento $eventName descartado: módulo não registrado")
+      }
     } catch (e: Exception) {
       WalletLogger.e(TAG, "❌ [SAMSUNG] Erro ao enviar evento para React Native: ${e.message}", e)
     }

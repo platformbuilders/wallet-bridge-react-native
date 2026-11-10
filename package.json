@@ -6,11 +6,28 @@
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
     ".": {
-      "source": "./src/index.tsx",
+      "source": "./src/index.ts",
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
+    "./enums": {
+      "source": "./src/enums/index.ts",
+      "types": "./lib/typescript/src/enums/index.d.ts",
+      "default": "./lib/module/enums/index.js"
+    },
+    "./src/enums": {
+      "source": "./src/enums/index.ts",
+      "types": "./lib/typescript/src/enums/index.d.ts",
+      "default": "./lib/module/enums/index.js"
+    },
     "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "enums": [
+        "./lib/typescript/src/enums/index.d.ts"
+      ]
+    }
   },
   "files": [
     "src",
@@ -31,7 +48,9 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace react-native-builders-wallet-example",
+    "example": "yarn workspace @platformbuilders/wallet-bridge-react-native-example",
+    "start:example": "yarn example start",
+    "start:example:clean": "yarn example start --reset-cache",
     "build": "bob build",
     "test": "jest",
     "lint": "yarn typecheck && eslint 'src/**/*.{js,jsx,ts,tsx}' --fix --cache",
@@ -45,6 +64,7 @@
     "pkg:example": "./scripts/change-android-package-name-app-example.sh --package-name=com.example.wallet",
     "pkg:custom": "./scripts/change-android-package-name-app-example.sh",
     "build:app-example": "./scripts/build-android-example.sh",
+    "build:app-example:ios": "./scripts/build-ios-example.sh",
     "build:google-wallet-mock": "./scripts/build-android-google-wallet-mock.sh",
     "build:samsung-wallet-mock": "./scripts/build-android-samsung-wallet-mock.sh",
     "log:google-wallet": "./scripts/quick-log-google-wallet.sh",
@@ -58,24 +78,25 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/platformbuilders/wallet-bridge.git"
+    "url": "git+https://github.com/platformbuilders/wallet-bridge-react-native.git"
   },
   "author": "neijrbuilders <nei.vitor@platformbuilders.io> (https://github.com/neijrbuilders)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/platformbuilders/wallet-bridge/issues"
+    "url": "https://github.com/platformbuilders/wallet-bridge-react-native/issues"
   },
-  "homepage": "https://github.com/platformbuilders/wallet-bridge#readme",
+  "homepage": "https://github.com/platformbuilders/wallet-bridge-react-native#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
     "@evilmartians/lefthook": "^1.5.0",
-    "@react-native-community/cli": "15.0.0-alpha.2",
-    "@react-native/babel-preset": "0.81.0",
+    "@react-native-community/cli": "20.1.0",
+    "@react-native/babel-preset": "0.86.3",
+    "@react-native/jest-preset": "0.86.3",
     "@release-it/conventional-changelog": "^9.0.2",
     "@types/jest": "^29.5.5",
-    "@types/react": "^19.1.0",
+    "@types/react": "^19.2.0",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
     "del-cli": "^5.1.0",
@@ -88,15 +109,15 @@
     "eslint-plugin-sonarjs": "^3.0.5",
     "jest": "^29.7.0",
     "prettier": "^3.6.2",
-    "react": "19.1.0",
-    "react-native": "0.81.0",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
     "react-native-builder-bob": "^0.30.2",
     "turbo": "^1.10.7",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "react": "^18.1.0",
-    "react-native": "^0.70.6"
+    "react": ">=18",
+    "react-native": ">=0.80"
   },
   "workspaces": [
     "example"
@@ -142,9 +163,14 @@
   "codegenConfig": {
     "name": "BuildersWalletSpec",
     "type": "modules",
-    "jsSrcsDir": "src",
+    "jsSrcsDir": "src/specs",
     "android": {
       "javaPackageName": "com.builders.wallet"
+    },
+    "ios": {
+      "modulesProvider": {
+        "AppleWallet": "AppleWallet"
+      }
     }
   },
   "react-native": {

@@ -5,14 +5,19 @@
 // Este arquivo contém uma versão do SamsungWalletEventEmitter
 // que funciona apenas em dispositivos Android.
 
-import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
+import { type EventSubscription, Platform } from 'react-native';
+import { getNativeSamsungWallet } from '../native-modules';
+import type { Spec as NativeSamsungWalletSpec } from '../specs/NativeSamsungWallet';
 import {
   type SamsungWalletIntentEvent,
   type SamsungWalletLogEvent,
 } from '../types/samsung-wallet.types';
 
 export class SamsungWalletEventEmitter {
-  private eventEmitter: NativeEventEmitter | null = null;
+  // TurboModule: os eventos vêm dos EventEmitter da spec (onIntentReceived,
+  // onLog...), sem NativeEventEmitter. O módulo é resolvido no primeiro uso,
+  // não no construtor (o service cria o emitter no import da lib).
+  private subscriptions: Set<EventSubscription> = new Set();
   private listeners: Map<string, (event: SamsungWalletIntentEvent) => void> =
     new Map();
   private noIntentListeners: Map<string, () => void> = new Map();
@@ -23,34 +28,10 @@ export class SamsungWalletEventEmitter {
 
   constructor() {
     this.isIOS = Platform.OS === 'ios';
+  }
 
-    // Em iOS, não inicializar o EventEmitter
-    if (this.isIOS) {
-      console.warn(
-        '⚠️ [SamsungWalletEventEmitter] iOS detectado - EventEmitter desabilitado',
-      );
-      return;
-    }
-
-    try {
-      // Verificar se o módulo está disponível (apenas em Android)
-      const SamsungWalletModule = NativeModules.SamsungWallet;
-      if (SamsungWalletModule) {
-        this.eventEmitter = new NativeEventEmitter(SamsungWalletModule);
-        console.log(
-          '✅ [SamsungWalletEventEmitter] EventEmitter inicializado com sucesso',
-        );
-      } else {
-        console.warn(
-          '⚠️ [SamsungWalletEventEmitter] Módulo SamsungWallet não está disponível',
-        );
-      }
-    } catch (error) {
-      console.error(
-        '❌ [SamsungWalletEventEmitter] Erro ao inicializar EventEmitter:',
-        error,
-      );
-    }
+  private get eventEmitter(): NativeSamsungWalletSpec | null {
+    return this.isIOS ? null : getNativeSamsungWallet();
   }
 
   /**
@@ -84,16 +65,11 @@ export class SamsungWalletEventEmitter {
     this.listeners.set(listenerId, callback);
 
     // Criar o listener do NativeEventEmitter
-    const subscription = this.eventEmitter.addListener(
-      'SamsungWalletIntentReceived',
-      (event: any) => {
-        const walletEvent = event as SamsungWalletIntentEvent;
-        console.log(
-          '🎯 [SamsungWalletEventEmitter] Intent recebido:',
-          walletEvent,
-        );
-        callback(walletEvent);
-      },
+    const subscription = this.track(
+      this.eventEmitter.onIntentReceived((event) => {
+        // Não logar o evento: ele carrega dados de provisionamento.
+        callback(event as SamsungWalletIntentEvent);
+      }),
     );
 
     console.log(
@@ -103,7 +79,7 @@ export class SamsungWalletEventEmitter {
     // Retornar função de cleanup
     return () => {
       this.listeners.delete(listenerId);
-      subscription.remove();
+      this.untrack(subscription);
       console.log(
         `🧹 [SamsungWalletEventEmitter] Listener removido: ${listenerId}`,
       );
@@ -139,12 +115,11 @@ export class SamsungWalletEventEmitter {
     this.noIntentListeners.set(listenerId, callback);
 
     // Criar o listener do NativeEventEmitter
-    const subscription = this.eventEmitter.addListener(
-      'SamsungWalletNoIntentReceived',
-      () => {
+    const subscription = this.track(
+      this.eventEmitter.onNoIntentReceived(() => {
         console.log('🎯 [SamsungWalletEventEmitter] Nenhuma intent recebida');
         callback();
-      },
+      }),
     );
 
     console.log(
@@ -154,7 +129,7 @@ export class SamsungWalletEventEmitter {
     // Retornar função de cleanup
     return () => {
       this.noIntentListeners.delete(listenerId);
-      subscription.remove();
+      this.untrack(subscription);
       console.log(
         `🧹 [SamsungWalletEventEmitter] NoIntent Listener removido: ${listenerId}`,
       );
@@ -186,14 +161,13 @@ export class SamsungWalletEventEmitter {
 
     this.validCallerNoIntentListeners.set(listenerId, callback);
 
-    const subscription = this.eventEmitter.addListener(
-      'SamsungWalletValidCallerNoIntentReceived',
-      () => {
+    const subscription = this.track(
+      this.eventEmitter.onValidCallerNoIntentReceived(() => {
         console.log(
           '⚠️ [SamsungWalletEventEmitter] Wallet válida chamou sem payload',
         );
         callback();
-      },
+      }),
     );
 
     console.log(
@@ -202,7 +176,7 @@ export class SamsungWalletEventEmitter {
 
     return () => {
       this.validCallerNoIntentListeners.delete(listenerId);
-      subscription.remove();
+      this.untrack(subscription);
       console.log(
         `🧹 [SamsungWalletEventEmitter] ValidCallerNoIntent Listener removido: ${listenerId}`,
       );
@@ -238,12 +212,11 @@ export class SamsungWalletEventEmitter {
     this.logListeners.set(listenerId, callback);
 
     // Criar o listener do NativeEventEmitter
-    const subscription = this.eventEmitter.addListener(
-      'WalletLog',
-      (event: any) => {
+    const subscription = this.track(
+      this.eventEmitter.onLog((event) => {
         const logEvent = event as SamsungWalletLogEvent;
         callback(logEvent);
-      },
+      }),
     );
 
     console.log(
@@ -253,11 +226,21 @@ export class SamsungWalletEventEmitter {
     // Retornar função de cleanup
     return () => {
       this.logListeners.delete(listenerId);
-      subscription.remove();
+      this.untrack(subscription);
       console.log(
         `🧹 [SamsungWalletEventEmitter] Log Listener removido: ${listenerId}`,
       );
     };
+  }
+
+  private track(subscription: EventSubscription): EventSubscription {
+    this.subscriptions.add(subscription);
+    return subscription;
+  }
+
+  private untrack(subscription: EventSubscription): void {
+    subscription.remove();
+    this.subscriptions.delete(subscription);
   }
 
   /**
@@ -279,12 +262,8 @@ export class SamsungWalletEventEmitter {
     }
 
     if (this.eventEmitter) {
-      this.eventEmitter.removeAllListeners('SamsungWalletIntentReceived');
-      this.eventEmitter.removeAllListeners('SamsungWalletNoIntentReceived');
-      this.eventEmitter.removeAllListeners(
-        'SamsungWalletValidCallerNoIntentReceived',
-      );
-      this.eventEmitter.removeAllListeners('WalletLog');
+      this.subscriptions.forEach((subscription) => subscription.remove());
+      this.subscriptions.clear();
       console.log(
         '🧹 [SamsungWalletEventEmitter] Todos os listeners foram removidos',
       );

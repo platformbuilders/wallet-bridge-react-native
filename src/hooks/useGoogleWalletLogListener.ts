@@ -1,44 +1,49 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { GoogleWalletService } from '../services/google-wallet.service';
+import type { WalletListenerOptions } from '../types/common.types';
 import type { GoogleWalletLogEvent } from '../types/google-wallet.types';
-import { usePromise } from '../utils/usePromise';
 
 /**
- * Hook para ouvir logs do Google Wallet.
- * Inicia o listener nativo e registra o listener JS, limpando tudo ao desmontar.
+ * Escuta os logs nativos do Google Wallet (Android; no-op nas outras
+ * plataformas). Registra o listener JS antes de ligar o log no nativo e
+ * desliga tudo ao desmontar. `isListeningLogs` fica `true` enquanto o log
+ * nativo estiver ligado.
+ *
+ * Use `options.enabled` para não assinar o log quando não for necessário
+ * (ex.: `enabled: !isProduction`).
  */
 export const useGoogleWalletLogListener = (
   onLogReceived: (event: GoogleWalletLogEvent) => void,
+  options: WalletListenerOptions = {},
 ) => {
-  const { loading, callPromise } = usePromise(
-    GoogleWalletService.startLogListener,
-  );
+  const { enabled = true } = options;
+  const [isListeningLogs, setIsListeningLogs] = useState(false);
+  const callback = useRef(onLogReceived);
+  callback.current = onLogReceived;
 
   useEffect(() => {
-    const activateListener = async () => {
-      try {
-        await callPromise();
-      } catch {}
-    };
-
-    activateListener();
+    if (!enabled || Platform.OS !== 'android') return undefined;
 
     const removeLogListener =
-      GoogleWalletService.walletEventEmitter.addLogListener(
-        (event: GoogleWalletLogEvent) => {
-          console.log('📝 [Hook] Google Wallet log:', event);
-          onLogReceived(event);
-        },
+      GoogleWalletService.walletEventEmitter.addLogListener((event) =>
+        callback.current(event),
       );
 
-    return () => {
-      try {
-        // eslint-disable-next-line promise/prefer-await-to-then
-        GoogleWalletService.stopLogListener().catch(() => {});
-      } catch {}
-      removeLogListener();
+    let mounted = true;
+    const startLogListener = async () => {
+      const started = await GoogleWalletService.startLogListener();
+      if (mounted) setIsListeningLogs(started);
     };
-  }, []);
+    void startLogListener();
 
-  return { isListeningLogs: loading };
+    return () => {
+      mounted = false;
+      setIsListeningLogs(false);
+      removeLogListener();
+      void GoogleWalletService.stopLogListener();
+    };
+  }, [enabled]);
+
+  return { isListeningLogs };
 };

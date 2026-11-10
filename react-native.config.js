@@ -7,7 +7,7 @@ module.exports = {
           packageImportPath: 'import com.builders.wallet.BuildersWalletPackage;',
         },
         ios: {
-          podspecPath: '../WalletBridgeReactNative.podspec',
+          podspecPath: '../wallet-bridge-react-native.podspec',
         },
       },
     },

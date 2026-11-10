@@ -1,16 +1,17 @@
 package com.builders.wallet.googletapandpay
 
-import com.facebook.react.ReactPackage
+import com.builders.wallet.turboModuleInfo
+import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.uimanager.ViewManager
+import com.facebook.react.module.model.ReactModuleInfoProvider
 
-class GoogleWalletPackage : ReactPackage {
-  override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-    return listOf(GoogleWalletModule(reactContext))
-  }
+/** Registra só o GoogleWallet como TurboModule. */
+class GoogleWalletPackage : BaseReactPackage() {
+  override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? =
+    if (name == GoogleWalletModule.NAME) GoogleWalletModule(reactContext) else null
 
-  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
-    return emptyList()
+  override fun getReactModuleInfoProvider() = ReactModuleInfoProvider {
+    mapOf(GoogleWalletModule.NAME to turboModuleInfo(GoogleWalletModule.NAME, GoogleWalletModule::class.java.name))
   }
 }

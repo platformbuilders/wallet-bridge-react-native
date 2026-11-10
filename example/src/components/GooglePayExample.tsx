@@ -26,8 +26,6 @@ import type {
 } from '@platformbuilders/wallet-bridge-react-native';
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 
-import { SafeAreaView } from 'react-native-safe-area-context';
-
 
 // Função centralizada para logar erros da Google Wallet
 function logGoogleWalletError(error: unknown, context?: string): string {
@@ -730,7 +728,7 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
     };
 
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.safeArea}>
         <ScrollView
           style={styles.container}
           contentContainerStyle={{ paddingBottom: 40 }}
@@ -1058,7 +1056,7 @@ export const GooglePayExample = forwardRef<GooglePayExampleRef>(
             <Text style={styles.buttonText}>Abrir Google Wallet</Text>
           </TouchableOpacity>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 );

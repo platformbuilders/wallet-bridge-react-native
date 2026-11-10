@@ -1,71 +1,73 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { GoogleWalletService } from '../services/google-wallet.service';
+import type { WalletListenerOptions } from '../types/common.types';
 import type { GoogleWalletIntentEvent } from '../types/google-wallet.types';
-import { usePromise } from '../utils/usePromise';
 
 /**
- * Hook para gerenciar o listener de intent do Google Wallet.
- * Ativa automaticamente o listener nativo, escuta eventos e faz cleanup ao desmontar.
+ * Escuta os eventos de App2App do Google Wallet (Android; no-op nas outras
+ * plataformas).
+ *
+ * - Registra os listeners JS **antes** de `setIntentListener`, que entrega o
+ *   intent pendente: o intent que abriu o app não se perde.
+ * - Os callbacks podem mudar a cada render; o hook sempre chama a versão mais
+ *   recente, sem registrar os listeners de novo.
+ * - `options.enabled: false` não assina nada e não chama o nativo.
  */
 export const useGoogleWalletListener = (
   onIntentReceived: (event: GoogleWalletIntentEvent) => void,
   onNoIntentReceived?: () => void,
   onValidCallerNoIntentReceived?: () => void,
+  options: WalletListenerOptions = {},
 ) => {
-  const { loading, callPromise } = usePromise(
-    GoogleWalletService.startIntentListener,
-  );
+  const { enabled = true } = options;
+  const [isCheckingPendingData, setIsCheckingPendingData] = useState(false);
+  const callbacks = useRef({
+    onIntentReceived,
+    onNoIntentReceived,
+    onValidCallerNoIntentReceived,
+  });
+  callbacks.current = {
+    onIntentReceived,
+    onNoIntentReceived,
+    onValidCallerNoIntentReceived,
+  };
 
   useEffect(() => {
-    const activateListener = async () => {
+    if (!enabled || Platform.OS !== 'android') return undefined;
+
+    const emitter = GoogleWalletService.walletEventEmitter;
+    const removeListeners = [
+      emitter.addIntentListener((event) =>
+        callbacks.current.onIntentReceived(event),
+      ),
+      emitter.addNoIntentListener(() =>
+        callbacks.current.onNoIntentReceived?.(),
+      ),
+      emitter.addValidCallerNoIntentListener(() =>
+        callbacks.current.onValidCallerNoIntentReceived?.(),
+      ),
+    ];
+
+    let mounted = true;
+    const requestPendingIntent = async () => {
+      setIsCheckingPendingData(true);
       try {
-        await callPromise();
-      } catch (e) {
-        // Silenciar erro para iOS/ambientes sem suporte
+        await GoogleWalletService.startIntentListener();
+      } catch {
+        // O service já devolve `false` em erro; só garante o flag abaixo.
+      } finally {
+        if (mounted) setIsCheckingPendingData(false);
       }
     };
-
-    activateListener();
-
-    const removeIntentListener =
-      GoogleWalletService.walletEventEmitter.addIntentListener(
-        (walletEvent: GoogleWalletIntentEvent) => {
-          console.log(
-            '🎯 [Hook] Intent received from Google Wallet:',
-            walletEvent,
-          );
-          onIntentReceived(walletEvent);
-        },
-      );
-
-    const removeNoIntentListener = onNoIntentReceived
-      ? GoogleWalletService.walletEventEmitter.addNoIntentListener(() => {
-          console.log('🎯 [Hook] No intent received from Google Wallet');
-          onNoIntentReceived();
-        })
-      : () => {};
-
-    const removeValidCallerNoIntentListener = onValidCallerNoIntentReceived
-      ? GoogleWalletService.walletEventEmitter.addValidCallerNoIntentListener(
-          () => {
-            console.log(
-              '⚠️ [Hook] Valid caller no intent received from Google Wallet',
-            );
-            onValidCallerNoIntentReceived();
-          },
-        )
-      : () => {};
+    void requestPendingIntent();
 
     return () => {
-      try {
-        // eslint-disable-next-line promise/prefer-await-to-then
-        GoogleWalletService.stopIntentListener().catch(() => {});
-      } catch {}
-      removeIntentListener();
-      removeNoIntentListener();
-      removeValidCallerNoIntentListener();
+      mounted = false;
+      removeListeners.forEach((remove) => remove());
+      void GoogleWalletService.stopIntentListener();
     };
-  }, []);
+  }, [enabled]);
 
-  return { isCheckingPendingData: loading };
+  return { isCheckingPendingData };
 };

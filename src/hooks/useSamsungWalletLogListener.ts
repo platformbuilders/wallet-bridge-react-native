@@ -1,44 +1,49 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { SamsungWalletService } from '../services/samsung-wallet.service';
+import type { WalletListenerOptions } from '../types/common.types';
 import type { SamsungWalletLogEvent } from '../types/samsung-wallet.types';
-import { usePromise } from '../utils/usePromise';
 
 /**
- * Hook para ouvir logs do Samsung Wallet.
- * Inicia o listener nativo e registra o listener JS, limpando tudo ao desmontar.
+ * Escuta os logs nativos do Samsung Wallet (Android; no-op nas outras
+ * plataformas). Registra o listener JS antes de ligar o log no nativo e
+ * desliga tudo ao desmontar. `isListeningLogs` fica `true` enquanto o log
+ * nativo estiver ligado.
+ *
+ * Use `options.enabled` para não assinar o log quando não for necessário
+ * (ex.: `enabled: !isProduction`).
  */
 export const useSamsungWalletLogListener = (
   onLogReceived: (event: SamsungWalletLogEvent) => void,
+  options: WalletListenerOptions = {},
 ) => {
-  const { loading, callPromise } = usePromise(
-    SamsungWalletService.startLogListener,
-  );
+  const { enabled = true } = options;
+  const [isListeningLogs, setIsListeningLogs] = useState(false);
+  const callback = useRef(onLogReceived);
+  callback.current = onLogReceived;
 
   useEffect(() => {
-    const activateListener = async () => {
-      try {
-        await callPromise();
-      } catch {}
-    };
-
-    activateListener();
+    if (!enabled || Platform.OS !== 'android') return undefined;
 
     const removeLogListener =
-      SamsungWalletService.walletEventEmitter.addLogListener(
-        (event: SamsungWalletLogEvent) => {
-          console.log('📝 [Hook] Samsung Wallet log:', event);
-          onLogReceived(event);
-        },
+      SamsungWalletService.walletEventEmitter.addLogListener((event) =>
+        callback.current(event),
       );
 
-    return () => {
-      try {
-        // eslint-disable-next-line promise/prefer-await-to-then
-        SamsungWalletService.stopLogListener().catch(() => {});
-      } catch {}
-      removeLogListener();
+    let mounted = true;
+    const startLogListener = async () => {
+      const started = await SamsungWalletService.startLogListener();
+      if (mounted) setIsListeningLogs(started);
     };
-  }, []);
+    void startLogListener();
 
-  return { isListeningLogs: loading };
+    return () => {
+      mounted = false;
+      setIsListeningLogs(false);
+      removeLogListener();
+      void SamsungWalletService.stopLogListener();
+    };
+  }, [enabled]);
+
+  return { isListeningLogs };
 };
