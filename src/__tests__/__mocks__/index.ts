@@ -4,10 +4,7 @@
 // Este arquivo exporta todos os mocks necessários para testar aplicações
 // que utilizam a biblioteca BuildersWallet
 
-import {
-  AppleCanAddCardReason,
-  ApplePassActivationState,
-} from '../../enums/apple-wallet.enum';
+import { ApplePassActivationState } from '../../enums/apple-wallet.enum';
 import type {
   ApplePaymentPass,
   AppleWalletConstants,
@@ -345,18 +342,13 @@ export const mockAppleWalletModule = {
   getConstants: jest.fn().mockReturnValue(mockAppleWalletConstants),
   getEnvironment: jest.fn().mockResolvedValue('ios-simulator'),
   openWallet: jest.fn().mockResolvedValue(true),
-  checkWalletAvailability: jest.fn().mockResolvedValue(true),
-  canAddCard: jest.fn().mockResolvedValue({
-    canAdd: true,
-    reason: AppleCanAddCardReason.AVAILABLE,
-    message: 'Device apto a adicionar cartão à Apple Wallet.',
-  }),
+  canAddPaymentPass: jest.fn().mockResolvedValue(true),
+  canAddSecureElementPass: jest.fn().mockResolvedValue(true),
   startInAppProvisioning: jest.fn().mockResolvedValue('FAKE_REQUEST_ID'),
   submitProvisioningData: jest.fn().mockResolvedValue(true),
   cancelProvisioning: jest.fn().mockResolvedValue(true),
   listPasses: jest.fn().mockResolvedValue(mockApplePasses),
   listRemotePasses: jest.fn().mockResolvedValue(mockAppleRemotePasses),
-  isCardTokenized: jest.fn().mockResolvedValue(false),
   isWatchPaired: jest.fn().mockResolvedValue(true),
   activatePass: jest.fn().mockResolvedValue(true),
   setLogListener: jest.fn().mockResolvedValue(true),

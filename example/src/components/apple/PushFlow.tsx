@@ -5,7 +5,6 @@ import {
   AppleProvisioningStatus,
   AppleWalletModule,
   useAppleWalletListener,
-  type AppleCanAddCardResult,
   type AppleProvisioningConfig,
   type AppleProvisioningResultEvent,
 } from '@platformbuilders/wallet-bridge-react-native';
@@ -32,8 +31,10 @@ export function PushFlow({
 }: {
   onLog: (message: string) => void;
 }): React.JSX.Element {
-  const [availability, setAvailability] =
-    useState<AppleCanAddCardResult | null>(null);
+  const [availability, setAvailability] = useState<{
+    canAddPaymentPass: boolean;
+    canAddSecureElementPass: boolean;
+  } | null>(null);
   const [stages, setStages] = useState<AppleProvisioningStatus[]>([]);
   const [result, setResult] = useState<AppleProvisioningResultEvent | null>(
     null,
@@ -68,9 +69,17 @@ export function PushFlow({
 
   const checkAvailability = async () => {
     setError(null);
-    setAvailability(
-      await AppleWalletModule.canAddCard(TEST_CARD.primaryAccountIdentifier),
-    );
+    // A lib só repassa o PassKit; decidir se mostra o botão é do app.
+    const [device, card] = await Promise.all([
+      AppleWalletModule.canAddPaymentPass(),
+      AppleWalletModule.canAddSecureElementPass(
+        TEST_CARD.primaryAccountIdentifier ?? '',
+      ),
+    ]);
+    setAvailability({
+      canAddPaymentPass: device,
+      canAddSecureElementPass: card,
+    });
   };
 
   const start = async () => {
@@ -100,17 +109,19 @@ export function PushFlow({
         aceita o passo 2.
       </Text>
       <Button
-        title="canAddCard"
+        title="Checar disponibilidade"
         variant="secondary"
         onPress={checkAvailability}
       />
       {availability && (
         <>
-          <Row label="canAdd" value={availability.canAdd} />
-          <Row label="reason" value={availability.reason} />
           <Row
-            label="deviceAccountIdentifier"
-            value={availability.deviceAccountIdentifier}
+            label="canAddPaymentPass"
+            value={availability.canAddPaymentPass}
+          />
+          <Row
+            label="canAddSecureElementPass"
+            value={availability.canAddSecureElementPass}
           />
         </>
       )}

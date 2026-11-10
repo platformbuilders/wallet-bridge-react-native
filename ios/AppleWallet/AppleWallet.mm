@@ -126,16 +126,14 @@ static NSArray<NSDictionary *> *AWPassesToArray(NSArray<AWPaymentPass *> *passes
 
 #pragma mark - Provisioning
 
-- (void)checkWalletAvailability:(RCTPromiseResolveBlock)resolve
-                         reject:(RCTPromiseRejectBlock)reject {
-  resolve(@([self.provider canAddCardWithPrimaryAccountIdentifier:nil].canAddCard));
+- (void)canAddPaymentPass:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
+  resolve(@([self.provider canAddPaymentPass]));
 }
 
-- (void)canAddCard:(NSString *_Nullable)primaryAccountIdentifier
-           resolve:(RCTPromiseResolveBlock)resolve
-            reject:(RCTPromiseRejectBlock)reject {
-  NSString *identifier = primaryAccountIdentifier.length > 0 ? primaryAccountIdentifier : nil;
-  resolve([[self.provider canAddCardWithPrimaryAccountIdentifier:identifier] toDictionary]);
+- (void)canAddSecureElementPass:(NSString *)primaryAccountIdentifier
+                        resolve:(RCTPromiseResolveBlock)resolve
+                         reject:(RCTPromiseRejectBlock)reject {
+  resolve(@([self.provider canAddSecureElementPassWithPrimaryAccountIdentifier:primaryAccountIdentifier]));
 }
 
 - (void)startInAppProvisioning:(NSDictionary *)config
@@ -190,12 +188,6 @@ static NSArray<NSDictionary *> *AWPassesToArray(NSArray<AWPaymentPass *> *passes
 - (void)listRemotePasses:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject {
   resolve(AWPassesToArray([self.provider listRemotePasses]));
-}
-
-- (void)isCardTokenized:(NSString *)primaryAccountIdentifier
-                resolve:(RCTPromiseResolveBlock)resolve
-                 reject:(RCTPromiseRejectBlock)reject {
-  resolve(@([self.provider isCardTokenizedWithPrimaryAccountIdentifier:primaryAccountIdentifier]));
 }
 
 - (void)isWatchPaired:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {

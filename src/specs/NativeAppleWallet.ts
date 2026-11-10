@@ -49,8 +49,8 @@ export interface Spec extends TurboModule {
   openWallet(): Promise<boolean>;
 
   // Provisioning
-  checkWalletAvailability(): Promise<boolean>;
-  canAddCard(primaryAccountIdentifier: string | null): Promise<Object>;
+  canAddPaymentPass(): Promise<boolean>;
+  canAddSecureElementPass(primaryAccountIdentifier: string): Promise<boolean>;
   startInAppProvisioning(config: Object): Promise<string>;
   submitProvisioningData(payload: Object): Promise<boolean>;
   cancelProvisioning(): Promise<boolean>;
@@ -58,7 +58,6 @@ export interface Spec extends TurboModule {
   // Passes
   listPasses(): Promise<Array<Object>>;
   listRemotePasses(): Promise<Array<Object>>;
-  isCardTokenized(primaryAccountIdentifier: string): Promise<boolean>;
   isWatchPaired(): Promise<boolean>;
 
   // Verification

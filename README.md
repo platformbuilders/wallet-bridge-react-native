@@ -269,8 +269,8 @@ const tokens = await SamsungWalletModule.listTokens();
 #### Setup
 
 - The pod links `PassKit`, `UIKit` and `WatchConnectivity` for every iOS app, also apps that do not use Apple Wallet. Linking PassKit alone needs no entitlement.
-- In-App Provisioning needs the restricted entitlement `com.apple.developer.payment-pass-provisioning`, granted by Apple, in the app provisioning profile. Without it `startInAppProvisioning` rejects with `ENTITLEMENT_MISSING` and `canAddCard` answers `ENTITLEMENT_MISSING` on a device.
-- `listPasses`, `isCardTokenized` and `activatePass` see only the passes whose `associatedApplicationIdentifiers` include the app (configured by the issuer with Apple).
+- In-App Provisioning needs the restricted entitlement `com.apple.developer.payment-pass-provisioning`, granted by Apple, in the app provisioning profile. Without it `startInAppProvisioning` rejects with `ENTITLEMENT_MISSING` on a device and `canAddPaymentPass` answers `false`.
+- `listPasses`, `listRemotePasses` and `activatePass` see only the passes whose `associatedApplicationIdentifiers` include the app (configured by the issuer with Apple).
 
 #### In-App Provisioning (push)
 
@@ -299,8 +299,9 @@ useAppleWalletListener({
   },
 });
 
-const availability = await AppleWalletModule.canAddCard(fpanId);
-// availability.reason: AVAILABLE | ALREADY_ADDED | REQUIRES_ACTIVATION | ...
+// PassKit as is: deciding whether to offer "Add to Apple Wallet" is up to the app.
+const deviceCanAdd = await AppleWalletModule.canAddPaymentPass();
+const cardCanBeAdded = await AppleWalletModule.canAddSecureElementPass(fpanId);
 
 await AppleWalletModule.startInAppProvisioning({
   cardholderName: 'NAME ON CARD',
@@ -312,7 +313,7 @@ await AppleWalletModule.startInAppProvisioning({
 });
 ```
 
-`startInAppProvisioning` does not check `canAddCard` first: deciding whether to start (card already in Wallet, pending activation) is up to the app. It only rejects when PassKit itself cannot proceed. `submitProvisioningData` resolves `true` once PassKit received the data; the added pass arrives in `onProvisioningResult` with status `ADDED`. The encryption scheme is always `ECC_V2`.
+`startInAppProvisioning` does no pre-check: deciding whether to start (card already in Wallet, pending activation) is up to the app. It only rejects when PassKit itself cannot proceed. `submitProvisioningData` resolves `true` once PassKit received the data; the added pass arrives in `onProvisioningResult` with status `ADDED`. The encryption scheme is always `ECC_V2`.
 
 #### Passes and In-App Verification
 
@@ -337,14 +338,13 @@ await AppleWalletModule.activatePass(deviceAccountIdentifier, activationData);
 
 | Method | Returns | Notes |
 |---|---|---|
-| `checkWalletAvailability()` | `Promise<boolean>` | Device can add cards |
-| `canAddCard(fpanId?)` | `Promise<AppleCanAddCardResult>` | `canAdd`, `reason`, `deviceAccountIdentifier` of an existing pass |
+| `canAddPaymentPass()` | `Promise<boolean>` | `PKAddPaymentPassViewController.canAddPaymentPass()` |
+| `canAddSecureElementPass(fpanId)` | `Promise<boolean>` | `PKPassLibrary.canAddSecureElementPass`; Apple notes it returns `true` without the entitlement |
 | `startInAppProvisioning(config)` | `Promise<string>` | `requestId`; presents the PassKit sheet |
 | `submitProvisioningData(payload)` | `Promise<boolean>` | Step 2; pass arrives in `onProvisioningResult` |
 | `cancelProvisioning()` | `Promise<boolean>` | `false` when nothing is in progress |
 | `listPasses()` | `Promise<ApplePaymentPass[]>` | `passes(of: .secureElement)` |
 | `listRemotePasses()` | `Promise<ApplePaymentPass[]>` | `remoteSecureElementPasses` (paired devices) |
-| `isCardTokenized(fpanId)` | `Promise<boolean>` | Any device |
 | `isWatchPaired()` | `Promise<boolean>` | |
 | `activatePass(dpanId, activationData)` | `Promise<boolean>` | In-App Verification |
 | `openWallet()` / `getEnvironment()` | | |

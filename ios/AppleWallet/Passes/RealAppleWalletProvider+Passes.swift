@@ -21,10 +21,6 @@ extension RealAppleWalletProvider {
         Self.remotePasses().map(Self.makePass)
     }
 
-    func isCardTokenized(primaryAccountIdentifier: String) -> Bool {
-        Self.findSecureElementPass(primaryAccountIdentifier: primaryAccountIdentifier) != nil
-    }
-
     var isWatchPaired: Bool { watchSession.isPaired }
 
     // MARK: - Helpers
@@ -68,16 +64,8 @@ extension RealAppleWalletProvider {
         }
     }
 
-    /// Primeiro pass com este FPANID: locais, depois remotos.
-    static func findSecureElementPass(
-        primaryAccountIdentifier: String
-    ) -> PKSecureElementPass? {
-        guard !primaryAccountIdentifier.isEmpty else { return nil }
-        return (localPasses() + remotePasses())
-            .first { $0.primaryAccountIdentifier == primaryAccountIdentifier }
-    }
-
-    /// Pass com este DPANID: locais, depois remotos.
+    /// Pass com este DPANID, locais e remotos. Necessário porque o JS só
+    /// conhece o identificador, e o `activate` do PassKit pede o objeto.
     static func findSecureElementPass(
         deviceAccountIdentifier: String
     ) -> PKSecureElementPass? {

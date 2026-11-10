@@ -9,7 +9,6 @@
 // blobs do passo 2 em `submitProvisioningData`.
 
 import type {
-  AppleCanAddCardReason,
   ApplePassActivationState,
   AppleProvisioningStatus,
   AppleWalletErrorCode,
@@ -83,14 +82,6 @@ export interface ApplePaymentPass {
   localizedDescription: string;
 }
 
-export interface AppleCanAddCardResult {
-  canAdd: boolean;
-  reason: AppleCanAddCardReason;
-  message: string;
-  /** DPANID do pass existente (`ALREADY_ADDED` / `REQUIRES_ACTIVATION`). */
-  deviceAccountIdentifier?: string;
-}
-
 /** Transição de estágio ou resultado final do provisioning. */
 export interface AppleProvisioningResultEvent {
   requestId: string;
@@ -119,18 +110,20 @@ export interface AppleWalletSpec {
 
   // --- Provisioning -------------------------------------------------------
 
-  /** `true` quando o device consegue adicionar cartão (sem olhar um cartão específico). */
-  checkWalletAvailability(): Promise<boolean>;
+  /** `PKAddPaymentPassViewController.canAddPaymentPass()`. */
+  canAddPaymentPass(): Promise<boolean>;
 
-  /** Disponibilidade para um cartão (FPANID), com o motivo da negativa. */
-  canAddCard(
-    primaryAccountIdentifier?: string | null,
-  ): Promise<AppleCanAddCardResult>;
+  /**
+   * `PKPassLibrary.canAddSecureElementPass(primaryAccountIdentifier:)`, como o
+   * PassKit devolve. A Apple avisa que, sem o entitlement de provisioning, o
+   * método responde `true` sempre.
+   */
+  canAddSecureElementPass(primaryAccountIdentifier: string): Promise<boolean>;
 
   /**
    * Apresenta a sheet do PassKit e resolve com o `requestId`. Os passos
    * seguintes chegam por `onProvisioningCertificates` e `onProvisioningResult`.
-   * Não consulta `canAddCard`: decidir se o fluxo deve começar (cartão já na
+   * Não faz pré-checagem: decidir se o fluxo deve começar (cartão já na
    * Wallet, pendente de ativação) é do app. Rejeita só quando o PassKit não
    * consegue seguir: `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`,
    * `ALREADY_IN_PROGRESS` ou `INVALID_CONFIGURATION`.
@@ -157,9 +150,6 @@ export interface AppleWalletSpec {
    * Juntar com `listPasses` e identificar o device é do app.
    */
   listRemotePasses(): Promise<ApplePaymentPass[]>;
-
-  /** `true` se o cartão (FPANID) já está na Wallet, em qualquer device. */
-  isCardTokenized(primaryAccountIdentifier: string): Promise<boolean>;
 
   isWatchPaired(): Promise<boolean>;
 

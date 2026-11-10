@@ -28,7 +28,7 @@ enum AWScenario: String, CaseIterable {
     case userCanceled = "USER_CANCELED"
     case entitlementMissing = "ENTITLEMENT_MISSING"
     case noSecureElement = "NO_SECURE_ELEMENT"
-    /// `canAddCard` responde ALREADY_ADDED; o provisioning segue (decidir é do app).
+    /// `canAddSecureElementPass` responde `false`; o provisioning segue (decidir é do app).
     case alreadyAdded = "ALREADY_ADDED"
     /// O PassKit rejeita o passo 2.
     case invalidActivationData = "INVALID_ACTIVATION_DATA"

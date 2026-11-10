@@ -16,56 +16,17 @@ import PassKit
 
 extension RealAppleWalletProvider {
 
-    func canAddCard(primaryAccountIdentifier: String?) -> AWCanAddCardResult {
-        // Cartão já provisionado? O PKPassLibrary responde sem entitlement,
-        // aqui e nos devices pareados.
-        if let identifier = primaryAccountIdentifier,
-           let existing = Self.findSecureElementPass(primaryAccountIdentifier: identifier)
-        {
-            let where_ = existing.isRemotePass ? "no dispositivo pareado" : "neste device"
-            switch existing.passActivationState {
-            case .requiresActivation, .activating:
-                return AWCanAddCardResult(
-                    canAdd: false,
-                    reason: .requiresActivation,
-                    message: "Cartão já está na Apple Wallet \(where_), pendente de ativação.",
-                    deviceAccountIdentifier: existing.deviceAccountIdentifier
-                )
-            default:
-                return AWCanAddCardResult(
-                    canAdd: false,
-                    reason: .alreadyAdded,
-                    message: "Cartão já está na Apple Wallet \(where_).",
-                    deviceAccountIdentifier: existing.deviceAccountIdentifier
-                )
-            }
-        }
+    /// `PKAddPaymentPassViewController.canAddPaymentPass()`.
+    func canAddPaymentPass() -> Bool {
+        PKAddPaymentPassViewController.canAddPaymentPass()
+    }
 
-        if PKAddPaymentPassViewController.canAddPaymentPass() {
-            return AWCanAddCardResult(
-                canAdd: true,
-                reason: .available,
-                message: "Device apto a adicionar cartão à Apple Wallet."
-            )
-        }
-
-        // canAddPaymentPass devolve só um booleano. No Simulator a causa é
-        // conhecida; em device, a mais provável é o entitlement ausente.
-        #if targetEnvironment(simulator)
-        return AWCanAddCardResult(
-            canAdd: false,
-            reason: .noSecureElement,
-            message: "Simulator não tem Secure Element: in-app provisioning não roda aqui."
-        )
-        #else
-        return AWCanAddCardResult(
-            canAdd: false,
-            reason: .entitlementMissing,
-            message: "canAddPaymentPass() retornou false. Causa mais provável: "
-                + "entitlement \(AWConst.provisioningEntitlement) ausente no "
-                + "provisioning profile. Outras: região sem Apple Pay, restrição de MDM."
-        )
-        #endif
+    /// `PKPassLibrary.canAddSecureElementPass(primaryAccountIdentifier:)`.
+    ///
+    /// Repassado como o PassKit devolve. A Apple avisa que, sem o
+    /// entitlement de provisioning, o método responde `true` sempre.
+    func canAddSecureElementPass(primaryAccountIdentifier: String) -> Bool {
+        PKPassLibrary().canAddSecureElementPass(primaryAccountIdentifier: primaryAccountIdentifier)
     }
 
     func startInAppProvisioning(config: AWProvisioningRequestConfig) throws -> String {
@@ -75,9 +36,9 @@ extension RealAppleWalletProvider {
             throw AWError.make(.alreadyInProgress, message)
         }
 
-        // Sem pré-checagem de canAddCard: decidir se o fluxo deve começar
-        // (cartão já na Wallet, pendente de ativação...) é do app. A lib só
-        // falha quando o próprio PassKit não consegue seguir.
+        // Sem pré-checagem: decidir se o fluxo deve começar (cartão já na
+        // Wallet, pendente de ativação...) é do app. A lib só falha quando o
+        // próprio PassKit não consegue seguir.
 
         // ECC_V2 fixo. A Apple define EV_ECC_V2 como esquema obrigatório; RSA
         // exige liberação da Apple e muda o formato do payload inteiro. Se um

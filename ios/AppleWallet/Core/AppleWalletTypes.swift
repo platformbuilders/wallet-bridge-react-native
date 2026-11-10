@@ -60,18 +60,6 @@ public enum AWStatus: String {
     }
 }
 
-/// Motivo da resposta de canAddCard. Espelha AppleCanAddCardReason.
-public enum AWReason: String {
-    case available = "AVAILABLE"
-    case entitlementMissing = "ENTITLEMENT_MISSING"
-    case noSecureElement = "NO_SECURE_ELEMENT"
-    case alreadyAdded = "ALREADY_ADDED"
-    /// Cartão já está na Wallet, mas pendente de ativação. Separado de
-    /// `alreadyAdded` porque exige ação do app (CTA de ativação).
-    case requiresActivation = "REQUIRES_ACTIVATION"
-    case unknown = "UNKNOWN"
-}
-
 /// Códigos legíveis entregues ao JS. Espelha AppleWalletErrorCode.
 public enum AWErrorCode: String {
     case unknown = "UNKNOWN"
@@ -265,44 +253,6 @@ public enum AWActivationState: String {
             "deviceName": deviceName,
             "localizedDescription": localizedDescription,
         ]
-    }
-}
-
-/// Resultado de canAddCard, com o motivo. O PassKit devolve só um booleano;
-/// aqui o motivo é preservado para o app distinguir entitlement ausente de
-/// device sem Secure Element. Espelha AppleCanAddCardResult.
-@objc public final class AWCanAddCardResult: NSObject {
-    let canAdd: Bool
-    let reason: AWReason
-    let message: String
-    /// DPANID do pass que já existe (`alreadyAdded` / `requiresActivation`).
-    let deviceAccountIdentifier: String?
-
-    init(
-        canAdd: Bool,
-        reason: AWReason,
-        message: String,
-        deviceAccountIdentifier: String? = nil
-    ) {
-        self.canAdd = canAdd
-        self.reason = reason
-        self.message = message
-        self.deviceAccountIdentifier = deviceAccountIdentifier
-        super.init()
-    }
-
-    @objc public var canAddCard: Bool { canAdd }
-
-    @objc public func toDictionary() -> [String: Any] {
-        var dictionary: [String: Any] = [
-            "canAdd": canAdd,
-            "reason": reason.rawValue,
-            "message": message,
-        ]
-        if let deviceAccountIdentifier {
-            dictionary["deviceAccountIdentifier"] = deviceAccountIdentifier
-        }
-        return dictionary
     }
 }
 

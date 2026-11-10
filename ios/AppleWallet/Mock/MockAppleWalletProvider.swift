@@ -85,62 +85,18 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     // MARK: - Provisioning
 
-    func canAddCard(primaryAccountIdentifier: String?) -> AWCanAddCardResult {
-        switch scenario {
-        case .entitlementMissing:
-            return AWCanAddCardResult(
-                canAdd: false,
-                reason: .entitlementMissing,
-                message: "[MOCK] Entitlement \(AWConst.provisioningEntitlement) ausente."
-            )
-        case .noSecureElement:
-            return AWCanAddCardResult(
-                canAdd: false,
-                reason: .noSecureElement,
-                message: "[MOCK] Device sem Secure Element."
-            )
-        default:
-            break
-        }
+    /// Como o PassKit: `false` só quando o device não consegue adicionar.
+    func canAddPaymentPass() -> Bool {
+        scenario != .entitlementMissing && scenario != .noSecureElement
+    }
 
-        let existing = primaryAccountIdentifier.flatMap { identifier in
-            passes
-                .sorted { !$0.isRemote && $1.isRemote }
-                .first { $0.primaryAccountIdentifier == identifier }
+    /// Como o PassKit: `false` quando o cartão já está em todos os devices
+    /// (no mock, quando há um pass local com o FPANID, ou no ALREADY_ADDED).
+    func canAddSecureElementPass(primaryAccountIdentifier: String) -> Bool {
+        guard canAddPaymentPass(), scenario != .alreadyAdded else { return false }
+        return !passes.contains {
+            !$0.isRemote && $0.primaryAccountIdentifier == primaryAccountIdentifier
         }
-
-        if let existing {
-            if existing.activationState == .requiresActivation
-                || existing.activationState == .activating
-            {
-                return AWCanAddCardResult(
-                    canAdd: false,
-                    reason: .requiresActivation,
-                    message: "[MOCK] Cartão já está na Wallet, pendente de ativação.",
-                    deviceAccountIdentifier: existing.deviceAccountIdentifier
-                )
-            }
-            return AWCanAddCardResult(
-                canAdd: false,
-                reason: .alreadyAdded,
-                message: "[MOCK] Cartão já está na Wallet.",
-                deviceAccountIdentifier: existing.deviceAccountIdentifier
-            )
-        }
-
-        if scenario == .alreadyAdded {
-            return AWCanAddCardResult(
-                canAdd: false,
-                reason: .alreadyAdded,
-                message: "[MOCK] Cartão já está na Wallet."
-            )
-        }
-
-        return AWCanAddCardResult(
-            canAdd: true,
-            reason: .available,
-            message: "[MOCK] Device apto a adicionar cartão à Apple Wallet."
-        )
     }
 
     func startInAppProvisioning(config: AWProvisioningRequestConfig) throws -> String {
@@ -150,7 +106,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             throw AWError.make(.alreadyInProgress, message)
         }
 
-        // Como no real: sem pré-checagem de canAddCard (isso é do app). Só
+        // Como no real: sem pré-checagem (isso é do app). Só
         // falha onde o PassKit falharia, quando o controller não instancia.
         switch scenario {
         case .entitlementMissing:
@@ -362,10 +318,6 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     func listRemotePasses() -> [AWPaymentPass] {
         passes.filter(\.isRemote)
-    }
-
-    func isCardTokenized(primaryAccountIdentifier: String) -> Bool {
-        passes.contains { $0.primaryAccountIdentifier == primaryAccountIdentifier }
     }
 
     var isWatchPaired: Bool { scenario.hasWatch }

@@ -27,17 +27,6 @@ export enum AppleProvisioningStatus {
   FAILED = 'FAILED',
 }
 
-/** Motivo da resposta de `canAddCard`. */
-export enum AppleCanAddCardReason {
-  AVAILABLE = 'AVAILABLE',
-  ENTITLEMENT_MISSING = 'ENTITLEMENT_MISSING',
-  NO_SECURE_ELEMENT = 'NO_SECURE_ELEMENT',
-  ALREADY_ADDED = 'ALREADY_ADDED',
-  /** Já está na Wallet, mas pendente de ativação: o app oferece a ativação. */
-  REQUIRES_ACTIVATION = 'REQUIRES_ACTIVATION',
-  UNKNOWN = 'UNKNOWN',
-}
-
 /** `code` dos erros (reject e evento de resultado). */
 export enum AppleWalletErrorCode {
   UNKNOWN = 'UNKNOWN',

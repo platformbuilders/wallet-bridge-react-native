@@ -48,8 +48,11 @@ import UIKit
 
     // --- Provisioning ----------------------------------------------------
 
-    /// Disponibilidade para adicionar um cartão, com o motivo da negativa.
-    func canAddCard(primaryAccountIdentifier: String?) -> AWCanAddCardResult
+    /// `PKAddPaymentPassViewController.canAddPaymentPass()`.
+    func canAddPaymentPass() -> Bool
+
+    /// `PKPassLibrary.canAddSecureElementPass(primaryAccountIdentifier:)`.
+    func canAddSecureElementPass(primaryAccountIdentifier: String) -> Bool
 
     /// Apresenta a sheet do PassKit. Devolve o `requestId` do fluxo.
     func startInAppProvisioning(config: AWProvisioningRequestConfig) throws -> String
@@ -69,7 +72,6 @@ import UIKit
     /// `PKPassLibrary.remoteSecureElementPasses` (devices pareados).
     func listRemotePasses() -> [AWPaymentPass]
 
-    func isCardTokenized(primaryAccountIdentifier: String) -> Bool
 
     var isWatchPaired: Bool { get }
 

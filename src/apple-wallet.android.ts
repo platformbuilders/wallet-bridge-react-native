@@ -5,10 +5,7 @@
 // neutros (nada disponível, nenhum pass, nenhum evento) e as ações rejeitam
 // com NOT_SUPPORTED_ON_PLATFORM, como os stubs de Google e Samsung no iOS.
 
-import {
-  AppleCanAddCardReason,
-  AppleWalletErrorCode,
-} from './enums/apple-wallet.enum';
+import { AppleWalletErrorCode } from './enums/apple-wallet.enum';
 import type {
   AppleWalletConstants,
   AppleWalletError,
@@ -38,19 +35,14 @@ export const AppleWalletAndroid: AppleWalletSpec = {
   getEnvironment: async () => 'android',
   openWallet: async () => false,
 
-  checkWalletAvailability: async () => false,
-  canAddCard: async () => ({
-    canAdd: false,
-    reason: AppleCanAddCardReason.UNKNOWN,
-    message: 'Apple Wallet is only available on iOS.',
-  }),
+  canAddPaymentPass: async () => false,
+  canAddSecureElementPass: async () => false,
   startInAppProvisioning: () => notSupported('startInAppProvisioning'),
   submitProvisioningData: () => notSupported('submitProvisioningData'),
   cancelProvisioning: async () => false,
 
   listPasses: async () => [],
   listRemotePasses: async () => [],
-  isCardTokenized: async () => false,
   isWatchPaired: async () => false,
 
   activatePass: () => notSupported('activatePass'),

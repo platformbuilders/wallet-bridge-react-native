@@ -1,9 +1,6 @@
 // Testa o contrato Apple fora dos hooks: stub Android, Proxy do
 // AppleWalletModule no iOS e o entrypoint de testes (controle do mock nativo).
-import {
-  AppleCanAddCardReason,
-  AppleWalletErrorCode,
-} from '../enums/apple-wallet.enum';
+import { AppleWalletErrorCode } from '../enums/apple-wallet.enum';
 import {
   mockApplePasses,
   mockAppleRemotePasses,
@@ -57,20 +54,12 @@ describe('AppleWalletModule on Android (stub)', () => {
   it('answers the queries with neutral values', async () => {
     const { AppleWalletModule } = load<Bridge>('../NativeBuildersWallet');
 
-    await expect(AppleWalletModule.checkWalletAvailability()).resolves.toBe(
-      false,
-    );
-    await expect(AppleWalletModule.canAddCard('FPANID')).resolves.toEqual(
-      expect.objectContaining({
-        canAdd: false,
-        reason: AppleCanAddCardReason.UNKNOWN,
-      }),
-    );
+    await expect(AppleWalletModule.canAddPaymentPass()).resolves.toBe(false);
+    await expect(
+      AppleWalletModule.canAddSecureElementPass('FPANID'),
+    ).resolves.toBe(false);
     await expect(AppleWalletModule.listPasses()).resolves.toEqual([]);
     await expect(AppleWalletModule.listRemotePasses()).resolves.toEqual([]);
-    await expect(AppleWalletModule.isCardTokenized('FPANID')).resolves.toBe(
-      false,
-    );
     await expect(AppleWalletModule.isWatchPaired()).resolves.toBe(false);
     await expect(AppleWalletModule.cancelProvisioning()).resolves.toBe(false);
     expect(AppleWalletModule.getConstants().EVENT_LOG).toBe('');

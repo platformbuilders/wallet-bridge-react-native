@@ -22,22 +22,23 @@ dos commits.
 ### Features
 
 - **Apple Wallet (iOS, PassKit)** — `AppleWalletModule`:
-  - In-App Provisioning: `checkWalletAvailability`, `canAddCard`,
+  - In-App Provisioning: `canAddPaymentPass`, `canAddSecureElementPass`,
     `startInAppProvisioning`, `submitProvisioningData` (resolve `boolean`; o
     pass chega no evento `onProvisioningResult`), `cancelProvisioning`.
     Esquema de criptografia fixo em `ECC_V2` (sem `encryptionScheme` na config).
-    `startInAppProvisioning` não consulta `canAddCard`: decidir se o fluxo
+    `startInAppProvisioning` não faz pré-checagem: decidir se o fluxo
     começa é do app; a lib só rejeita quando o PassKit não consegue seguir.
   - Passes: `listPasses` (`passes(of: .secureElement)`) e `listRemotePasses`
     (`remoteSecureElementPasses`), com DPANID, FPANID, `passActivationState`,
-    `isRemote` e `deviceName` como o PassKit devolve; `isCardTokenized`,
-    `isWatchPaired`. Juntar as listas e identificar o device é do app.
+    `isRemote` e `deviceName` como o PassKit devolve; `isWatchPaired`. Juntar as listas e identificar o device é do app.
   - In-App Verification: `activatePass`.
   - Eventos `onProvisioningCertificates`, `onProvisioningResult` e `onLog`, e os
     hooks `useAppleWalletListener` / `useAppleWalletLogListener`.
-  - Enums `ApplePassActivationState`, `AppleProvisioningStatus`, `AppleCanAddCardReason`, `AppleWalletErrorCode`.
+  - Enums `ApplePassActivationState`, `AppleProvisioningStatus`, `AppleWalletErrorCode`.
   - Stub fora do iOS: consultas com valores neutros, ações rejeitam com
     `NOT_SUPPORTED_ON_PLATFORM`, sem `console.warn` no import.
+  - A lib só intermedeia o PassKit: sem pré-checagens, sem juntar listas e
+    sem interpretar estados. Essas decisões são do app.
   - Sem API de Wallet Extension: status, pass entries e autorização são do app
     (Swift nativo, outro processo).
 - **Mock nativo do Apple Wallet (só Debug)**, com cenários de iPhone + Watch,
