@@ -6,7 +6,6 @@
 
 import {
   AppleCanAddCardReason,
-  AppleDeviceType,
   ApplePassActivationState,
 } from '../../enums/apple-wallet.enum';
 import type {
@@ -284,8 +283,8 @@ export const mockSamsungWalletModule = {
 // ============================================================================
 // MOCKS DO APPLE WALLET
 // ============================================================================
-// Dados falsos: o mesmo cartão (FPANID) no iPhone (ativo) e no Apple Watch
-// (pendente), com DPANIDs distintos, e um segundo cartão pendente.
+// Dados falsos: o mesmo cartão (FPANID) no iPhone (ativo) e num device
+// pareado (pendente), com DPANIDs distintos, e um segundo cartão pendente.
 
 export const mockAppleWalletConstants: AppleWalletConstants = {
   PROVISIONING_ENTITLEMENT: 'com.apple.developer.payment-pass-provisioning',
@@ -304,7 +303,6 @@ const mockApplePass = (
   serialNumber: 'FAKE_SERIAL_1_PHONE',
   passTypeIdentifier: 'pass.com.builders.wallet.mock',
   passActivationState: ApplePassActivationState.ACTIVATED,
-  deviceType: AppleDeviceType.PHONE,
   isRemote: false,
   deviceName: 'iPhone',
   localizedDescription: 'Cartão 1',
@@ -318,7 +316,6 @@ export const mockAppleWatchPass = mockApplePass({
   deviceAccountNumberSuffix: '9002',
   serialNumber: 'FAKE_SERIAL_1_WATCH',
   passActivationState: ApplePassActivationState.REQUIRES_ACTIVATION,
-  deviceType: AppleDeviceType.WATCH,
   isRemote: true,
   deviceName: 'Apple Watch',
 });
@@ -333,11 +330,14 @@ export const mockApplePendingPass = mockApplePass({
   localizedDescription: 'Cartão 2',
 });
 
+/** `listPasses`: passes deste device. */
 export const mockApplePasses: ApplePaymentPass[] = [
   mockApplePhonePass,
-  mockAppleWatchPass,
   mockApplePendingPass,
 ];
+
+/** `listRemotePasses`: passes de devices pareados. */
+export const mockAppleRemotePasses: ApplePaymentPass[] = [mockAppleWatchPass];
 
 const mockAppleSubscription = () => ({ remove: jest.fn() });
 
@@ -355,6 +355,7 @@ export const mockAppleWalletModule = {
   submitProvisioningData: jest.fn().mockResolvedValue(true),
   cancelProvisioning: jest.fn().mockResolvedValue(true),
   listPasses: jest.fn().mockResolvedValue(mockApplePasses),
+  listRemotePasses: jest.fn().mockResolvedValue(mockAppleRemotePasses),
   isCardTokenized: jest.fn().mockResolvedValue(false),
   isWatchPaired: jest.fn().mockResolvedValue(true),
   activatePass: jest.fn().mockResolvedValue(true),

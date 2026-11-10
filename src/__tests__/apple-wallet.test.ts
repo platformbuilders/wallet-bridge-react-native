@@ -6,6 +6,7 @@ import {
 } from '../enums/apple-wallet.enum';
 import {
   mockApplePasses,
+  mockAppleRemotePasses,
   mockAppleWalletModule,
   mockReactNative,
 } from './__mocks__/index';
@@ -66,6 +67,7 @@ describe('AppleWalletModule on Android (stub)', () => {
       }),
     );
     await expect(AppleWalletModule.listPasses()).resolves.toEqual([]);
+    await expect(AppleWalletModule.listRemotePasses()).resolves.toEqual([]);
     await expect(AppleWalletModule.isCardTokenized('FPANID')).resolves.toBe(
       false,
     );
@@ -139,6 +141,9 @@ describe('AppleWalletModule on iOS', () => {
     );
 
     await expect(AppleWalletModule.listPasses()).resolves.toBe(mockApplePasses);
+    await expect(AppleWalletModule.listRemotePasses()).resolves.toBe(
+      mockAppleRemotePasses,
+    );
     await expect(
       AppleWalletModule.activatePass('FAKE_DPANID_1_WATCH', 'QQ=='),
     ).resolves.toBe(true);

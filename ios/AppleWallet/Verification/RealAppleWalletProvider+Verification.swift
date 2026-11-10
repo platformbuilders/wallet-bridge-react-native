@@ -32,9 +32,9 @@ extension RealAppleWalletProvider {
         }
 
         guard
-            let pass = Self.allSecureElementPasses().first(where: {
-                $0.deviceAccountIdentifier == deviceAccountIdentifier
-            })
+            let pass = Self.findSecureElementPass(
+                deviceAccountIdentifier: deviceAccountIdentifier
+            )
         else {
             let message = "Nenhum pass com esse deviceAccountIdentifier na Wallet."
             log("ERROR", message)

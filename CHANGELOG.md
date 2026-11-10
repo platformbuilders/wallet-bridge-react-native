@@ -28,13 +28,14 @@ dos commits.
     Esquema de criptografia fixo em `ECC_V2` (sem `encryptionScheme` na config).
     `startInAppProvisioning` não consulta `canAddCard`: decidir se o fluxo
     começa é do app; a lib só rejeita quando o PassKit não consegue seguir.
-  - Passes: `listPasses` (iPhone e Apple Watch, com DPANID, FPANID,
-    `passActivationState` e `deviceType`), `isCardTokenized`, `isWatchPaired`.
+  - Passes: `listPasses` (`passes(of: .secureElement)`) e `listRemotePasses`
+    (`remoteSecureElementPasses`), com DPANID, FPANID, `passActivationState`,
+    `isRemote` e `deviceName` como o PassKit devolve; `isCardTokenized`,
+    `isWatchPaired`. Juntar as listas e identificar o device é do app.
   - In-App Verification: `activatePass`.
   - Eventos `onProvisioningCertificates`, `onProvisioningResult` e `onLog`, e os
     hooks `useAppleWalletListener` / `useAppleWalletLogListener`.
-  - Enums `ApplePassActivationState`, `AppleDeviceType`,
-    `AppleProvisioningStatus`, `AppleCanAddCardReason`, `AppleWalletErrorCode`.
+  - Enums `ApplePassActivationState`, `AppleProvisioningStatus`, `AppleCanAddCardReason`, `AppleWalletErrorCode`.
   - Stub fora do iOS: consultas com valores neutros, ações rejeitam com
     `NOT_SUPPORTED_ON_PLATFORM`, sem `console.warn` no import.
   - Sem API de Wallet Extension: status, pass entries e autorização são do app
@@ -44,7 +45,7 @@ dos commits.
   `AppleWalletMockControl`, exportado só em
   `@platformbuilders/wallet-bridge-react-native/testing`. O build Release não
   compila o mock.
-- Mocks de Jest do Apple Wallet (`mockAppleWalletModule`, passes iPhone + Watch)
+- Mocks de Jest do Apple Wallet (`mockAppleWalletModule`, passes locais e remotos)
   em `src/__tests__/__mocks__`.
 - Enums também em `@platformbuilders/wallet-bridge-react-native/enums`.
 - Evento de log da Apple com nome próprio (`AppleWalletLog`), sem colidir com

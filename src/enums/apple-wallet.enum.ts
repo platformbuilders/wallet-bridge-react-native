@@ -13,12 +13,6 @@ export enum ApplePassActivationState {
   DEACTIVATED = 'DEACTIVATED',
 }
 
-/** Device em que o pass está. */
-export enum AppleDeviceType {
-  PHONE = 'PHONE',
-  WATCH = 'WATCH',
-}
-
 /** Estágios do In-App Provisioning, entregues no evento de resultado. */
 export enum AppleProvisioningStatus {
   IDLE = 'IDLE',

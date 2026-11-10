@@ -63,8 +63,11 @@ import UIKit
 
     // --- Passes ----------------------------------------------------------
 
-    /// Passes de pagamento do device e dos pareados (Apple Watch).
+    /// `PKPassLibrary.passes(of: .secureElement)`.
     func listPasses() -> [AWPaymentPass]
+
+    /// `PKPassLibrary.remoteSecureElementPasses` (devices pareados).
+    func listRemotePasses() -> [AWPaymentPass]
 
     func isCardTokenized(primaryAccountIdentifier: String) -> Bool
 

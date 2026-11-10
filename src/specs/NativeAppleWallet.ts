@@ -57,6 +57,7 @@ export interface Spec extends TurboModule {
 
   // Passes
   listPasses(): Promise<Array<Object>>;
+  listRemotePasses(): Promise<Array<Object>>;
   isCardTokenized(primaryAccountIdentifier: string): Promise<boolean>;
   isWatchPaired(): Promise<boolean>;
 

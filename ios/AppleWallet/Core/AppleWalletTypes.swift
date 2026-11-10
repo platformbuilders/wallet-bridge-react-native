@@ -99,12 +99,6 @@ public enum AWActivationState: String {
     case deactivated = "DEACTIVATED"
 }
 
-/// Onde o pass está. Espelha AppleDeviceType.
-public enum AWDeviceType: String {
-    case phone = "PHONE"
-    case watch = "WATCH"
-}
-
 // ============================================================================
 // ERROS
 // ============================================================================
@@ -252,9 +246,9 @@ public enum AWDeviceType: String {
     var serialNumber = ""
     var passTypeIdentifier = ""
     var activationState: AWActivationState = .activated
-    var deviceType: AWDeviceType = .phone
-    /// `true` quando o pass está em um device pareado (Apple Watch).
+    /// `PKPass.isRemotePass`: o pass está em um device pareado.
     var isRemote = false
+    /// `PKPass.deviceName`, como o PassKit devolve.
     var deviceName = ""
     var localizedDescription = ""
 
@@ -267,7 +261,6 @@ public enum AWDeviceType: String {
             "serialNumber": serialNumber,
             "passTypeIdentifier": passTypeIdentifier,
             "passActivationState": activationState.rawValue,
-            "deviceType": deviceType.rawValue,
             "isRemote": isRemote,
             "deviceName": deviceName,
             "localizedDescription": localizedDescription,

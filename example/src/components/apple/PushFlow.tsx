@@ -131,7 +131,7 @@ export function PushFlow({
           />
           <Row
             label="passes adicionais"
-            value={result.additionalPasses.map((p) => p.deviceType).join(', ')}
+            value={result.additionalPasses.map((p) => p.deviceName).join(', ')}
           />
         </>
       )}

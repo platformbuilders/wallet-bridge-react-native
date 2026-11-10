@@ -82,7 +82,7 @@ enum MockProvisioningFixtures {
     static func pass(
         primaryAccountIdentifier: String,
         primaryAccountNumberSuffix: String,
-        deviceType: AWDeviceType,
+        remote: Bool,
         state: AWActivationState,
         description: String
     ) -> AWPaymentPass {
@@ -90,14 +90,14 @@ enum MockProvisioningFixtures {
         let pass = AWPaymentPass()
         pass.primaryAccountIdentifier = primaryAccountIdentifier
         pass.primaryAccountNumberSuffix = primaryAccountNumberSuffix
-        pass.deviceAccountIdentifier = "FAKE_DPANID_\(suffix)_\(deviceType.rawValue)"
+        pass.deviceAccountIdentifier = "FAKE_DPANID_\(suffix)_\(remote ? "REMOTE" : "LOCAL")"
         pass.deviceAccountNumberSuffix = String(Int.random(in: 1000...9999))
-        pass.serialNumber = "FAKE_SERIAL_\(suffix)_\(deviceType.rawValue)"
+        pass.serialNumber = "FAKE_SERIAL_\(suffix)_\(remote ? "REMOTE" : "LOCAL")"
         pass.passTypeIdentifier = passTypeIdentifier
         pass.activationState = state
-        pass.deviceType = deviceType
-        pass.isRemote = deviceType == .watch
-        pass.deviceName = deviceType == .watch ? "Apple Watch" : "iPhone"
+        // Como o PassKit devolve: o app decide o que é iPhone ou Watch.
+        pass.isRemote = remote
+        pass.deviceName = remote ? "Apple Watch" : "iPhone"
         pass.localizedDescription = description
         return pass
     }
@@ -106,13 +106,13 @@ enum MockProvisioningFixtures {
     /// quem ativa é o emissor (como o token do Google/Samsung).
     static func provisionedPass(
         config: AWProvisioningRequestConfig,
-        deviceType: AWDeviceType
+        remote: Bool
     ) -> AWPaymentPass {
         pass(
             primaryAccountIdentifier: config.primaryAccountIdentifier
                 ?? "FAKE_FPANID_\(uniqueSuffix())",
             primaryAccountNumberSuffix: config.primaryAccountSuffix,
-            deviceType: deviceType,
+            remote: remote,
             state: .requiresActivation,
             description: config.localizedDescription
         )
@@ -131,35 +131,35 @@ enum MockProvisioningFixtures {
         case .mixedDeviceStates:
             return [
                 pass(primaryAccountIdentifier: id(0), primaryAccountNumberSuffix: "1111",
-                     deviceType: .phone, state: .activated, description: "Cartão 1"),
+                     remote: false, state: .activated, description: "Cartão 1"),
                 pass(primaryAccountIdentifier: id(0), primaryAccountNumberSuffix: "1111",
-                     deviceType: .watch, state: .requiresActivation, description: "Cartão 1"),
+                     remote: true, state: .requiresActivation, description: "Cartão 1"),
             ]
         case .multiplePending:
             return [
                 pass(primaryAccountIdentifier: id(0), primaryAccountNumberSuffix: "1111",
-                     deviceType: .phone, state: .requiresActivation, description: "Cartão 1"),
+                     remote: false, state: .requiresActivation, description: "Cartão 1"),
                 pass(primaryAccountIdentifier: id(1), primaryAccountNumberSuffix: "2222",
-                     deviceType: .phone, state: .requiresActivation, description: "Cartão 2"),
+                     remote: false, state: .requiresActivation, description: "Cartão 2"),
                 pass(primaryAccountIdentifier: id(1), primaryAccountNumberSuffix: "2222",
-                     deviceType: .watch, state: .requiresActivation, description: "Cartão 2"),
+                     remote: true, state: .requiresActivation, description: "Cartão 2"),
             ]
         case .deactivated:
             return [
                 pass(primaryAccountIdentifier: id(0), primaryAccountNumberSuffix: "1111",
-                     deviceType: .phone, state: .deactivated, description: "Cartão 1"),
+                     remote: false, state: .deactivated, description: "Cartão 1"),
                 pass(primaryAccountIdentifier: id(1), primaryAccountNumberSuffix: "2222",
-                     deviceType: .phone, state: .activated, description: "Cartão 2"),
+                     remote: false, state: .activated, description: "Cartão 2"),
             ]
         case .activating:
             return [
                 pass(primaryAccountIdentifier: id(0), primaryAccountNumberSuffix: "1111",
-                     deviceType: .phone, state: .activating, description: "Cartão 1"),
+                     remote: false, state: .activating, description: "Cartão 1"),
             ]
         case .alreadyAdded:
             return [
                 pass(primaryAccountIdentifier: id(0), primaryAccountNumberSuffix: "1111",
-                     deviceType: .phone, state: .activated, description: "Cartão 1"),
+                     remote: false, state: .activated, description: "Cartão 1"),
             ]
         default:
             return []

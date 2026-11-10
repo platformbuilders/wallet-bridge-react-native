@@ -10,7 +10,6 @@
 
 import type {
   AppleCanAddCardReason,
-  AppleDeviceType,
   ApplePassActivationState,
   AppleProvisioningStatus,
   AppleWalletErrorCode,
@@ -77,9 +76,9 @@ export interface ApplePaymentPass {
   serialNumber: string;
   passTypeIdentifier: string;
   passActivationState: ApplePassActivationState;
-  deviceType: AppleDeviceType;
-  /** `true` quando o pass está em um device pareado. */
+  /** `PKPass.isRemotePass`: o pass está em um device pareado. */
   isRemote: boolean;
+  /** `PKPass.deviceName`, como o PassKit devolve. */
   deviceName: string;
   localizedDescription: string;
 }
@@ -150,8 +149,14 @@ export interface AppleWalletSpec {
 
   // --- Passes -------------------------------------------------------------
 
-  /** Passes do iPhone e dos devices pareados (Apple Watch). */
+  /** `PKPassLibrary.passes(of: .secureElement)`: passes deste device. */
   listPasses(): Promise<ApplePaymentPass[]>;
+
+  /**
+   * `PKPassLibrary.remoteSecureElementPasses`: passes de devices pareados.
+   * Juntar com `listPasses` e identificar o device é do app.
+   */
+  listRemotePasses(): Promise<ApplePaymentPass[]>;
 
   /** `true` se o cartão (FPANID) já está na Wallet, em qualquer device. */
   isCardTokenized(primaryAccountIdentifier: string): Promise<boolean>;

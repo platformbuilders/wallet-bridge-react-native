@@ -49,6 +49,7 @@ export const AppleWalletAndroid: AppleWalletSpec = {
   cancelProvisioning: async () => false,
 
   listPasses: async () => [],
+  listRemotePasses: async () => [],
   isCardTokenized: async () => false,
   isWatchPaired: async () => false,
 

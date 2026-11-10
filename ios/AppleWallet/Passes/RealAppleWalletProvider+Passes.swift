@@ -1,9 +1,12 @@
 // ============================================================================
 // APPLE WALLET — PASSES (PKPassLibrary)
 // ============================================================================
-// Leitura dos passes de pagamento do iPhone e dos devices pareados. Funciona
-// sem o entitlement de provisioning: o PKPassLibrary devolve os passes do
-// próprio emissor (associated applications do pass).
+// Repassa os passes de pagamento como o PassKit devolve, sem interpretar:
+//   - listPasses       → PKPassLibrary.passes(of: .secureElement)
+//   - listRemotePasses → PKPassLibrary.remoteSecureElementPasses
+// Juntar as listas, identificar o device (iPhone, Apple Watch) e decidir o
+// que fazer com cada estado é do app. Funciona sem o entitlement de
+// provisioning: o PKPassLibrary devolve os passes do próprio emissor.
 
 import Foundation
 import PassKit
@@ -11,17 +14,11 @@ import PassKit
 extension RealAppleWalletProvider {
 
     func listPasses() -> [AWPaymentPass] {
-        guard PKPassLibrary.isPassLibraryAvailable() else {
-            log("WARN", "PKPassLibrary indisponível neste device.")
-            return []
-        }
+        Self.localPasses().map(Self.makePass)
+    }
 
-        let passes = Self.allSecureElementPasses().map(Self.makePass)
-        let pending = passes.filter {
-            $0.activationState == .requiresActivation || $0.activationState == .activating
-        }.count
-        log("INFO", "listPasses() → \(passes.count) pass(es), \(pending) pendente(s).")
-        return passes
+    func listRemotePasses() -> [AWPaymentPass] {
+        Self.remotePasses().map(Self.makePass)
     }
 
     func isCardTokenized(primaryAccountIdentifier: String) -> Bool {
@@ -32,6 +29,17 @@ extension RealAppleWalletProvider {
 
     // MARK: - Helpers
 
+    static func localPasses() -> [PKSecureElementPass] {
+        guard PKPassLibrary.isPassLibraryAvailable() else { return [] }
+        return PKPassLibrary().passes(of: .secureElement).compactMap(\.secureElementPass)
+    }
+
+    static func remotePasses() -> [PKSecureElementPass] {
+        guard PKPassLibrary.isPassLibraryAvailable() else { return [] }
+        return PKPassLibrary().remoteSecureElementPasses
+    }
+
+    /// Campos do `PKSecureElementPass`, sem transformação além do enum de estado.
     static func makePass(_ sePass: PKSecureElementPass) -> AWPaymentPass {
         let pass = AWPaymentPass()
         pass.primaryAccountIdentifier = sePass.primaryAccountIdentifier
@@ -41,18 +49,10 @@ extension RealAppleWalletProvider {
         pass.serialNumber = sePass.serialNumber
         pass.passTypeIdentifier = sePass.passTypeIdentifier
         pass.activationState = activationState(sePass.passActivationState)
-        pass.deviceType = isAppleWatchPass(sePass) ? .watch : .phone
         pass.isRemote = sePass.isRemotePass
         pass.deviceName = sePass.deviceName
         pass.localizedDescription = sePass.localizedDescription
         return pass
-    }
-
-    /// `isRemotePass` sozinho não basta: o pass remoto pode ser de outro
-    /// device pareado. O sample da Apple casa com o nome do device.
-    static func isAppleWatchPass(_ pass: PKPass) -> Bool {
-        pass.isRemotePass
-            && pass.deviceName.localizedCaseInsensitiveContains("Apple Watch")
     }
 
     static func activationState(
@@ -68,37 +68,20 @@ extension RealAppleWalletProvider {
         }
     }
 
-    /// Pass com este FPANID, aqui ou num device pareado. Local primeiro: se
-    /// o cartão estiver nos dois, o device atual decide se dá para adicionar.
-    ///
-    /// Não usa `canAddPaymentPassWithPrimaryAccountIdentifier:`: sem o
-    /// entitlement ele devolve `true` sempre.
+    /// Primeiro pass com este FPANID: locais, depois remotos.
     static func findSecureElementPass(
         primaryAccountIdentifier: String
     ) -> PKSecureElementPass? {
         guard !primaryAccountIdentifier.isEmpty else { return nil }
-        return allSecureElementPasses()
-            .sorted { !$0.isRemotePass && $1.isRemotePass }
+        return (localPasses() + remotePasses())
             .first { $0.primaryAccountIdentifier == primaryAccountIdentifier }
     }
 
-    /// Passes locais + remotos, sem repetição.
-    ///
-    /// A documentação orienta somar `passes(of:)` e `remoteSecureElementPasses`,
-    /// mas o sample da Apple sugere que `passes(of:)` já traz os remotos.
-    /// Somar e deduplicar por `passTypeIdentifier + serialNumber` funciona nos
-    /// dois casos. A chave identifica o pass, não o cartão: o mesmo cartão no
-    /// iPhone e no Watch são dois passes.
-    static func allSecureElementPasses() -> [PKSecureElementPass] {
-        guard PKPassLibrary.isPassLibraryAvailable() else { return [] }
-
-        let library = PKPassLibrary()
-        let candidates = library.passes(of: .secureElement).compactMap(\.secureElementPass)
-            + library.remoteSecureElementPasses
-
-        var seen = Set<String>()
-        return candidates.filter { pass in
-            seen.insert("\(pass.passTypeIdentifier)|\(pass.serialNumber)").inserted
-        }
+    /// Pass com este DPANID: locais, depois remotos.
+    static func findSecureElementPass(
+        deviceAccountIdentifier: String
+    ) -> PKSecureElementPass? {
+        (localPasses() + remotePasses())
+            .first { $0.deviceAccountIdentifier == deviceAccountIdentifier }
     }
 }

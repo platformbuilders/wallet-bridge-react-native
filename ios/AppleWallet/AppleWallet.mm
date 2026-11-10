@@ -187,6 +187,11 @@ static NSArray<NSDictionary *> *AWPassesToArray(NSArray<AWPaymentPass *> *passes
   resolve(AWPassesToArray([self.provider listPasses]));
 }
 
+- (void)listRemotePasses:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject {
+  resolve(AWPassesToArray([self.provider listRemotePasses]));
+}
+
 - (void)isCardTokenized:(NSString *)primaryAccountIdentifier
                 resolve:(RCTPromiseResolveBlock)resolve
                  reject:(RCTPromiseRejectBlock)reject {

@@ -317,10 +317,13 @@ await AppleWalletModule.startInAppProvisioning({
 #### Passes and In-App Verification
 
 ```typescript
-const passes = await AppleWalletModule.listPasses();
-// Each pass: primaryAccountIdentifier (FPANID), deviceAccountIdentifier (DPANID),
-// passActivationState (ACTIVATED | REQUIRES_ACTIVATION | ACTIVATING | SUSPENDED | DEACTIVATED),
-// deviceType (PHONE | WATCH), isRemote, deviceName, suffixes.
+const passes = await AppleWalletModule.listPasses(); // PKPassLibrary.passes(of: .secureElement)
+const remotePasses = await AppleWalletModule.listRemotePasses(); // remoteSecureElementPasses
+// Each pass, as PassKit returns it: primaryAccountIdentifier (FPANID),
+// deviceAccountIdentifier (DPANID), passActivationState (ACTIVATED |
+// REQUIRES_ACTIVATION | ACTIVATING | SUSPENDED | DEACTIVATED), isRemote,
+// deviceName, suffixes. Merging the lists and telling iPhone from Apple Watch
+// is up to the app.
 
 const watchPaired = await AppleWalletModule.isWatchPaired();
 
@@ -339,7 +342,8 @@ await AppleWalletModule.activatePass(deviceAccountIdentifier, activationData);
 | `startInAppProvisioning(config)` | `Promise<string>` | `requestId`; presents the PassKit sheet |
 | `submitProvisioningData(payload)` | `Promise<boolean>` | Step 2; pass arrives in `onProvisioningResult` |
 | `cancelProvisioning()` | `Promise<boolean>` | `false` when nothing is in progress |
-| `listPasses()` | `Promise<ApplePaymentPass[]>` | iPhone and paired Apple Watch |
+| `listPasses()` | `Promise<ApplePaymentPass[]>` | `passes(of: .secureElement)` |
+| `listRemotePasses()` | `Promise<ApplePaymentPass[]>` | `remoteSecureElementPasses` (paired devices) |
 | `isCardTokenized(fpanId)` | `Promise<boolean>` | Any device |
 | `isWatchPaired()` | `Promise<boolean>` | |
 | `activatePass(dpanId, activationData)` | `Promise<boolean>` | In-App Verification |
@@ -370,7 +374,7 @@ await AppleWalletMockControl.setImplementation(AppleWalletImplementation.REAL);
 
 Scenarios: `HAPPY_PUSH`, `PHONE_AND_WATCH`, `MIXED_DEVICE_STATES`, `MULTIPLE_PENDING`, `DEACTIVATED`, `ACTIVATING`, `USER_CANCELED`, `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`, `INVALID_ACTIVATION_DATA`, `HOST_TIMEOUT`, `ACTIVATION_FAILED`. In Release the control methods reject with `NOT_SUPPORTED_ON_PLATFORM`.
 
-For Jest, `mockAppleWalletModule` and iPhone + Watch pass fixtures are exported from `src/__tests__/__mocks__`.
+For Jest, `mockAppleWalletModule` and local + remote pass fixtures are exported from `src/__tests__/__mocks__`.
 
 #### Example app and Wallet mock app
 

@@ -20,7 +20,12 @@ export function PassesList({
   const [watchPaired, setWatchPaired] = useState<boolean | null>(null);
 
   const refresh = useCallback(async () => {
-    setPasses(await AppleWalletModule.listPasses());
+    // A lib devolve as duas listas do PassKit separadas; juntar é do app.
+    const [local, remote] = await Promise.all([
+      AppleWalletModule.listPasses(),
+      AppleWalletModule.listRemotePasses(),
+    ]);
+    setPasses([...local, ...remote]);
     setWatchPaired(await AppleWalletModule.isWatchPaired());
   }, []);
 
@@ -36,7 +41,7 @@ export function PassesList({
         <View key={pass.serialNumber} style={styles.card}>
           <Row
             label="device"
-            value={`${pass.deviceType} (${pass.deviceName})`}
+            value={`${pass.deviceName}${pass.isRemote ? ' (remoto)' : ''}`}
           />
           <Row label="estado" value={pass.passActivationState} />
           <Row label="FPANID" value={pass.primaryAccountIdentifier} />

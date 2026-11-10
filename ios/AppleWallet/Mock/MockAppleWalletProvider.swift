@@ -300,13 +300,13 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
                 return
             }
 
-            let pass = MockProvisioningFixtures.provisionedPass(config: config, deviceType: .phone)
+            let pass = MockProvisioningFixtures.provisionedPass(config: config, remote: false)
             self.passes.append(pass)
             var additional: [AWPaymentPass] = []
             if includeWatch {
                 let watchPass = MockProvisioningFixtures.provisionedPass(
                     config: config,
-                    deviceType: .watch
+                    remote: true
                 )
                 watchPass.primaryAccountIdentifier = pass.primaryAccountIdentifier
                 self.passes.append(watchPass)
@@ -357,8 +357,11 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     // MARK: - Passes
 
     func listPasses() -> [AWPaymentPass] {
-        log("INFO", "listPasses() → \(passes.count) pass(es).")
-        return passes
+        passes.filter { !$0.isRemote }
+    }
+
+    func listRemotePasses() -> [AWPaymentPass] {
+        passes.filter(\.isRemote)
     }
 
     func isCardTokenized(primaryAccountIdentifier: String) -> Bool {
