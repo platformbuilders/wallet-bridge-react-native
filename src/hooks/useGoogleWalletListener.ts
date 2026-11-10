@@ -52,8 +52,13 @@ export const useGoogleWalletListener = (
     let mounted = true;
     const requestPendingIntent = async () => {
       setIsCheckingPendingData(true);
-      await GoogleWalletService.startIntentListener();
-      if (mounted) setIsCheckingPendingData(false);
+      try {
+        await GoogleWalletService.startIntentListener();
+      } catch {
+        // O service já devolve `false` em erro; só garante o flag abaixo.
+      } finally {
+        if (mounted) setIsCheckingPendingData(false);
+      }
     };
     void requestPendingIntent();
 

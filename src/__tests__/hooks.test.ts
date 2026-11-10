@@ -131,6 +131,30 @@ describe('wallet listener hooks', () => {
     },
   );
 
+  it.each([
+    ['google', useGoogleWalletListener, 'startIntentListener'],
+    ['samsung', useSamsungWalletListener, 'startWalletIntentListener'],
+  ] as const)(
+    '%s: isCheckingPendingData volta a false mesmo se o nativo rejeitar',
+    async (prefix, useListener, method) => {
+      const service = (
+        prefix === 'google'
+          ? require('../services/google-wallet.service').GoogleWalletService
+          : require('../services/samsung-wallet.service').SamsungWalletService
+      ) as Record<string, jest.Mock>;
+      service[method]?.mockRejectedValueOnce(new Error('boom'));
+
+      useListener(jest.fn());
+      const [setIsChecking] = mockSetters;
+      runEffects();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(setIsChecking).toHaveBeenNthCalledWith(1, true);
+      expect(setIsChecking).toHaveBeenLastCalledWith(false);
+    },
+  );
+
   it('chama sempre os callbacks mais recentes', () => {
     const first = jest.fn();
     const latest = jest.fn();
