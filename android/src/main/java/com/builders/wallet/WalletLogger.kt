@@ -5,6 +5,7 @@ import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
 import java.lang.reflect.Method
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Logger customizado que envia logs para React Native além do Log padrão do Android.
@@ -16,7 +17,9 @@ import java.lang.reflect.Method
 object WalletLogger {
 
     private var reactContext: ReactApplicationContext? = null
-    private var logListenerActive: Boolean = false
+    // Contador de referência: Google e Samsung (e hooks montados mais de uma
+    // vez) compartilham este logger. O log só desliga quando o último sai.
+    private val logListenerCount = AtomicInteger(0)
 
     /**
      * Flag de depuração em cache. `null` = ainda não inicializado (padrão seguro → suprimido).
@@ -92,17 +95,22 @@ object WalletLogger {
     private fun isLoggingAllowed(): Boolean = enableLogs == true
 
     /**
-     * Ativa o listener de logs
+     * Registra (`true`) ou libera (`false`) um listener de logs. O envio para o
+     * React Native fica ligado enquanto houver ao menos um listener registrado.
      */
     fun setLogListener(active: Boolean) {
-        logListenerActive = active
+        if (active) {
+            logListenerCount.incrementAndGet()
+        } else {
+            logListenerCount.updateAndGet { count -> if (count > 0) count - 1 else 0 }
+        }
     }
 
     /**
      * Envia log para React Native
      */
     private fun sendLogToReactNative(level: String, tag: String, message: String, throwable: Throwable? = null) {
-        if (!logListenerActive || reactContext == null) {
+        if (logListenerCount.get() == 0 || reactContext == null) {
             return
         }
 
