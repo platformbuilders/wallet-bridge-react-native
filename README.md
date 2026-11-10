@@ -312,7 +312,7 @@ await AppleWalletModule.startInAppProvisioning({
 });
 ```
 
-`submitProvisioningData` resolves `true` once PassKit received the data; the added pass arrives in `onProvisioningResult` with status `ADDED`. The encryption scheme is always `ECC_V2`.
+`startInAppProvisioning` does not check `canAddCard` first: deciding whether to start (card already in Wallet, pending activation) is up to the app. It only rejects when PassKit itself cannot proceed. `submitProvisioningData` resolves `true` once PassKit received the data; the added pass arrives in `onProvisioningResult` with status `ADDED`. The encryption scheme is always `ECC_V2`.
 
 #### Passes and In-App Verification
 
@@ -346,7 +346,7 @@ await AppleWalletModule.activatePass(deviceAccountIdentifier, activationData);
 | `openWallet()` / `getEnvironment()` | | |
 | `onProvisioningCertificates` / `onProvisioningResult` / `onLog` | subscription | or `useAppleWalletListener` / `useAppleWalletLogListener` |
 
-Errors carry `code` from `AppleWalletErrorCode` (`ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`, `ALREADY_IN_PROGRESS`, `NOT_IN_PROGRESS`, `INVALID_CONFIGURATION`, `INVALID_SECURE_PAYLOAD`, `HOST_TIMEOUT`, `USER_CANCELED`, `PASS_NOT_FOUND`, `ACTIVATION_FAILED`, ...).
+Errors carry `code` from `AppleWalletErrorCode` (`ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_IN_PROGRESS`, `NOT_IN_PROGRESS`, `INVALID_CONFIGURATION`, `INVALID_SECURE_PAYLOAD`, `HOST_TIMEOUT`, `USER_CANCELED`, `PASS_NOT_FOUND`, `ACTIVATION_FAILED`, ...).
 
 Wallet Extensions (the issuer entries shown inside the Wallet app) run in a separate process and are native Swift in the app; they are not part of this library.
 

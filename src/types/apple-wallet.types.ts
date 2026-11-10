@@ -131,7 +131,9 @@ export interface AppleWalletSpec {
   /**
    * Apresenta a sheet do PassKit e resolve com o `requestId`. Os passos
    * seguintes chegam por `onProvisioningCertificates` e `onProvisioningResult`.
-   * Rejeita com `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`,
+   * Não consulta `canAddCard`: decidir se o fluxo deve começar (cartão já na
+   * Wallet, pendente de ativação) é do app. Rejeita só quando o PassKit não
+   * consegue seguir: `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`,
    * `ALREADY_IN_PROGRESS` ou `INVALID_CONFIGURATION`.
    */
   startInAppProvisioning(config: AppleProvisioningConfig): Promise<string>;

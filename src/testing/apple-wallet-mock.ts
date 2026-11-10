@@ -33,7 +33,7 @@ export enum AppleWalletMockScenario {
   USER_CANCELED = 'USER_CANCELED',
   ENTITLEMENT_MISSING = 'ENTITLEMENT_MISSING',
   NO_SECURE_ELEMENT = 'NO_SECURE_ELEMENT',
-  /** O cartão pedido já está na Wallet. */
+  /** `canAddCard` responde ALREADY_ADDED (o provisioning segue: decidir é do app). */
   ALREADY_ADDED = 'ALREADY_ADDED',
   /** O PassKit rejeita o passo 2. */
   INVALID_ACTIVATION_DATA = 'INVALID_ACTIVATION_DATA',

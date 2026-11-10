@@ -150,12 +150,21 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             throw AWError.make(.alreadyInProgress, message)
         }
 
-        let availability = canAddCard(
-            primaryAccountIdentifier: config.primaryAccountIdentifier
-        )
-        guard availability.canAddCard else {
-            log("ERROR", "Bloqueado: \(availability.reason.rawValue)")
-            throw AWError.make(availability.reason.errorCode, availability.message)
+        // Como no real: sem pré-checagem de canAddCard (isso é do app). Só
+        // falha onde o PassKit falharia, quando o controller não instancia.
+        switch scenario {
+        case .entitlementMissing:
+            let message = "[MOCK] PKAddPaymentPassViewController não instanciou: "
+                + "entitlement \(AWConst.provisioningEntitlement) ausente."
+            log("ERROR", message)
+            throw AWError.make(.entitlementMissing, message)
+        case .noSecureElement:
+            let message = "[MOCK] PKAddPaymentPassViewController não instanciou: "
+                + "device sem Secure Element."
+            log("ERROR", message)
+            throw AWError.make(.noSecureElement, message)
+        default:
+            break
         }
 
         let requestId = UUID().uuidString

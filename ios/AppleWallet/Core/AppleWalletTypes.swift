@@ -70,16 +70,6 @@ public enum AWReason: String {
     /// `alreadyAdded` porque exige ação do app (CTA de ativação).
     case requiresActivation = "REQUIRES_ACTIVATION"
     case unknown = "UNKNOWN"
-
-    /// Código de erro do reject quando o provisioning é bloqueado.
-    var errorCode: AWErrorCode {
-        switch self {
-        case .entitlementMissing: return .entitlementMissing
-        case .noSecureElement: return .noSecureElement
-        case .alreadyAdded, .requiresActivation: return .alreadyAdded
-        case .available, .unknown: return .unknown
-        }
-    }
 }
 
 /// Códigos legíveis entregues ao JS. Espelha AppleWalletErrorCode.
@@ -89,7 +79,6 @@ public enum AWErrorCode: String {
     case systemCanceled = "SYSTEM_CANCELED"
     case entitlementMissing = "ENTITLEMENT_MISSING"
     case noSecureElement = "NO_SECURE_ELEMENT"
-    case alreadyAdded = "ALREADY_ADDED"
     case invalidConfiguration = "INVALID_CONFIGURATION"
     case invalidSecurePayload = "INVALID_SECURE_PAYLOAD"
     case hostTimeout = "HOST_TIMEOUT"

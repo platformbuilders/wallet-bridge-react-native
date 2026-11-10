@@ -75,13 +75,9 @@ extension RealAppleWalletProvider {
             throw AWError.make(.alreadyInProgress, message)
         }
 
-        let availability = canAddCard(
-            primaryAccountIdentifier: config.primaryAccountIdentifier
-        )
-        guard availability.canAddCard else {
-            log("ERROR", "Bloqueado: \(availability.reason.rawValue)")
-            throw AWError.make(availability.reason.errorCode, availability.message)
-        }
+        // Sem pré-checagem de canAddCard: decidir se o fluxo deve começar
+        // (cartão já na Wallet, pendente de ativação...) é do app. A lib só
+        // falha quando o próprio PassKit não consegue seguir.
 
         // ECC_V2 fixo. A Apple define EV_ECC_V2 como esquema obrigatório; RSA
         // exige liberação da Apple e muda o formato do payload inteiro. Se um
@@ -115,11 +111,20 @@ extension RealAppleWalletProvider {
                 delegate: self
             )
         else {
+            // O PassKit não diz o motivo. No Simulator não há Secure Element;
+            // em device, a causa esperada é o entitlement ausente.
+            #if targetEnvironment(simulator)
+            let message = "PKAddPaymentPassViewController não instanciou: "
+                + "Simulator não tem Secure Element."
+            log("ERROR", message)
+            throw AWError.make(.noSecureElement, message)
+            #else
             let message = "PKAddPaymentPassViewController não instanciou. O "
                 + "entitlement \(AWConst.provisioningEntitlement) precisa estar "
                 + "no provisioning profile do app."
             log("ERROR", message)
             throw AWError.make(.entitlementMissing, message)
+            #endif
         }
 
         let requestId = UUID().uuidString

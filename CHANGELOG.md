@@ -26,6 +26,8 @@ dos commits.
     `startInAppProvisioning`, `submitProvisioningData` (resolve `boolean`; o
     pass chega no evento `onProvisioningResult`), `cancelProvisioning`.
     Esquema de criptografia fixo em `ECC_V2` (sem `encryptionScheme` na config).
+    `startInAppProvisioning` não consulta `canAddCard`: decidir se o fluxo
+    começa é do app; a lib só rejeita quando o PassKit não consegue seguir.
   - Passes: `listPasses` (iPhone e Apple Watch, com DPANID, FPANID,
     `passActivationState` e `deviceType`), `isCardTokenized`, `isWatchPaired`.
   - In-App Verification: `activatePass`.
