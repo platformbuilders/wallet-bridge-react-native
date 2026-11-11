@@ -4,7 +4,10 @@
 // Este arquivo exporta todos os mocks necessários para testar aplicações
 // que utilizam a biblioteca BuildersWallet
 
-import { ApplePassActivationState } from '../../enums/apple-wallet.enum';
+import {
+  ApplePassActivationState,
+  AppleWalletErrorCode,
+} from '../../enums/apple-wallet.enum';
 import type {
   ApplePaymentPass,
   AppleWalletConstants,
@@ -460,6 +463,19 @@ export const setupSuccessMocks = () => {
   mockSamsungWalletModule.checkWalletAvailability.mockResolvedValue(true);
   mockSamsungWalletModule.getSamsungPayStatus.mockResolvedValue(0);
   mockSamsungWalletModule.getAllCards.mockResolvedValue([mockSamsungCard]);
+
+  mockAppleWalletModule.canAddPaymentPass.mockResolvedValue(true);
+  mockAppleWalletModule.canAddSecureElementPass.mockResolvedValue(true);
+  mockAppleWalletModule.isWatchPaired.mockResolvedValue(true);
+  mockAppleWalletModule.listPasses.mockResolvedValue(mockApplePasses);
+  mockAppleWalletModule.listRemotePasses.mockResolvedValue(
+    mockAppleRemotePasses,
+  );
+  mockAppleWalletModule.startInAppProvisioning.mockResolvedValue(
+    'FAKE_REQUEST_ID',
+  );
+  mockAppleWalletModule.submitProvisioningData.mockResolvedValue(true);
+  mockAppleWalletModule.activatePass.mockResolvedValue(true);
 };
 
 /**
@@ -475,6 +491,15 @@ export const setupErrorMocks = () => {
   mockSamsungWalletModule.checkWalletAvailability.mockRejectedValue(error);
   mockSamsungWalletModule.getSamsungPayStatus.mockRejectedValue(error);
   mockSamsungWalletModule.getAllCards.mockRejectedValue(error);
+
+  // Como o nativo: as consultas do PassKit não rejeitam; as ações rejeitam
+  // com `code` de AppleWalletErrorCode.
+  const appleError = Object.assign(new Error('Apple Wallet not available'), {
+    code: AppleWalletErrorCode.ENTITLEMENT_MISSING,
+  });
+  mockAppleWalletModule.startInAppProvisioning.mockRejectedValue(appleError);
+  mockAppleWalletModule.submitProvisioningData.mockRejectedValue(appleError);
+  mockAppleWalletModule.activatePass.mockRejectedValue(appleError);
 };
 
 /**
@@ -484,4 +509,10 @@ export const setupUnavailableMocks = () => {
   mockGoogleWalletModule.checkWalletAvailability.mockResolvedValue(false);
   mockSamsungWalletModule.checkWalletAvailability.mockResolvedValue(false);
   mockSamsungWalletModule.getSamsungPayStatus.mockResolvedValue(2); // SPAY_NOT_SUPPORTED
+
+  mockAppleWalletModule.canAddPaymentPass.mockResolvedValue(false);
+  mockAppleWalletModule.canAddSecureElementPass.mockResolvedValue(false);
+  mockAppleWalletModule.isWatchPaired.mockResolvedValue(false);
+  mockAppleWalletModule.listPasses.mockResolvedValue([]);
+  mockAppleWalletModule.listRemotePasses.mockResolvedValue([]);
 };

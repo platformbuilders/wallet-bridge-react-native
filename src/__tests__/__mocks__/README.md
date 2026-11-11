@@ -84,6 +84,7 @@ describe('Meu App - Testes de Wallet', () => {
 
 - `mockGoogleWalletModule` - Mock completo do GoogleWalletModule
 - `mockSamsungWalletModule` - Mock completo do SamsungWalletModule
+- `mockAppleWalletModule` - Mock completo do AppleWalletModule
 
 ### Dados de Exemplo
 
@@ -92,11 +93,14 @@ describe('Meu App - Testes de Wallet', () => {
 - `mockGoogleTokenStatus` - Status de token do Google
 - `mockSamsungCard` - Cartão de exemplo do Samsung
 - `mockSamsungWalletInfo` - Informações da carteira Samsung
+- `mockApplePhonePass`, `mockAppleWatchPass`, `mockApplePendingPass` - Passes Apple de exemplo (iPhone ativo, Watch pendente, segundo cartão pendente)
+- `mockApplePasses` / `mockAppleRemotePasses` - Retornos de `listPasses` / `listRemotePasses`
 
 ### Constantes
 
 - `mockGoogleWalletConstants` - Constantes do Google Wallet
 - `mockSamsungWalletConstants` - Constantes do Samsung Wallet
+- `mockAppleWalletConstants` - Constantes do Apple Wallet
 
 ### Event Emitters
 
@@ -115,15 +119,15 @@ Reseta todos os mocks para um estado limpo.
 
 ### `setupSuccessMocks()`
 
-Configura todos os mocks para retornar sucesso.
+Configura todos os mocks (Google, Samsung e Apple) para retornar sucesso. Na Apple: `canAddPaymentPass` / `canAddSecureElementPass` / `isWatchPaired` `true`, passes locais e remotos de exemplo, e as ações resolvem.
 
 ### `setupErrorMocks()`
 
-Configura todos os mocks para retornar erro.
+Configura todos os mocks (Google, Samsung e Apple) para retornar erro. Na Apple, como no nativo, as consultas não rejeitam: `startInAppProvisioning`, `submitProvisioningData` e `activatePass` rejeitam com `code: ENTITLEMENT_MISSING`.
 
 ### `setupUnavailableMocks()`
 
-Configura todos os mocks para simular carteiras não disponíveis.
+Configura todos os mocks (Google, Samsung e Apple) para simular carteiras não disponíveis. Na Apple: `canAddPaymentPass` / `canAddSecureElementPass` / `isWatchPaired` `false` e listas de passes vazias.
 
 ## Exemplos de Cenários
 
