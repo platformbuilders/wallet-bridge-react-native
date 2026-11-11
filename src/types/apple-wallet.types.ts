@@ -14,8 +14,11 @@ import type {
   AppleWalletErrorCode,
 } from '../enums/apple-wallet.enum';
 
+/** Níveis que o módulo Apple emite no evento de log. */
+export type AppleWalletLogLevel = 'INFO' | 'WARN' | 'ERROR';
+
 export type AppleWalletLogEvent = {
-  level: string;
+  level: AppleWalletLogLevel;
   tag: string;
   message: string;
 };
@@ -96,7 +99,7 @@ export interface AppleProvisioningResultEvent {
 
 /** Erro de um método do módulo: `code` é um AppleWalletErrorCode. */
 export interface AppleWalletError extends Error {
-  code: AppleWalletErrorCode | string;
+  code: AppleWalletErrorCode;
 }
 
 export interface AppleWalletSpec {

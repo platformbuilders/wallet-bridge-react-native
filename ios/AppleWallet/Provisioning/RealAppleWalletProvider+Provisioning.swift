@@ -32,7 +32,7 @@ extension RealAppleWalletProvider {
     func startInAppProvisioning(config: AWProvisioningRequestConfig) throws -> String {
         if pendingRequestId != nil {
             let message = "Já existe um provisioning em andamento."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.alreadyInProgress, message)
         }
 
@@ -46,7 +46,7 @@ extension RealAppleWalletProvider {
         guard let pkConfig = PKAddPaymentPassRequestConfiguration(encryptionScheme: .ECC_V2)
         else {
             let message = "PKAddPaymentPassRequestConfiguration não instanciou."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.invalidConfiguration, message)
         }
 
@@ -77,13 +77,13 @@ extension RealAppleWalletProvider {
             #if targetEnvironment(simulator)
             let message = "PKAddPaymentPassViewController não instanciou: "
                 + "Simulator não tem Secure Element."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.noSecureElement, message)
             #else
             let message = "PKAddPaymentPassViewController não instanciou. O "
                 + "entitlement \(AWConst.provisioningEntitlement) precisa estar "
                 + "no provisioning profile do app."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.entitlementMissing, message)
             #endif
         }
@@ -92,14 +92,14 @@ extension RealAppleWalletProvider {
         pendingRequestId = requestId
         pendingController = controller
 
-        log("INFO", "startInAppProvisioning(\(requestId)) — apresentando a sheet.")
+        log(.info, "startInAppProvisioning(\(requestId)) — apresentando a sheet.")
         emit(AWProvisioningResultEvent(requestId: requestId, status: .presenting))
 
         DispatchQueue.main.async { [weak self] in
             self?.presentWhenReady(controller) { [weak self] in
                 guard let self, self.pendingRequestId == requestId else { return }
                 let message = "Nenhum view controller disponível para apresentar a sheet."
-                self.log("ERROR", message)
+                self.log(.error, message)
                 self.clearPending()
                 let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
                 event.errorCode = .unknown
@@ -115,7 +115,7 @@ extension RealAppleWalletProvider {
         guard let handler = pendingRequestHandler, let requestId = pendingRequestId else {
             let message = "Nenhum provisioning aguardando o passo 2. "
                 + "Chame startInAppProvisioning antes."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.notInProgress, message)
         }
 
@@ -125,7 +125,7 @@ extension RealAppleWalletProvider {
             let activationData = Data(base64Encoded: payload.activationData)
         else {
             let message = "Payload do passo 2 não é Base64 válido."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.invalidSecurePayload, message)
         }
 
@@ -135,7 +135,7 @@ extension RealAppleWalletProvider {
         request.activationData = activationData
 
         emit(AWProvisioningResultEvent(requestId: requestId, status: .submitting))
-        log("INFO", "Passo 2 entregue ao PassKit (\(requestId)).")
+        log(.info, "Passo 2 entregue ao PassKit (\(requestId)).")
 
         pendingRequestHandler = nil
         handler(request)
@@ -143,7 +143,7 @@ extension RealAppleWalletProvider {
 
     func cancelProvisioning() -> Bool {
         guard let requestId = pendingRequestId else {
-            log("WARN", "cancelProvisioning() sem provisioning em andamento.")
+            log(.warn, "cancelProvisioning() sem provisioning em andamento.")
             return false
         }
 
@@ -186,7 +186,7 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
             nonceSignature: nonceSignature.base64EncodedString()
         )
 
-        log("INFO", "Passo 1 concluído (\(requestId)). Aguardando o emissor.")
+        log(.info, "Passo 1 concluído (\(requestId)). Aguardando o emissor.")
         delegate?.provider(self, didReceiveCertificates: event)
         emit(AWProvisioningResultEvent(requestId: requestId, status: .awaitingHost))
     }
@@ -205,7 +205,7 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
         if let error {
             let nsError = error as NSError
             let canceled = nsError.code == PKAddPaymentPassError.userCancelled.rawValue
-            log("ERROR", "PassKit concluiu com erro (\(nsError.code)).")
+            log(.error, "PassKit concluiu com erro (\(nsError.code)).")
             let event = AWProvisioningResultEvent(
                 requestId: requestId,
                 status: canceled ? .canceled : .failed
@@ -217,7 +217,7 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
         }
 
         guard let pass else {
-            log("WARN", "Usuário cancelou a adição do cartão.")
+            log(.warn, "Usuário cancelou a adição do cartão.")
             let event = AWProvisioningResultEvent(requestId: requestId, status: .canceled)
             event.errorCode = .userCanceled
             event.errorMessage = "Usuário cancelou a adição do cartão."
@@ -225,7 +225,7 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
             return
         }
 
-        log("INFO", "Cartão adicionado à Wallet (\(requestId)).")
+        log(.info, "Cartão adicionado à Wallet (\(requestId)).")
         let event = AWProvisioningResultEvent(requestId: requestId, status: .added)
         event.pass = Self.makePass(pass)
         emit(event)

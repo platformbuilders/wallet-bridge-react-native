@@ -10,8 +10,6 @@
 // AppleWalletProviderFactory, que em Release só conhece o provider real: aqui
 // não há `#if DEBUG`, e mesmo assim nada do mock existe no binário de Release.
 
-static NSString *const AWMockUnavailableCode = @"NOT_SUPPORTED_ON_PLATFORM";
-
 @implementation AppleWalletMock
 
 + (NSString *)moduleName {
@@ -32,7 +30,7 @@ static NSString *const AWMockUnavailableCode = @"NOT_SUPPORTED_ON_PLATFORM";
 }
 
 static void AWRejectMockUnavailable(RCTPromiseRejectBlock reject) {
-  reject(AWMockUnavailableCode,
+  reject(AWError.notSupportedOnPlatformCode,
          @"O mock do Apple Wallet não está ativo (Release, ou implementação real).",
          nil);
 }
@@ -46,7 +44,7 @@ static void AWRejectMockUnavailable(RCTPromiseRejectBlock reject) {
                   resolve:(RCTPromiseResolveBlock)resolve
                    reject:(RCTPromiseRejectBlock)reject {
   if (![AppleWalletProviderFactory useImplementation:name]) {
-    reject(AWMockUnavailableCode,
+    reject(AWError.notSupportedOnPlatformCode,
            [NSString stringWithFormat:@"Implementação '%@' indisponível neste build.", name],
            nil);
     return;

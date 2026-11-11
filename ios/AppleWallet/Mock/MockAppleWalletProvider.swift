@@ -50,8 +50,8 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     // MARK: - Log e eventos
 
-    private func log(_ level: String, _ message: String) {
-        NSLog("[%@][%@] %@", Self.tag, level, message)
+    private func log(_ level: AWLogLevel, _ message: String) {
+        NSLog("[%@][%@] %@", Self.tag, level.rawValue, message)
         delegate?.provider(
             self,
             didLog: AWLogEvent(level: level, tag: Self.tag, message: message)
@@ -99,7 +99,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     func startInAppProvisioning(config: AWProvisioningRequestConfig) throws -> String {
         if pendingRequestId != nil {
             let message = "Já existe um provisioning em andamento."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.alreadyInProgress, message)
         }
 
@@ -109,12 +109,12 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         case .entitlementMissing:
             let message = "[MOCK] PKAddPaymentPassViewController não instanciou: "
                 + "entitlement \(AWConst.provisioningEntitlement) ausente."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.entitlementMissing, message)
         case .noSecureElement:
             let message = "[MOCK] PKAddPaymentPassViewController não instanciou: "
                 + "device sem Secure Element."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.noSecureElement, message)
         default:
             break
@@ -126,7 +126,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         pendingStage = .presenting
         pendingIncludesWatch = false
 
-        log("INFO", "startInAppProvisioning(\(requestId)) — sheet mock.")
+        log(.info, "startInAppProvisioning(\(requestId)) — sheet mock.")
         emit(AWProvisioningResultEvent(requestId: requestId, status: .presenting))
 
         if scenario == .userCanceled {
@@ -164,7 +164,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             self.presentWhenReady(sheet) { [weak self] in
                 guard let self else { return }
                 self.pendingSheet = nil
-                self.log("ERROR", "Não foi possível apresentar a sheet; seguindo sem ela.")
+                self.log(.error, "Não foi possível apresentar a sheet; seguindo sem ela.")
                 self.proceedToHandshake(requestId: requestId, includeWatch: false)
             }
         }
@@ -180,7 +180,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             guard let self, self.pendingRequestId == requestId else { return }
             let certificates = MockProvisioningFixtures.certificatesEvent(requestId: requestId)
             self.pendingStage = .awaitingHost
-            self.log("INFO", "Passo 1 concluído (\(requestId)). Aguardando o emissor.")
+            self.log(.info, "Passo 1 concluído (\(requestId)). Aguardando o emissor.")
             self.pendingSheet?.showProgress("Aguardando o emissor…")
             self.delegate?.provider(self, didReceiveCertificates: certificates)
             self.emit(AWProvisioningResultEvent(requestId: requestId, status: .awaitingHost))
@@ -193,7 +193,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         else {
             let message = "Nenhum provisioning aguardando o passo 2. "
                 + "Chame startInAppProvisioning antes."
-            log("ERROR", message)
+            log(.error, message)
             throw AWError.make(.notInProgress, message)
         }
 
@@ -214,7 +214,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             guard let self, self.pendingRequestId == requestId else { return }
 
             if let invalidReason {
-                self.log("ERROR", invalidReason)
+                self.log(.error, invalidReason)
                 self.clearPending()
                 let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
                 event.errorCode = .invalidSecurePayload
@@ -237,7 +237,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             }
 
             self.clearPending()
-            self.log("INFO", "Cartão adicionado à Wallet (\(requestId)).")
+            self.log(.info, "Cartão adicionado à Wallet (\(requestId)).")
             let event = AWProvisioningResultEvent(requestId: requestId, status: .added)
             event.pass = pass
             event.additionalPasses = additional
@@ -247,7 +247,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     func cancelProvisioning() -> Bool {
         guard let requestId = pendingRequestId else {
-            log("WARN", "cancelProvisioning() sem provisioning em andamento.")
+            log(.warn, "cancelProvisioning() sem provisioning em andamento.")
             return false
         }
         finishCanceled(
@@ -260,7 +260,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     private func finishCanceled(requestId: String, errorCode: AWErrorCode, message: String) {
         guard pendingRequestId == requestId else { return }
-        log("WARN", message)
+        log(.warn, message)
         clearPending()
         let event = AWProvisioningResultEvent(requestId: requestId, status: .canceled)
         event.errorCode = errorCode
@@ -306,21 +306,21 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             $0.deviceAccountIdentifier == deviceAccountIdentifier
         }) else {
             let message = "Nenhum pass com esse deviceAccountIdentifier na Wallet."
-            log("ERROR", message)
+            log(.error, message)
             completion(false, AWError.make(.passNotFound, message))
             return
         }
 
-        log("INFO", "activatePass() — ativando.")
+        log(.info, "activatePass() — ativando.")
         let fails = scenario == .activationFailed
         afterLatency { [weak self] in
             if fails {
-                self?.log("ERROR", "Ativação falhou (cenário).")
+                self?.log(.error, "Ativação falhou (cenário).")
                 completion(false, AWError.make(.activationFailed, "[MOCK] Ativação recusada."))
                 return
             }
             pass.activationState = .activated
-            self?.log("INFO", "Pass ativado.")
+            self?.log(.info, "Pass ativado.")
             completion(true, nil)
         }
     }
@@ -328,7 +328,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     // MARK: - Utilitários
 
     func openWallet() -> Bool {
-        log("INFO", "openWallet() simulado.")
+        log(.info, "openWallet() simulado.")
         return true
     }
 
@@ -348,7 +348,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
                 for: parsed,
                 primaryAccountIdentifiers: primaryAccountIdentifiers
             )
-            log("INFO", "Cenário: \(raw) (\(passes.count) pass(es) semeado(s)).")
+            log(.info, "Cenário: \(raw) (\(passes.count) pass(es) semeado(s)).")
         }
         return stateSnapshot()
     }
@@ -361,7 +361,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         latencyMs = 800
         primaryAccountIdentifiers = MockProvisioningFixtures.defaultPrimaryAccountIdentifiers()
         passes.removeAll()
-        log("INFO", "Mock resetado.")
+        log(.info, "Mock resetado.")
     }
 
     func stateSnapshot() -> [String: Any] {

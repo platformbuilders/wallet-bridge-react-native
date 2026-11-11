@@ -76,6 +76,13 @@ public enum AWErrorCode: String {
     case notSupportedOnPlatform = "NOT_SUPPORTED_ON_PLATFORM"
 }
 
+/// Nível do evento de log. Espelha AppleWalletLogLevel no TS.
+public enum AWLogLevel: String {
+    case info = "INFO"
+    case warn = "WARN"
+    case error = "ERROR"
+}
+
 /// PKSecureElementPass.PassActivationState. Espelha ApplePassActivationState.
 public enum AWActivationState: String {
     case activated = "ACTIVATED"
@@ -95,6 +102,9 @@ public enum AWActivationState: String {
     @objc public static let domain = "com.builders.wallet.apple"
     /// Chave do userInfo que a ponte usa como `code` do reject.
     @objc public static let codeKey = "appleWalletErrorCode"
+    /// `code` do reject dos controles do mock quando ele não existe (Release).
+    @objc public static let notSupportedOnPlatformCode =
+        AWErrorCode.notSupportedOnPlatform.rawValue
 
     /// NSError cujo código legível vai para o JS como `code` do reject.
     static func make(_ code: AWErrorCode, _ message: String) -> NSError {
@@ -318,11 +328,11 @@ public enum AWActivationState: String {
 }
 
 @objc public final class AWLogEvent: NSObject {
-    let level: String
+    let level: AWLogLevel
     let tag: String
     let message: String
 
-    init(level: String, tag: String, message: String) {
+    init(level: AWLogLevel, tag: String, message: String) {
         self.level = level
         self.tag = tag
         self.message = message
@@ -331,7 +341,7 @@ public enum AWActivationState: String {
 
     @objc public func toDictionary() -> [String: Any] {
         [
-            "level": level,
+            "level": level.rawValue,
             "tag": tag,
             "message": message,
         ]

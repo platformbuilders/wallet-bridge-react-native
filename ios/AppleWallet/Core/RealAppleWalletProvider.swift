@@ -53,9 +53,9 @@ final class RealAppleWalletProvider: NSObject, AppleWalletProviding {
     // MARK: - Log e eventos
 
     /// Log de diagnóstico: só em build Debug, como o `WalletLogger` do Android.
-    func log(_ level: String, _ message: String) {
+    func log(_ level: AWLogLevel, _ message: String) {
         #if DEBUG
-        NSLog("[%@][%@] %@", Self.tag, level, message)
+        NSLog("[%@][%@] %@", Self.tag, level.rawValue, message)
         delegate?.provider(
             self,
             didLog: AWLogEvent(level: level, tag: Self.tag, message: message)
@@ -73,10 +73,10 @@ final class RealAppleWalletProvider: NSObject, AppleWalletProviding {
         guard let url = URL(string: AWConst.walletURLScheme),
               UIApplication.shared.canOpenURL(url)
         else {
-            log("WARN", "Não foi possível abrir o app Wallet neste device.")
+            log(.warn, "Não foi possível abrir o app Wallet neste device.")
             return false
         }
-        log("INFO", "Abrindo o app Wallet.")
+        log(.info, "Abrindo o app Wallet.")
         DispatchQueue.main.async {
             UIApplication.shared.open(url)
         }

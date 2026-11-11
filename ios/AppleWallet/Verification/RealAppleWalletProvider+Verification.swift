@@ -37,23 +37,23 @@ extension RealAppleWalletProvider {
             )
         else {
             let message = "Nenhum pass com esse deviceAccountIdentifier na Wallet."
-            log("ERROR", message)
+            log(.error, message)
             completion(false, AWError.make(.passNotFound, message))
             return
         }
 
-        log("INFO", "activatePass() — chamando o PassKit.")
+        log(.info, "activatePass() — chamando o PassKit.")
         PKPassLibrary().activate(pass, activationData: data) { [weak self] success, error in
             DispatchQueue.main.async {
                 if let error {
-                    self?.log("ERROR", "Ativação falhou: \(error.localizedDescription)")
+                    self?.log(.error, "Ativação falhou: \(error.localizedDescription)")
                     completion(
                         false,
                         AWError.make(.activationFailed, error.localizedDescription)
                     )
                     return
                 }
-                self?.log("INFO", "Ativação concluída: \(success).")
+                self?.log(.info, "Ativação concluída: \(success).")
                 completion(
                     success,
                     success ? nil
