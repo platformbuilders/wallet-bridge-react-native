@@ -14,6 +14,13 @@
 // A interface vem do codegen (src/specs/NativeAppleWallet.ts); o registro do
 // módulo vem do `codegenConfig.ios.modulesProvider` do package.json.
 
+// Tamanho de cada fila até o JS ligar o emitter. Acima disso, o evento mais
+// antigo sai. Logs são muitos e descartáveis; certificados chegam um por fluxo;
+// resultados, alguns estágios por fluxo.
+static const NSInteger AWLogEventsLimit = 32;
+static const NSInteger AWCertificatesEventsLimit = 4;
+static const NSInteger AWResultEventsLimit = 16;
+
 @interface AppleWallet () <AppleWalletProviderDelegate>
 @property (nonatomic, strong) id<AppleWalletProviding> provider;
 /// Eventos a caminho do JS. A fila guarda o que nasce antes de o JS ligar o
@@ -32,10 +39,10 @@
 - (instancetype)init {
   self = [super init];
   if (self) {
-    _logEvents = [[AWEventBuffer alloc] initWithLimit:32];
-    _certificatesEvents = [[AWEventBuffer alloc] initWithLimit:4];
+    _logEvents = [[AWEventBuffer alloc] initWithLimit:AWLogEventsLimit];
+    _certificatesEvents = [[AWEventBuffer alloc] initWithLimit:AWCertificatesEventsLimit];
     _certificatesEvents.enabled = YES;
-    _resultEvents = [[AWEventBuffer alloc] initWithLimit:16];
+    _resultEvents = [[AWEventBuffer alloc] initWithLimit:AWResultEventsLimit];
     _resultEvents.enabled = YES;
 
     _provider = [AppleWalletProviderFactory currentProvider];

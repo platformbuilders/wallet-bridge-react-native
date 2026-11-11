@@ -33,8 +33,10 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     // MARK: - Configuração
 
     private(set) var scenario: AWScenario = .happyPush
+    /// Latência padrão das transições simuladas, em ms.
+    private static let defaultLatencyMs = 800
     /// Latência simulada das transições, em ms.
-    private(set) var latencyMs = 800
+    private(set) var latencyMs = defaultLatencyMs
     private var primaryAccountIdentifiers = MockProvisioningFixtures
         .defaultPrimaryAccountIdentifiers()
 
@@ -358,7 +360,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         pendingSheet = nil
         clearPending()
         scenario = .happyPush
-        latencyMs = 800
+        latencyMs = Self.defaultLatencyMs
         primaryAccountIdentifiers = MockProvisioningFixtures.defaultPrimaryAccountIdentifiers()
         passes.removeAll()
         log(.info, "Mock resetado.")
