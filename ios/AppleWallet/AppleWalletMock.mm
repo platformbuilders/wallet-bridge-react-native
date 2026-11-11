@@ -45,7 +45,8 @@ static void AWRejectMockUnavailable(RCTPromiseRejectBlock reject) {
                    reject:(RCTPromiseRejectBlock)reject {
   if (![AppleWalletProviderFactory useImplementation:name]) {
     reject(AWError.notSupportedOnPlatformCode,
-           [NSString stringWithFormat:@"Implementação '%@' indisponível neste build.", name],
+           [NSString stringWithFormat:@"Implementação '%@' indisponível: o mock exige build Debug "
+                                      @"e APPLE_WALLET_USE_MOCK no Info.plist.", name],
            nil);
     return;
   }

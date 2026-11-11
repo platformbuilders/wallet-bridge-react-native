@@ -44,7 +44,9 @@ dos commits.
   - Sem API de Wallet Extension: status, pass entries e autorização são do app
     (Swift nativo, outro processo).
 - **Mock nativo do Apple Wallet (só Debug)**, com cenários de iPhone + Watch,
-  vários pendentes, `DEACTIVATED`, `ACTIVATING` e de erro. Controlado por
+  vários pendentes, `DEACTIVATED`, `ACTIVATING` e de erro. Desligado por
+  padrão (o provider padrão é sempre o real); liga com
+  `APPLE_WALLET_USE_MOCK` no Info.plist do app. Controlado por
   `AppleWalletMockControl`, exportado só em
   `@platformbuilders/wallet-bridge-react-native/testing`. O build Release não
   compila o mock.

@@ -359,7 +359,15 @@ Wallet Extensions (the issuer entries shown inside the Wallet app) run in a sepa
 
 #### Mock (Debug builds)
 
-In Debug builds where PassKit cannot add cards (Simulator, or a device without the entitlement) the library uses a native mock: a look-alike sheet (with a `MOCK` badge) and an in-memory pass library. Release builds do not compile the mock.
+The library always uses the real PassKit provider by default, also in Debug. To use the native mock (a look-alike sheet with a `MOCK` badge and an in-memory pass library), turn it on explicitly in the app `Info.plist`, as `GOOGLE_WALLET_USE_MOCK` / `SAMSUNG_WALLET_USE_MOCK` on Android:
+
+```xml
+<!-- ios/<App>/Info.plist -->
+<key>APPLE_WALLET_USE_MOCK</key>
+<true/>
+```
+
+The key only takes effect in Debug builds; Release builds do not compile the mock. A string value (`YES`, `true`, `1`) also works, so it can come from a build setting such as `$(APPLE_WALLET_USE_MOCK)`. With the key on, the control below also switches between the mock and the real provider at runtime; with it off, `setImplementation(MOCK)` rejects with `NOT_SUPPORTED_ON_PLATFORM`.
 
 ```typescript
 import {

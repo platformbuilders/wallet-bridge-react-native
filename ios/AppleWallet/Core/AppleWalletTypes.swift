@@ -32,6 +32,8 @@ import Foundation
     // --- implementação ativa ---
     @objc public static let implementationReal = "real"
     @objc public static let implementationMock = "mock"
+    /// Chave do Info.plist que liga o mock em Debug (desligado por padrão).
+    @objc public static let useMockInfoPlistKey = "APPLE_WALLET_USE_MOCK"
 
     /// Postada quando a implementação ativa muda (só acontece em Debug, com
     /// o mock). A ponte reassina o delegate do provider novo.
