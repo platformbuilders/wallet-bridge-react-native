@@ -385,8 +385,6 @@ await AppleWalletMockControl.setImplementation(AppleWalletImplementation.REAL);
 
 Scenarios: `HAPPY_PUSH`, `PHONE_AND_WATCH`, `MIXED_DEVICE_STATES`, `MULTIPLE_PENDING`, `DEACTIVATED`, `ACTIVATING`, `USER_CANCELED`, `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`, `INVALID_ACTIVATION_DATA`, `ACTIVATION_FAILED`. In Release the control methods reject with `NOT_SUPPORTED_ON_PLATFORM`.
 
-For Jest, `mockAppleWalletModule` and local + remote pass fixtures are exported from `src/__tests__/__mocks__`.
-
 #### Example app and Wallet mock app
 
 - `yarn build:app-example:ios` runs the example; the Apple screen has Push, Verification and Passes flows and the mock panel.
