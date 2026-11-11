@@ -5,9 +5,9 @@ Este diretório contém os testes unitários para a biblioteca BuildersWallet Re
 ## Estrutura
 
 - `jest.setup.ts` - Configuração inicial dos testes e mocks
-- `__mocks__/` - Diretório com mocks exportáveis dos módulos nativos
-  - `index.ts` - Mocks exportáveis para uso em aplicações externas
-  - `README.md` - Documentação dos mocks exportáveis
+- `__mocks__/` - Mocks internos dos módulos nativos (não vão no pacote publicado)
+  - `index.ts` - Mocks usados pelos testes da lib
+  - `README.md` - Documentação dos mocks
 - `*.test.ts` - Arquivos de teste específicos
   - `index.test.tsx` - Teste de setup básico
   - `NativeBuildersWallet.test.ts` - Testes dos módulos nativos
@@ -55,9 +55,9 @@ yarn test:ci
 - `GoogleWalletEventEmitter` - Mock do event emitter do Google Wallet
 - `SamsungWalletEventEmitter` - Mock do event emitter do Samsung Wallet
 
-### Mocks Exportáveis
+### Mocks internos
 
-Todos os mocks estão disponíveis em `__mocks__/index.ts` para uso em aplicações externas:
+Todos os mocks estão em `__mocks__/index.ts`, para os testes da lib (não vão no pacote publicado):
 
 - `mockGoogleWalletModule` - Mock completo do GoogleWalletModule
 - `mockSamsungWalletModule` - Mock completo do SamsungWalletModule
@@ -74,9 +74,9 @@ Todos os mocks estão disponíveis em `__mocks__/index.ts` para uso em aplicaç�
 2. **NativeBuildersWallet Test** - Testa os métodos dos módulos nativos
 3. **Types Test** - Testa os tipos e enums da biblioteca
 
-## Usando Mocks em Aplicações Externas
+## Usando os mocks nos testes da lib
 
-Para usar os mocks em aplicações que utilizam a biblioteca:
+Os mocks são internos: o pacote publicado exclui `__tests__`, então um app consumidor não consegue importá-los. Nos testes da lib (imports relativos a `src/__tests__/`):
 
 ```typescript
 // 1. Importar os mocks
@@ -85,10 +85,10 @@ import {
   mockSamsungWalletModule,
   setupSuccessMocks,
   resetAllMocks,
-} from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';
+} from './__mocks__';
 
 // 2. Configurar no jest.setup.ts
-import { mockReactNative } from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';
+import { mockReactNative } from './__mocks__';
 jest.mock('react-native', () => mockReactNative);
 
 // 3. Usar nos testes
