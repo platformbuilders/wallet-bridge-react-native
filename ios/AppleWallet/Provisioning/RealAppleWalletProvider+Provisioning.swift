@@ -40,6 +40,37 @@ extension RealAppleWalletProvider {
         // Wallet, pendente de ativação...) é do app. A lib só falha quando o
         // próprio PassKit não consegue seguir.
 
+        let controller = try makeAddPaymentPassController(
+            configuration: makePassKitConfiguration(config)
+        )
+
+        let requestId = UUID().uuidString
+        pendingRequestId = requestId
+        pendingController = controller
+
+        log(.info, "startInAppProvisioning(\(requestId)) — apresentando a sheet.")
+        emit(AWProvisioningResultEvent(requestId: requestId, status: .presenting))
+
+        DispatchQueue.main.async { [weak self] in
+            self?.presentWhenReady(controller) { [weak self] in
+                guard let self, self.pendingRequestId == requestId else { return }
+                let message = "Nenhum view controller disponível para apresentar a sheet."
+                self.log(.error, message)
+                self.clearPending()
+                let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
+                event.errorCode = .unknown
+                event.errorMessage = message
+                self.emit(event)
+            }
+        }
+
+        return requestId
+    }
+
+    /// `PKAddPaymentPassRequestConfiguration` com os dados do cartão.
+    private func makePassKitConfiguration(
+        _ config: AWProvisioningRequestConfig
+    ) throws -> PKAddPaymentPassRequestConfiguration {
         // ECC_V2 fixo. A Apple define EV_ECC_V2 como esquema obrigatório; RSA
         // exige liberação da Apple e muda o formato do payload inteiro. Se um
         // dia houver escolha, ela entra aqui e o caso RSA precisa falhar alto.
@@ -65,50 +96,33 @@ extension RealAppleWalletProvider {
                 PKLabeledValue(label: "expiration", value: expiration)
             )
         }
+        return pkConfig
+    }
 
-        guard
-            let controller = PKAddPaymentPassViewController(
-                requestConfiguration: pkConfig,
-                delegate: self
-            )
-        else {
-            // O PassKit não diz o motivo. No Simulator não há Secure Element;
-            // em device, a causa esperada é o entitlement ausente.
-            #if targetEnvironment(simulator)
-            let message = "PKAddPaymentPassViewController não instanciou: "
-                + "Simulator não tem Secure Element."
-            log(.error, message)
-            throw AWError.make(.noSecureElement, message)
-            #else
-            let message = "PKAddPaymentPassViewController não instanciou. O "
-                + "entitlement \(AWConst.provisioningEntitlement) precisa estar "
-                + "no provisioning profile do app."
-            log(.error, message)
-            throw AWError.make(.entitlementMissing, message)
-            #endif
+    /// O controller do PassKit, ou o erro de quando ele não instancia.
+    private func makeAddPaymentPassController(
+        configuration: PKAddPaymentPassRequestConfiguration
+    ) throws -> PKAddPaymentPassViewController {
+        if let controller = PKAddPaymentPassViewController(
+            requestConfiguration: configuration,
+            delegate: self
+        ) {
+            return controller
         }
-
-        let requestId = UUID().uuidString
-        pendingRequestId = requestId
-        pendingController = controller
-
-        log(.info, "startInAppProvisioning(\(requestId)) — apresentando a sheet.")
-        emit(AWProvisioningResultEvent(requestId: requestId, status: .presenting))
-
-        DispatchQueue.main.async { [weak self] in
-            self?.presentWhenReady(controller) { [weak self] in
-                guard let self, self.pendingRequestId == requestId else { return }
-                let message = "Nenhum view controller disponível para apresentar a sheet."
-                self.log(.error, message)
-                self.clearPending()
-                let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
-                event.errorCode = .unknown
-                event.errorMessage = message
-                self.emit(event)
-            }
-        }
-
-        return requestId
+        // O PassKit não diz o motivo. No Simulator não há Secure Element;
+        // em device, a causa esperada é o entitlement ausente.
+        #if targetEnvironment(simulator)
+        let message = "PKAddPaymentPassViewController não instanciou: "
+            + "Simulator não tem Secure Element."
+        log(.error, message)
+        throw AWError.make(.noSecureElement, message)
+        #else
+        let message = "PKAddPaymentPassViewController não instanciou. O "
+            + "entitlement \(AWConst.provisioningEntitlement) precisa estar "
+            + "no provisioning profile do app."
+        log(.error, message)
+        throw AWError.make(.entitlementMissing, message)
+        #endif
     }
 
     func submitProvisioningData(payload: AWSecurePayload) throws {
