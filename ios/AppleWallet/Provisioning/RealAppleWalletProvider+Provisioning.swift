@@ -31,9 +31,8 @@ extension RealAppleWalletProvider {
 
     func startInAppProvisioning(config: AWProvisioningRequestConfig) throws -> String {
         if pendingRequestId != nil {
-            let message = "Já existe um provisioning em andamento."
-            log(.error, message)
-            throw AWError.make(.alreadyInProgress, message)
+            log(.error, AWMessage.alreadyInProgress)
+            throw AWError.alreadyInProgress()
         }
 
         // Sem pré-checagem: decidir se o fluxo deve começar (cartão já na
@@ -127,10 +126,8 @@ extension RealAppleWalletProvider {
 
     func submitProvisioningData(payload: AWSecurePayload) throws {
         guard let handler = pendingRequestHandler, let requestId = pendingRequestId else {
-            let message = "Nenhum provisioning aguardando o passo 2. "
-                + "Chame startInAppProvisioning antes."
-            log(.error, message)
-            throw AWError.make(.notInProgress, message)
+            log(.error, AWMessage.notAwaitingStep2)
+            throw AWError.notAwaitingStep2()
         }
 
         guard
@@ -157,7 +154,7 @@ extension RealAppleWalletProvider {
 
     func cancelProvisioning() -> Bool {
         guard let requestId = pendingRequestId else {
-            log(.warn, "cancelProvisioning() sem provisioning em andamento.")
+            log(.warn, AWMessage.nothingToCancel)
             return false
         }
 
@@ -169,7 +166,7 @@ extension RealAppleWalletProvider {
 
         let event = AWProvisioningResultEvent(requestId: requestId, status: .canceled)
         event.errorCode = .systemCanceled
-        event.errorMessage = "Provisioning cancelado pelo app."
+        event.errorMessage = AWMessage.canceledByApp
         emit(event)
         return true
     }
@@ -231,10 +228,10 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
         }
 
         guard let pass else {
-            log(.warn, "Usuário cancelou a adição do cartão.")
+            log(.warn, AWMessage.userCanceled)
             let event = AWProvisioningResultEvent(requestId: requestId, status: .canceled)
             event.errorCode = .userCanceled
-            event.errorMessage = "Usuário cancelou a adição do cartão."
+            event.errorMessage = AWMessage.userCanceled
             emit(event)
             return
         }

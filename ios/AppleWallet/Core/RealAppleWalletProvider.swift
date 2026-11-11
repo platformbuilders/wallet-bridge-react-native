@@ -22,13 +22,7 @@ final class RealAppleWalletProvider: NSObject, AppleWalletProviding {
 
     var implementationName: String { AWConst.implementationReal }
 
-    var environment: String {
-        #if targetEnvironment(simulator)
-        return "ios-simulator"
-        #else
-        return "ios-device"
-        #endif
-    }
+    var environment: String { AWRuntime.environment }
 
     // MARK: - Estado do provisioning em andamento
 

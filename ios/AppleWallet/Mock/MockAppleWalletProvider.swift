@@ -22,13 +22,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     var implementationName: String { AWConst.implementationMock }
 
-    var environment: String {
-        #if targetEnvironment(simulator)
-        return "ios-simulator"
-        #else
-        return "ios-device"
-        #endif
-    }
+    var environment: String { AWRuntime.environment }
 
     // MARK: - Configuração
 
@@ -100,9 +94,8 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     func startInAppProvisioning(config: AWProvisioningRequestConfig) throws -> String {
         if pendingRequestId != nil {
-            let message = "Já existe um provisioning em andamento."
-            log(.error, message)
-            throw AWError.make(.alreadyInProgress, message)
+            log(.error, AWMessage.alreadyInProgress)
+            throw AWError.alreadyInProgress()
         }
 
         try throwIfControllerUnavailable()
@@ -121,7 +114,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
                 self?.finishCanceled(
                     requestId: requestId,
                     errorCode: .userCanceled,
-                    message: "Usuário cancelou a adição do cartão."
+                    message: AWMessage.userCanceled
                 )
             }
             return requestId
@@ -201,10 +194,8 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         guard let requestId = pendingRequestId, pendingStage == .awaitingHost,
               let config = pendingConfig
         else {
-            let message = "Nenhum provisioning aguardando o passo 2. "
-                + "Chame startInAppProvisioning antes."
-            log(.error, message)
-            throw AWError.make(.notInProgress, message)
+            log(.error, AWMessage.notAwaitingStep2)
+            throw AWError.notAwaitingStep2()
         }
 
         let includeWatch = pendingIncludesWatch
@@ -271,13 +262,13 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     func cancelProvisioning() -> Bool {
         guard let requestId = pendingRequestId else {
-            log(.warn, "cancelProvisioning() sem provisioning em andamento.")
+            log(.warn, AWMessage.nothingToCancel)
             return false
         }
         finishCanceled(
             requestId: requestId,
             errorCode: .systemCanceled,
-            message: "Provisioning cancelado pelo app."
+            message: AWMessage.canceledByApp
         )
         return true
     }

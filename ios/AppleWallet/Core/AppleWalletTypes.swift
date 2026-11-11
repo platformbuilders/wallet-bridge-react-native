@@ -100,6 +100,31 @@ public enum AWActivationState: String {
 // ERROS
 // ============================================================================
 
+// ============================================================================
+// COMUM AO PROVIDER REAL E AO MOCK
+// ============================================================================
+// Os dois providers devolvem o mesmo ambiente e o mesmo texto para o mesmo
+// caso: um ponto só evita que o mock se afaste do real.
+
+enum AWRuntime {
+    static var environment: String {
+        #if targetEnvironment(simulator)
+        return "ios-simulator"
+        #else
+        return "ios-device"
+        #endif
+    }
+}
+
+enum AWMessage {
+    static let alreadyInProgress = "Já existe um provisioning em andamento."
+    static let notAwaitingStep2 =
+        "Nenhum provisioning aguardando o passo 2. Chame startInAppProvisioning antes."
+    static let userCanceled = "Usuário cancelou a adição do cartão."
+    static let canceledByApp = "Provisioning cancelado pelo app."
+    static let nothingToCancel = "cancelProvisioning() sem provisioning em andamento."
+}
+
 @objc public final class AWError: NSObject {
     @objc public static let domain = "com.builders.wallet.apple"
     /// Chave do userInfo que a ponte usa como `code` do reject.
@@ -118,6 +143,16 @@ public enum AWActivationState: String {
                 codeKey: code.rawValue,
             ]
         )
+    }
+
+    /// `startInAppProvisioning` com outro fluxo em andamento.
+    static func alreadyInProgress() -> NSError {
+        make(.alreadyInProgress, AWMessage.alreadyInProgress)
+    }
+
+    /// `submitProvisioningData` sem fluxo aguardando o passo 2.
+    static func notAwaitingStep2() -> NSError {
+        make(.notInProgress, AWMessage.notAwaitingStep2)
     }
 
     /// Código legível de um NSError (o nosso ou um do sistema).
