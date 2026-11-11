@@ -119,8 +119,8 @@ export interface AppleWalletSpec {
 
   /**
    * `PKPassLibrary.canAddSecureElementPass(primaryAccountIdentifier:)`, como o
-   * PassKit devolve. A Apple avisa que, sem o entitlement de provisioning, o
-   * método responde `true` sempre.
+   * PassKit devolve. Segundo a Apple, sem o entitlement de provisioning o
+   * método responde `false`.
    */
   canAddSecureElementPass(primaryAccountIdentifier: string): Promise<boolean>;
 

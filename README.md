@@ -340,7 +340,7 @@ await AppleWalletModule.activatePass(deviceAccountIdentifier, activationData);
 | Method | Returns | Notes |
 |---|---|---|
 | `canAddPaymentPass()` | `Promise<boolean>` | `PKAddPaymentPassViewController.canAddPaymentPass()` |
-| `canAddSecureElementPass(fpanId)` | `Promise<boolean>` | `PKPassLibrary.canAddSecureElementPass`; Apple notes it returns `true` without the entitlement |
+| `canAddSecureElementPass(fpanId)` | `Promise<boolean>` | `PKPassLibrary.canAddSecureElementPass`; per Apple, it returns `false` without the entitlement |
 | `startInAppProvisioning(config)` | `Promise<string>` | `requestId`; presents the PassKit sheet |
 | `submitProvisioningData(payload)` | `Promise<boolean>` | Step 2; pass arrives in `onProvisioningResult` |
 | `cancelProvisioning()` | `Promise<boolean>` | `false` when nothing is in progress |

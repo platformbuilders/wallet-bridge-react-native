@@ -23,8 +23,8 @@ extension RealAppleWalletProvider {
 
     /// `PKPassLibrary.canAddSecureElementPass(primaryAccountIdentifier:)`.
     ///
-    /// Repassado como o PassKit devolve. A Apple avisa que, sem o
-    /// entitlement de provisioning, o método responde `true` sempre.
+    /// Repassado como o PassKit devolve. Segundo a Apple, sem o entitlement de
+    /// provisioning o método responde `false`.
     func canAddSecureElementPass(primaryAccountIdentifier: String) -> Bool {
         PKPassLibrary().canAddSecureElementPass(primaryAccountIdentifier: primaryAccountIdentifier)
     }
