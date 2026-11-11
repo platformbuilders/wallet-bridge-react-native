@@ -30,7 +30,8 @@ dos commits.
     começa é do app; a lib só rejeita quando o PassKit não consegue seguir.
   - Passes: `listPasses` (`passes(of: .secureElement)`) e `listRemotePasses`
     (`remoteSecureElementPasses`), com DPANID, FPANID, `passActivationState`,
-    `isRemote` e `deviceName` como o PassKit devolve; `isWatchPaired`. Juntar as listas e identificar o device é do app.
+    `isRemote` e `deviceName` como o PassKit devolve (estado que a lib não
+    conhece chega como `UNKNOWN`, nunca como ativo); `isWatchPaired`. Juntar as listas e identificar o device é do app.
   - In-App Verification: `activatePass`.
   - Eventos `onProvisioningCertificates`, `onProvisioningResult` e `onLog`, e os
     hooks `useAppleWalletListener` / `useAppleWalletLogListener`.

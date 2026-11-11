@@ -60,7 +60,7 @@ extension RealAppleWalletProvider {
         case .activating: return .activating
         case .suspended: return .suspended
         case .deactivated: return .deactivated
-        @unknown default: return .activated
+        @unknown default: return .unknown
         }
     }
 

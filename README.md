@@ -322,7 +322,8 @@ const passes = await AppleWalletModule.listPasses(); // PKPassLibrary.passes(of:
 const remotePasses = await AppleWalletModule.listRemotePasses(); // remoteSecureElementPasses
 // Each pass, as PassKit returns it: primaryAccountIdentifier (FPANID),
 // deviceAccountIdentifier (DPANID), passActivationState (ACTIVATED |
-// REQUIRES_ACTIVATION | ACTIVATING | SUSPENDED | DEACTIVATED), isRemote,
+// REQUIRES_ACTIVATION | ACTIVATING | SUSPENDED | DEACTIVATED, or UNKNOWN for a
+// state PassKit adds later), isRemote,
 // deviceName, suffixes. Merging the lists and telling iPhone from Apple Watch
 // is up to the app.
 

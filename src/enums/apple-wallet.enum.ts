@@ -11,6 +11,8 @@ export enum ApplePassActivationState {
   ACTIVATING = 'ACTIVATING',
   SUSPENDED = 'SUSPENDED',
   DEACTIVATED = 'DEACTIVATED',
+  /** Estado que o PassKit trouxe e a lib ainda não conhece. */
+  UNKNOWN = 'UNKNOWN',
 }
 
 /** Estágios do In-App Provisioning, entregues no evento de resultado. */

@@ -85,6 +85,8 @@ public enum AWActivationState: String {
     case activating = "ACTIVATING"
     case suspended = "SUSPENDED"
     case deactivated = "DEACTIVATED"
+    /// Estado que o PassKit trouxe e a lib ainda não conhece.
+    case unknown = "UNKNOWN"
 }
 
 // ============================================================================
