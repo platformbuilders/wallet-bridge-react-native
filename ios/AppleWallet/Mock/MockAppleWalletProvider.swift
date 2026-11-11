@@ -105,22 +105,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             throw AWError.make(.alreadyInProgress, message)
         }
 
-        // Como no real: sem pré-checagem (isso é do app). Só
-        // falha onde o PassKit falharia, quando o controller não instancia.
-        switch scenario {
-        case .entitlementMissing:
-            let message = "[MOCK] PKAddPaymentPassViewController não instanciou: "
-                + "entitlement \(AWConst.provisioningEntitlement) ausente."
-            log(.error, message)
-            throw AWError.make(.entitlementMissing, message)
-        case .noSecureElement:
-            let message = "[MOCK] PKAddPaymentPassViewController não instanciou: "
-                + "device sem Secure Element."
-            log(.error, message)
-            throw AWError.make(.noSecureElement, message)
-        default:
-            break
-        }
+        try throwIfControllerUnavailable()
 
         let requestId = UUID().uuidString
         pendingRequestId = requestId
@@ -142,6 +127,31 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             return requestId
         }
 
+        presentSheet(config: config, requestId: requestId)
+        return requestId
+    }
+
+    /// Como no real: sem pré-checagem (isso é do app). Só falha onde o
+    /// PassKit falharia, quando o controller não instancia.
+    private func throwIfControllerUnavailable() throws {
+        switch scenario {
+        case .entitlementMissing:
+            let message = "[MOCK] PKAddPaymentPassViewController não instanciou: "
+                + "entitlement \(AWConst.provisioningEntitlement) ausente."
+            log(.error, message)
+            throw AWError.make(.entitlementMissing, message)
+        case .noSecureElement:
+            let message = "[MOCK] PKAddPaymentPassViewController não instanciou: "
+                + "device sem Secure Element."
+            log(.error, message)
+            throw AWError.make(.noSecureElement, message)
+        default:
+            break
+        }
+    }
+
+    /// Sheet mock no lugar da do PassKit; confirmar segue para o passo 1.
+    private func presentSheet(config: AWProvisioningRequestConfig, requestId: String) {
         let allowWatch = scenario.hasWatch
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -170,8 +180,6 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
                 self.proceedToHandshake(requestId: requestId, includeWatch: false)
             }
         }
-
-        return requestId
     }
 
     private func proceedToHandshake(requestId: String, includeWatch: Bool) {
@@ -204,47 +212,62 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         pendingSheet?.showProgress("Adicionando à Wallet…")
         emit(AWProvisioningResultEvent(requestId: requestId, status: .submitting))
 
-        let decodes = Data(base64Encoded: payload.encryptedPassData) != nil
-            && Data(base64Encoded: payload.ephemeralPublicKey) != nil
-            && Data(base64Encoded: payload.activationData) != nil
-        let invalidReason: String? =
-            scenario == .invalidActivationData
-            ? "activationData rejeitado pelo PassKit (cenário)."
-            : (decodes ? nil : "Payload do passo 2 não é Base64 válido.")
-
+        let rejection = invalidReason(for: payload)
         afterLatency { [weak self] in
             guard let self, self.pendingRequestId == requestId else { return }
-
-            if let invalidReason {
-                self.log(.error, invalidReason)
-                self.clearPending()
-                let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
-                event.errorCode = .invalidSecurePayload
-                event.errorMessage = invalidReason
-                self.emit(event)
-                return
-            }
-
-            let pass = MockProvisioningFixtures.provisionedPass(config: config, remote: false)
-            self.passes.append(pass)
-            var additional: [AWPaymentPass] = []
-            if includeWatch {
-                let watchPass = MockProvisioningFixtures.provisionedPass(
+            if let rejection {
+                self.failProvisioning(requestId: requestId, reason: rejection)
+            } else {
+                self.completeProvisioning(
+                    requestId: requestId,
                     config: config,
-                    remote: true
+                    includeWatch: includeWatch
                 )
-                watchPass.primaryAccountIdentifier = pass.primaryAccountIdentifier
-                self.passes.append(watchPass)
-                additional.append(watchPass)
             }
-
-            self.clearPending()
-            self.log(.info, "Cartão adicionado à Wallet (\(requestId)).")
-            let event = AWProvisioningResultEvent(requestId: requestId, status: .added)
-            event.pass = pass
-            event.additionalPasses = additional
-            self.emit(event)
         }
+    }
+
+    /// Motivo para o "PassKit" rejeitar o passo 2, ou `nil` se ele aceita.
+    private func invalidReason(for payload: AWSecurePayload) -> String? {
+        if scenario == .invalidActivationData {
+            return "activationData rejeitado pelo PassKit (cenário)."
+        }
+        let blobs = [payload.encryptedPassData, payload.ephemeralPublicKey, payload.activationData]
+        let decodes = blobs.allSatisfy { Data(base64Encoded: $0) != nil }
+        return decodes ? nil : "Payload do passo 2 não é Base64 válido."
+    }
+
+    private func failProvisioning(requestId: String, reason: String) {
+        log(.error, reason)
+        clearPending()
+        let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
+        event.errorCode = .invalidSecurePayload
+        event.errorMessage = reason
+        emit(event)
+    }
+
+    /// Adiciona o pass do iPhone (e o do Watch, se escolhido na sheet) e emite `.added`.
+    private func completeProvisioning(
+        requestId: String,
+        config: AWProvisioningRequestConfig,
+        includeWatch: Bool
+    ) {
+        let pass = MockProvisioningFixtures.provisionedPass(config: config, remote: false)
+        passes.append(pass)
+        var additional: [AWPaymentPass] = []
+        if includeWatch {
+            let watchPass = MockProvisioningFixtures.provisionedPass(config: config, remote: true)
+            watchPass.primaryAccountIdentifier = pass.primaryAccountIdentifier
+            passes.append(watchPass)
+            additional.append(watchPass)
+        }
+
+        clearPending()
+        log(.info, "Cartão adicionado à Wallet (\(requestId)).")
+        let event = AWProvisioningResultEvent(requestId: requestId, status: .added)
+        event.pass = pass
+        event.additionalPasses = additional
+        emit(event)
     }
 
     func cancelProvisioning() -> Bool {
