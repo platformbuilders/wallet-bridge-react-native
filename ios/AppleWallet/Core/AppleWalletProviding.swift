@@ -97,7 +97,7 @@ import UIKit
 // PassKit oferece. Só a implementação mock (compilada em Debug) adota.
 
 @objc public protocol AppleWalletMockControlling: AnyObject {
-    /// Ajusta cenário / latência / timeout. Devolve o estado depois de aplicar.
+    /// Ajusta cenário / latência. Devolve o estado depois de aplicar.
     func configure(_ config: [String: Any]) -> [String: Any]
 
     /// Limpa passes e provisioning em andamento e volta ao cenário padrão.
