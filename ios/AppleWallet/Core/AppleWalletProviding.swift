@@ -72,8 +72,9 @@ import UIKit
     /// `PKPassLibrary.remoteSecureElementPasses` (devices pareados).
     func listRemotePasses() -> [AWPaymentPass]
 
-
-    var isWatchPaired: Bool { get }
+    /// `WCSession.isPaired`. Responde depois que a sessão termina de ativar
+    /// (a ativação é assíncrona); sem ativação em ~2 s, responde `false`.
+    func isWatchPaired(completion: @escaping (Bool) -> Void)
 
     // --- Verification ----------------------------------------------------
 

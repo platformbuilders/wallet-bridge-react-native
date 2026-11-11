@@ -300,7 +300,9 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         passes.filter(\.isRemote)
     }
 
-    var isWatchPaired: Bool { scenario.hasWatch }
+    func isWatchPaired(completion: @escaping (Bool) -> Void) {
+        completion(scenario.hasWatch)
+    }
 
     // MARK: - Verification
 
@@ -385,7 +387,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             "scenario": scenario.rawValue,
             "scenarios": AWScenario.allCases.map(\.rawValue),
             "latencyMs": latencyMs,
-            "isWatchPaired": isWatchPaired,
+            "isWatchPaired": scenario.hasWatch,
             "passes": passes.map { $0.toDictionary() },
             "pendingRequestId": pendingRequestId ?? NSNull(),
             "pendingStage": pendingStage?.rawValue ?? NSNull(),

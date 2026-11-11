@@ -155,6 +155,11 @@ export interface AppleWalletSpec {
    */
   listRemotePasses(): Promise<ApplePaymentPass[]>;
 
+  /**
+   * `WCSession.isPaired`: há um Apple Watch pareado. A lib espera a sessão
+   * terminar de ativar (assíncrono) antes de responder; sem ativação em ~2 s,
+   * resolve `false`.
+   */
   isWatchPaired(): Promise<boolean>;
 
   // --- Verification -------------------------------------------------------

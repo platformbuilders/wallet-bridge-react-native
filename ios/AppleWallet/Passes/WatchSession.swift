@@ -20,13 +20,35 @@ final class WatchSession: NSObject, WCSessionDelegate {
         session.activate()
     }
 
-    /// `true` quando há um Apple Watch pareado. Enquanto a ativação
-    /// (assíncrona) não completa, devolve `false`.
-    var isPaired: Bool {
-        guard WCSession.isSupported() else { return false }
+    /// Intervalo e número de conferências da ativação: ~2 s no total.
+    private static let activationCheckInterval = DispatchTimeInterval.milliseconds(100)
+    private static let maxActivationChecks = 20
+
+    /// `true` quando há um Apple Watch pareado. A ativação da sessão é
+    /// assíncrona e `isPaired` só vale depois dela, então espera a ativação
+    /// antes de responder. Confere o estado em vez de depender do callback do
+    /// delegate, que pode ser do app. Sem ativação em ~2 s, responde `false`.
+    func isPaired(completion: @escaping (Bool) -> Void) {
+        checkPaired(attempt: 0, completion: completion)
+    }
+
+    private func checkPaired(attempt: Int, completion: @escaping (Bool) -> Void) {
+        guard WCSession.isSupported() else {
+            completion(false)
+            return
+        }
         let session = WCSession.default
-        guard session.activationState == .activated else { return false }
-        return session.isPaired
+        if session.activationState == .activated {
+            completion(session.isPaired)
+            return
+        }
+        guard attempt < Self.maxActivationChecks else {
+            completion(false)
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.activationCheckInterval) {
+            self.checkPaired(attempt: attempt + 1, completion: completion)
+        }
     }
 
     // MARK: - WCSessionDelegate

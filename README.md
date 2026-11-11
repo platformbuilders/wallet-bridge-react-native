@@ -346,7 +346,7 @@ await AppleWalletModule.activatePass(deviceAccountIdentifier, activationData);
 | `cancelProvisioning()` | `Promise<boolean>` | `false` when nothing is in progress |
 | `listPasses()` | `Promise<ApplePaymentPass[]>` | `passes(of: .secureElement)` |
 | `listRemotePasses()` | `Promise<ApplePaymentPass[]>` | `remoteSecureElementPasses` (paired devices) |
-| `isWatchPaired()` | `Promise<boolean>` | |
+| `isWatchPaired()` | `Promise<boolean>` | `WCSession.isPaired`; waits for the session to activate (async), `false` after ~2 s without activation |
 | `activatePass(dpanId, activationData)` | `Promise<boolean>` | In-App Verification |
 | `openWallet()` / `getEnvironment()` | | |
 | `onProvisioningCertificates` / `onProvisioningResult` / `onLog` | subscription | or `useAppleWalletListener` / `useAppleWalletLogListener` |

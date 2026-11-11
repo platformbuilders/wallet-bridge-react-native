@@ -198,7 +198,9 @@ static NSArray<NSDictionary *> *AWPassesToArray(NSArray<AWPaymentPass *> *passes
 }
 
 - (void)isWatchPaired:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
-  resolve(@(self.provider.isWatchPaired));
+  [self.provider isWatchPairedWithCompletion:^(BOOL paired) {
+    resolve(@(paired));
+  }];
 }
 
 #pragma mark - Verification

@@ -21,7 +21,9 @@ extension RealAppleWalletProvider {
         Self.remotePasses().map(Self.makePass)
     }
 
-    var isWatchPaired: Bool { watchSession.isPaired }
+    func isWatchPaired(completion: @escaping (Bool) -> Void) {
+        watchSession.isPaired(completion: completion)
+    }
 
     // MARK: - Helpers
 
