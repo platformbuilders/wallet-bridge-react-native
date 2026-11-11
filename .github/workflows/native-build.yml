@@ -43,7 +43,8 @@ jobs:
         run: yarn install --immutable
 
       # O Gemfile só pede ruby ">= 2.6.10"; a action exige uma versão exata.
-      - uses: ruby/setup-ruby@v1
+      # Ação de terceiro fixada por SHA (a tag v1 é móvel).
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
         with:
           ruby-version: '3.4'
           working-directory: example
@@ -80,10 +81,17 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             build | tail -n 50
-          # O mock do Apple Wallet só existe em Debug.
+          # O mock do Apple Wallet só existe em Debug: nenhum tipo declarado em
+          # ios/AppleWallet/Mock/ (todos sob #if DEBUG) pode chegar ao Release.
           binary=build/Build/Products/Release-iphonesimulator/BuildersWalletExample.app/BuildersWalletExample
-          if strings "$binary" | grep -q 'MockAppleWalletProvider'; then
-            echo '::error::Mock do Apple Wallet encontrado no binário Release'
+          mock_types=$(grep -hoE '^(final )?(class|enum|struct) +[A-Za-z]+' \
+            ../../ios/AppleWallet/Mock/*.swift | awk '{print $NF}' | paste -sd'|' -)
+          if [ -z "$mock_types" ]; then
+            echo '::error::Nenhum tipo encontrado em ios/AppleWallet/Mock/'
+            exit 1
+          fi
+          if strings "$binary" | grep -qE "$mock_types"; then
+            echo "::error::Mock do Apple Wallet no binário Release ($mock_types)"
             exit 1
           fi
 
