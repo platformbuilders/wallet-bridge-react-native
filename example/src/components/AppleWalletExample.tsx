@@ -1,7 +1,7 @@
 // Tela Apple Wallet do example, separada por fluxo: Push (In-App
-// Provisioning), Verificação (In-App Verification) e Passes. Em build Debug
-// sem entitlement (Simulator), a lib usa o mock nativo; o painel de mock
-// troca o cenário.
+// Provisioning), Verificação (In-App Verification) e Passes. O example liga
+// APPLE_WALLET_USE_MOCK no Info.plist, então em build Debug a lib usa o mock
+// nativo; o painel de mock troca o cenário e a implementação.
 import { useEffect, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text } from 'react-native';
 import {

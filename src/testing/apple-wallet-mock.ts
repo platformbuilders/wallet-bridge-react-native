@@ -74,9 +74,13 @@ const nativeMock = () => {
 };
 
 /**
- * Controle do mock nativo do Apple Wallet (build Debug). No Simulator e em
- * device sem o entitlement de provisioning, o mock já é a implementação
- * padrão; `setImplementation` troca em tempo de execução.
+ * Controle do mock nativo do Apple Wallet. O padrão é sempre o provider real;
+ * o mock só existe em build Debug com `APPLE_WALLET_USE_MOCK` no `Info.plist`
+ * do app, e aí `setImplementation` troca entre real e mock em tempo de
+ * execução. `getImplementation` e `setImplementation('real')` sempre
+ * resolvem; `setImplementation('mock')` rejeita sem a chave ou em Release, e
+ * `configure` / `reset` / `getState` rejeitam quando o mock não está ativo,
+ * todos com `NOT_SUPPORTED_ON_PLATFORM`.
  */
 export const AppleWalletMockControl = {
   getImplementation: async (): Promise<AppleWalletImplementation> =>

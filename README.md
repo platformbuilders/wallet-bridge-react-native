@@ -383,7 +383,7 @@ await AppleWalletMockControl.configure({
 await AppleWalletMockControl.setImplementation(AppleWalletImplementation.REAL);
 ```
 
-Scenarios: `HAPPY_PUSH`, `PHONE_AND_WATCH`, `MIXED_DEVICE_STATES`, `MULTIPLE_PENDING`, `DEACTIVATED`, `ACTIVATING`, `USER_CANCELED`, `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`, `INVALID_ACTIVATION_DATA`, `ACTIVATION_FAILED`. In Release the control methods reject with `NOT_SUPPORTED_ON_PLATFORM`.
+Scenarios: `HAPPY_PUSH`, `PHONE_AND_WATCH`, `MIXED_DEVICE_STATES`, `MULTIPLE_PENDING`, `DEACTIVATED`, `ACTIVATING`, `USER_CANCELED`, `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`, `INVALID_ACTIVATION_DATA`, `ACTIVATION_FAILED`. In Release the mock is not compiled: `getImplementation` resolves `real`, `setImplementation(REAL)` resolves `true`, and `setImplementation(MOCK)`, `configure`, `reset` and `getState` reject with `NOT_SUPPORTED_ON_PLATFORM`.
 
 #### Example app and Wallet mock app
 

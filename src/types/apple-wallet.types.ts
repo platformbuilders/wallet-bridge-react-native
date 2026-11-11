@@ -166,8 +166,8 @@ export interface AppleWalletSpec {
 
   /**
    * Ativa um pass `REQUIRES_ACTIVATION` com o `activationData` do emissor
-   * (Base64). Rejeita com `PASS_NOT_FOUND`, `INVALID_SECURE_PAYLOAD` ou
-   * `ACTIVATION_FAILED`.
+   * (Base64). Rejeita com `PASS_LIBRARY_UNAVAILABLE`, `PASS_NOT_FOUND`,
+   * `INVALID_SECURE_PAYLOAD` ou `ACTIVATION_FAILED`.
    */
   activatePass(
     deviceAccountIdentifier: string,
