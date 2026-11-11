@@ -635,6 +635,15 @@ npx react-native run-android
 
 > **⚠️ Warning:** This second command is only for building on a physical device or emulator.
 
+### 🧪 Continuous Integration
+
+- `check.yml` runs on every PR: install, `yarn test` and `yarn lint` (which includes the typecheck).
+- `native-build.yml` runs on PRs that touch native code, the codegen specs, the example or the package manifest:
+  - **iOS:** builds the example in Debug and Release on the Simulator and fails if the Apple Wallet mock reaches the Release binary.
+  - **Android:** builds the example with `GOOGLE_WALLET_ENABLED=false` and `SAMSUNG_WALLET_ENABLED=false`, so only `src/main` and the `noGoogleWallet` / `noSamsungWallet` stubs are compiled.
+
+> **⚠️ The real Android source sets (`googleWallet`, `samsungWallet`) are not compiled in this repository's CI.** The Tap and Pay and Samsung Pay SDKs belong to the consumer app and are not committed here. Before merging a change under `android/`, build a consumer app with both flags set to `true`, the SDKs in its `android/libs/`, and the library dependency pointing to your branch.
+
 ## 🔗 Useful Links
 
 - [Google Pay Android Push Provisioning](https://developers.google.com/pay/issuers/apis/push-provisioning/android)
