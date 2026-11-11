@@ -35,9 +35,6 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     private(set) var scenario: AWScenario = .happyPush
     /// Latência simulada das transições, em ms.
     private(set) var latencyMs = 800
-    /// Prazo para o emissor responder o passo 2, em ms. A Apple documenta
-    /// 20 s para o handler do PassKit.
-    private(set) var hostTimeoutMs = 20_000
     private var primaryAccountIdentifiers = MockProvisioningFixtures
         .defaultPrimaryAccountIdentifiers()
 
@@ -48,7 +45,6 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     private var pendingStage: AWStatus = .idle
     private var pendingConfig: AWProvisioningRequestConfig?
     private var pendingIncludesWatch = false
-    private var hostTimeoutWork: DispatchWorkItem?
     private weak var pendingSheet: MockAddPassSheetController?
 
     // MARK: - Log e eventos
@@ -187,28 +183,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             self.pendingSheet?.showProgress("Aguardando o emissor…")
             self.delegate?.provider(self, didReceiveCertificates: certificates)
             self.emit(AWProvisioningResultEvent(requestId: requestId, status: .awaitingHost))
-            self.armHostTimeout(requestId: requestId)
         }
-    }
-
-    private func armHostTimeout(requestId: String) {
-        hostTimeoutWork?.cancel()
-        let timeout = scenario == .hostTimeout ? min(hostTimeoutMs, 3_000) : hostTimeoutMs
-        let work = DispatchWorkItem { [weak self] in
-            guard let self, self.pendingRequestId == requestId else { return }
-            let message = "Emissor não respondeu em \(timeout) ms."
-            self.log("ERROR", message)
-            self.clearPending()
-            let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
-            event.errorCode = .hostTimeout
-            event.errorMessage = message
-            self.emit(event)
-        }
-        hostTimeoutWork = work
-        DispatchQueue.main.asyncAfter(
-            deadline: .now() + .milliseconds(timeout),
-            execute: work
-        )
     }
 
     func submitProvisioningData(payload: AWSecurePayload) throws {
@@ -221,16 +196,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             throw AWError.make(.notInProgress, message)
         }
 
-        // HOST_TIMEOUT: o emissor "não respondeu"; o passo 2 é ignorado e o
-        // timeout armado encerra o fluxo.
-        if scenario == .hostTimeout {
-            log("WARN", "Cenário HOST_TIMEOUT: passo 2 ignorado.")
-            return
-        }
-
         let includeWatch = pendingIncludesWatch
-        hostTimeoutWork?.cancel()
-        hostTimeoutWork = nil
         pendingStage = .submitting
         pendingSheet?.showProgress("Adicionando à Wallet…")
         emit(AWProvisioningResultEvent(requestId: requestId, status: .submitting))
@@ -302,8 +268,6 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     }
 
     private func clearPending() {
-        hostTimeoutWork?.cancel()
-        hostTimeoutWork = nil
         pendingRequestId = nil
         pendingConfig = nil
         pendingIncludesWatch = false
@@ -376,9 +340,6 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         if let value = config["latencyMs"] as? NSNumber {
             latencyMs = max(0, value.intValue)
         }
-        if let value = config["hostTimeoutMs"] as? NSNumber {
-            hostTimeoutMs = max(0, value.intValue)
-        }
         if let raw = config["scenario"] as? String, let parsed = AWScenario(rawValue: raw) {
             scenario = parsed
             clearPending()
@@ -397,7 +358,6 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         clearPending()
         scenario = .happyPush
         latencyMs = 800
-        hostTimeoutMs = 20_000
         primaryAccountIdentifiers = MockProvisioningFixtures.defaultPrimaryAccountIdentifiers()
         passes.removeAll()
         log("INFO", "Mock resetado.")
@@ -409,7 +369,6 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             "scenario": scenario.rawValue,
             "scenarios": AWScenario.allCases.map(\.rawValue),
             "latencyMs": latencyMs,
-            "hostTimeoutMs": hostTimeoutMs,
             "isWatchPaired": isWatchPaired,
             "passes": passes.map { $0.toDictionary() },
             "pendingRequestId": pendingRequestId ?? NSNull(),

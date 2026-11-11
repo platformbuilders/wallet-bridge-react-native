@@ -351,7 +351,9 @@ await AppleWalletModule.activatePass(deviceAccountIdentifier, activationData);
 | `openWallet()` / `getEnvironment()` | | |
 | `onProvisioningCertificates` / `onProvisioningResult` / `onLog` | subscription | or `useAppleWalletListener` / `useAppleWalletLogListener` |
 
-Errors carry `code` from `AppleWalletErrorCode` (`ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_IN_PROGRESS`, `NOT_IN_PROGRESS`, `INVALID_CONFIGURATION`, `INVALID_SECURE_PAYLOAD`, `HOST_TIMEOUT`, `USER_CANCELED`, `PASS_NOT_FOUND`, `ACTIVATION_FAILED`, ...).
+Errors carry `code` from `AppleWalletErrorCode` (`ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_IN_PROGRESS`, `NOT_IN_PROGRESS`, `INVALID_CONFIGURATION`, `INVALID_SECURE_PAYLOAD`, `USER_CANCELED`, `PASS_NOT_FOUND`, `ACTIVATION_FAILED`, ...).
+
+The library sets no deadline for step 2: how long to wait for the issuer, and when to call `cancelProvisioning`, is up to the app.
 
 Wallet Extensions (the issuer entries shown inside the Wallet app) run in a separate process and are native Swift in the app; they are not part of this library.
 
@@ -373,7 +375,7 @@ await AppleWalletMockControl.configure({
 await AppleWalletMockControl.setImplementation(AppleWalletImplementation.REAL);
 ```
 
-Scenarios: `HAPPY_PUSH`, `PHONE_AND_WATCH`, `MIXED_DEVICE_STATES`, `MULTIPLE_PENDING`, `DEACTIVATED`, `ACTIVATING`, `USER_CANCELED`, `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`, `INVALID_ACTIVATION_DATA`, `HOST_TIMEOUT`, `ACTIVATION_FAILED`. In Release the control methods reject with `NOT_SUPPORTED_ON_PLATFORM`.
+Scenarios: `HAPPY_PUSH`, `PHONE_AND_WATCH`, `MIXED_DEVICE_STATES`, `MULTIPLE_PENDING`, `DEACTIVATED`, `ACTIVATING`, `USER_CANCELED`, `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`, `INVALID_ACTIVATION_DATA`, `ACTIVATION_FAILED`. In Release the control methods reject with `NOT_SUPPORTED_ON_PLATFORM`.
 
 For Jest, `mockAppleWalletModule` and local + remote pass fixtures are exported from `src/__tests__/__mocks__`.
 

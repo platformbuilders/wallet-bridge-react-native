@@ -32,8 +32,6 @@ enum AWScenario: String, CaseIterable {
     case alreadyAdded = "ALREADY_ADDED"
     /// O PassKit rejeita o passo 2.
     case invalidActivationData = "INVALID_ACTIVATION_DATA"
-    /// O emissor não responde o passo 2 a tempo.
-    case hostTimeout = "HOST_TIMEOUT"
     /// `activatePass` falha.
     case activationFailed = "ACTIVATION_FAILED"
 

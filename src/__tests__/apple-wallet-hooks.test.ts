@@ -112,7 +112,7 @@ describe('useAppleWalletListener', () => {
       requestId: 'REQ',
       status: AppleProvisioningStatus.FAILED,
       additionalPasses: [],
-      errorCode: AppleWalletErrorCode.HOST_TIMEOUT,
+      errorCode: AppleWalletErrorCode.INVALID_SECURE_PAYLOAD,
     };
     lastListener(mockAppleWalletModule.onProvisioningResult)(result);
 

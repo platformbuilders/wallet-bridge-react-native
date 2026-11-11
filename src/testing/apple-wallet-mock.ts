@@ -37,8 +37,6 @@ export enum AppleWalletMockScenario {
   ALREADY_ADDED = 'ALREADY_ADDED',
   /** O PassKit rejeita o passo 2. */
   INVALID_ACTIVATION_DATA = 'INVALID_ACTIVATION_DATA',
-  /** O emissor não responde o passo 2 a tempo. */
-  HOST_TIMEOUT = 'HOST_TIMEOUT',
   /** `activatePass` falha. */
   ACTIVATION_FAILED = 'ACTIVATION_FAILED',
 }
@@ -47,8 +45,6 @@ export interface AppleWalletMockConfig {
   scenario?: AppleWalletMockScenario;
   /** Latência simulada das transições, em ms. */
   latencyMs?: number;
-  /** Prazo para o emissor responder o passo 2, em ms. */
-  hostTimeoutMs?: number;
   /** FPANIDs usados nos passes semeados pelo cenário (casar com os cartões do app). */
   primaryAccountIdentifiers?: string[];
 }
@@ -58,7 +54,6 @@ export interface AppleWalletMockState {
   scenario: AppleWalletMockScenario;
   scenarios: AppleWalletMockScenario[];
   latencyMs: number;
-  hostTimeoutMs: number;
   isWatchPaired: boolean;
   passes: ApplePaymentPass[];
   pendingRequestId: string | null;

@@ -69,7 +69,6 @@ public enum AWErrorCode: String {
     case noSecureElement = "NO_SECURE_ELEMENT"
     case invalidConfiguration = "INVALID_CONFIGURATION"
     case invalidSecurePayload = "INVALID_SECURE_PAYLOAD"
-    case hostTimeout = "HOST_TIMEOUT"
     case notInProgress = "NOT_IN_PROGRESS"
     case alreadyInProgress = "ALREADY_IN_PROGRESS"
     case passNotFound = "PASS_NOT_FOUND"
