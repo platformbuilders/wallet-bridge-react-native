@@ -121,6 +121,8 @@ enum AWMessage {
     static let notAwaitingStep2 =
         "Nenhum provisioning aguardando o passo 2. Chame startInAppProvisioning antes."
     static let userCanceled = "Usuário cancelou a adição do cartão."
+    static let invalidBase64 = "Payload do passo 2 não é Base64 válido."
+    static let noPresenter = "Nenhum view controller disponível para apresentar a sheet."
     static let canceledByApp = "Provisioning cancelado pelo app."
     static let nothingToCancel = "cancelProvisioning() sem provisioning em andamento."
 }

@@ -53,7 +53,7 @@ extension RealAppleWalletProvider {
         DispatchQueue.main.async { [weak self] in
             self?.presentWhenReady(controller) { [weak self] in
                 guard let self, self.pendingRequestId == requestId else { return }
-                let message = "Nenhum view controller disponível para apresentar a sheet."
+                let message = AWMessage.noPresenter
                 self.log(.error, message)
                 self.clearPending()
                 let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
@@ -135,9 +135,8 @@ extension RealAppleWalletProvider {
             let ephemeralPublicKey = Data(base64Encoded: payload.ephemeralPublicKey),
             let activationData = Data(base64Encoded: payload.activationData)
         else {
-            let message = "Payload do passo 2 não é Base64 válido."
-            log(.error, message)
-            throw AWError.make(.invalidSecurePayload, message)
+            log(.error, AWMessage.invalidBase64)
+            throw AWError.make(.invalidSecurePayload, AWMessage.invalidBase64)
         }
 
         let request = PKAddPaymentPassRequest()

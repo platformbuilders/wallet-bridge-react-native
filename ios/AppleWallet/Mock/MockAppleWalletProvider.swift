@@ -167,10 +167,10 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             sheet.modalPresentationStyle = .formSheet
             self.pendingSheet = sheet
             self.presentWhenReady(sheet) { [weak self] in
-                guard let self else { return }
+                // Como o real: sem tela para a sheet, o fluxo falha.
+                guard let self, self.pendingRequestId == requestId else { return }
                 self.pendingSheet = nil
-                self.log(.error, "Não foi possível apresentar a sheet; seguindo sem ela.")
-                self.proceedToHandshake(requestId: requestId, includeWatch: false)
+                self.failProvisioning(requestId: requestId, reason: AWMessage.noPresenter)
             }
         }
     }
@@ -198,12 +198,19 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             throw AWError.notAwaitingStep2()
         }
 
+        // Como o real: Base64 inválido rejeita na hora e o fluxo segue aberto.
+        let blobs = [payload.encryptedPassData, payload.ephemeralPublicKey, payload.activationData]
+        guard blobs.allSatisfy({ Data(base64Encoded: $0) != nil }) else {
+            log(.error, AWMessage.invalidBase64)
+            throw AWError.make(.invalidSecurePayload, AWMessage.invalidBase64)
+        }
+
         let includeWatch = pendingIncludesWatch
         pendingStage = .submitting
         pendingSheet?.showProgress("Adicionando à Wallet…")
         emit(AWProvisioningResultEvent(requestId: requestId, status: .submitting))
 
-        let rejection = invalidReason(for: payload)
+        let rejection = passKitRejection()
         afterLatency { [weak self] in
             guard let self, self.pendingRequestId == requestId else { return }
             if let rejection {
@@ -218,21 +225,20 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         }
     }
 
-    /// Motivo para o "PassKit" rejeitar o passo 2, ou `nil` se ele aceita.
-    private func invalidReason(for payload: AWSecurePayload) -> String? {
-        if scenario == .invalidActivationData {
-            return "activationData rejeitado pelo PassKit (cenário)."
-        }
-        let blobs = [payload.encryptedPassData, payload.ephemeralPublicKey, payload.activationData]
-        let decodes = blobs.allSatisfy { Data(base64Encoded: $0) != nil }
-        return decodes ? nil : "Payload do passo 2 não é Base64 válido."
+    /// Motivo para o "PassKit" rejeitar o passo 2 (cenário), ou `nil` se aceita.
+    private func passKitRejection() -> String? {
+        scenario == .invalidActivationData
+            ? "activationData rejeitado pelo PassKit (cenário)."
+            : nil
     }
 
+    /// Encerra o fluxo com `FAILED`. Como o real, que só distingue o
+    /// cancelamento: os demais erros do PassKit chegam como `UNKNOWN`.
     private func failProvisioning(requestId: String, reason: String) {
         log(.error, reason)
         clearPending()
         let event = AWProvisioningResultEvent(requestId: requestId, status: .failed)
-        event.errorCode = .invalidSecurePayload
+        event.errorCode = .unknown
         event.errorMessage = reason
         emit(event)
     }
