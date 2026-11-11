@@ -47,7 +47,6 @@ import Foundation
 
 /// Estágios do provisioning. Espelha AppleProvisioningStatus no TS.
 public enum AWStatus: String {
-    case idle = "IDLE"
     case presenting = "PRESENTING"
     case awaitingHost = "AWAITING_HOST"
     case submitting = "SUBMITTING"

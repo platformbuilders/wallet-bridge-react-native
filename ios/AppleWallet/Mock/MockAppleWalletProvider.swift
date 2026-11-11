@@ -42,7 +42,8 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
 
     private var passes: [AWPaymentPass] = []
     private var pendingRequestId: String?
-    private var pendingStage: AWStatus = .idle
+    /// Estágio do provisioning em andamento; `nil` sem provisioning.
+    private var pendingStage: AWStatus?
     private var pendingConfig: AWProvisioningRequestConfig?
     private var pendingIncludesWatch = false
     private weak var pendingSheet: MockAddPassSheetController?
@@ -271,7 +272,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         pendingRequestId = nil
         pendingConfig = nil
         pendingIncludesWatch = false
-        pendingStage = .idle
+        pendingStage = nil
     }
 
     // MARK: - Passes
@@ -372,7 +373,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             "isWatchPaired": isWatchPaired,
             "passes": passes.map { $0.toDictionary() },
             "pendingRequestId": pendingRequestId ?? NSNull(),
-            "pendingStage": pendingStage.rawValue,
+            "pendingStage": pendingStage?.rawValue ?? NSNull(),
         ]
     }
 }

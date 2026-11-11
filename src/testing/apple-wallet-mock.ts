@@ -57,7 +57,8 @@ export interface AppleWalletMockState {
   isWatchPaired: boolean;
   passes: ApplePaymentPass[];
   pendingRequestId: string | null;
-  pendingStage: AppleProvisioningStatus;
+  /** Estágio do provisioning em andamento; `null` sem provisioning. */
+  pendingStage: AppleProvisioningStatus | null;
 }
 
 const nativeMock = () => {

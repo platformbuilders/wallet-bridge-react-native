@@ -17,7 +17,6 @@ export enum ApplePassActivationState {
 
 /** Estágios do In-App Provisioning, entregues no evento de resultado. */
 export enum AppleProvisioningStatus {
-  IDLE = 'IDLE',
   /** A sheet do PassKit está sendo apresentada. */
   PRESENTING = 'PRESENTING',
   /** Passo 1 entregue: o app precisa chamar o emissor. */
