@@ -30,7 +30,6 @@ export type AppleProvisioningResultEvent = {
   requestId: string;
   status: string;
   pass?: Object;
-  additionalPasses: ReadonlyArray<Object>;
   errorCode?: string;
   errorMessage?: string;
 };

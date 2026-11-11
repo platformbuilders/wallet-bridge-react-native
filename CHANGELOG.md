@@ -24,7 +24,8 @@ dos commits.
 - **Apple Wallet (iOS, PassKit)** — `AppleWalletModule`:
   - In-App Provisioning: `canAddPaymentPass`, `canAddSecureElementPass`,
     `startInAppProvisioning`, `submitProvisioningData` (resolve `boolean`; o
-    pass chega no evento `onProvisioningResult`), `cancelProvisioning`.
+    pass chega no evento `onProvisioningResult`, um por fluxo, como o PassKit
+    devolve; a cópia no Watch aparece em `listRemotePasses`), `cancelProvisioning`.
     Esquema de criptografia fixo em `ECC_V2` (sem `encryptionScheme` na config).
     `startInAppProvisioning` não faz pré-checagem: decidir se o fluxo
     começa é do app; a lib só rejeita quando o PassKit não consegue seguir.

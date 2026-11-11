@@ -294,7 +294,7 @@ useAppleWalletListener({
   },
   onProvisioningResult: (event) => {
     if (event.status === AppleProvisioningStatus.ADDED) {
-      // event.pass (+ event.additionalPasses when also added to the Watch)
+      // event.pass. A copy on the Apple Watch shows up in listRemotePasses().
     }
   },
 });

@@ -111,7 +111,6 @@ describe('useAppleWalletListener', () => {
     const result = {
       requestId: 'REQ',
       status: AppleProvisioningStatus.FAILED,
-      additionalPasses: [],
       errorCode: AppleWalletErrorCode.INVALID_SECURE_PAYLOAD,
     };
     lastListener(mockAppleWalletModule.onProvisioningResult)(result);

@@ -89,10 +89,11 @@ export interface ApplePaymentPass {
 export interface AppleProvisioningResultEvent {
   requestId: string;
   status: AppleProvisioningStatus;
-  /** Pass adicionado (status `ADDED`). */
+  /**
+   * Pass adicionado (status `ADDED`). O PassKit devolve um pass por fluxo;
+   * o cartão no Apple Watch aparece em `listRemotePasses()`.
+   */
   pass?: ApplePaymentPass;
-  /** Passes adicionados junto (ex.: o mesmo cartão no Apple Watch). */
-  additionalPasses: ApplePaymentPass[];
   errorCode?: AppleWalletErrorCode;
   errorMessage?: string;
 }

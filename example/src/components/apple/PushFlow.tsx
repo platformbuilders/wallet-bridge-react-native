@@ -140,10 +140,6 @@ export function PushFlow({
             label="pass (DPANID)"
             value={result.pass?.deviceAccountIdentifier}
           />
-          <Row
-            label="passes adicionais"
-            value={result.additionalPasses.map((p) => p.deviceName).join(', ')}
-          />
         </>
       )}
       {error && <Text style={styles.error}>{error}</Text>}

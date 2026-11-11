@@ -254,19 +254,18 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     ) {
         let pass = MockProvisioningFixtures.provisionedPass(config: config, remote: false)
         passes.append(pass)
-        var additional: [AWPaymentPass] = []
+        // Como no PassKit: o evento traz um pass; o do Watch fica só na lista
+        // de `listRemotePasses()`.
         if includeWatch {
             let watchPass = MockProvisioningFixtures.provisionedPass(config: config, remote: true)
             watchPass.primaryAccountIdentifier = pass.primaryAccountIdentifier
             passes.append(watchPass)
-            additional.append(watchPass)
         }
 
         clearPending()
         log(.info, "Cartão adicionado à Wallet (\(requestId)).")
         let event = AWProvisioningResultEvent(requestId: requestId, status: .added)
         event.pass = pass
-        event.additionalPasses = additional
         emit(event)
     }
 

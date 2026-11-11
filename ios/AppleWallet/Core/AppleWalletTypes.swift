@@ -296,9 +296,9 @@ public enum AWActivationState: String {
 @objc public final class AWProvisioningResultEvent: NSObject {
     let requestId: String
     let status: AWStatus
+    /// Pass adicionado. O PassKit devolve um por fluxo; o do Watch aparece em
+    /// `listRemotePasses()`.
     var pass: AWPaymentPass?
-    /// Passes adicionados juntos (ex.: o mesmo cartão no Apple Watch).
-    var additionalPasses: [AWPaymentPass] = []
     var errorCode: AWErrorCode?
     var errorMessage: String?
 
@@ -312,7 +312,6 @@ public enum AWActivationState: String {
         var dictionary: [String: Any] = [
             "requestId": requestId,
             "status": status.rawValue,
-            "additionalPasses": additionalPasses.map { $0.toDictionary() },
         ]
         if let pass {
             dictionary["pass"] = pass.toDictionary()
