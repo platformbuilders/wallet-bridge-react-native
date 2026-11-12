@@ -121,24 +121,47 @@ export const mockGoogleTokenStatus: GoogleTokenStatus = {
 };
 
 export const mockGoogleWalletModule = {
-  checkWalletAvailability: jest.fn().mockResolvedValue(true),
-  getSecureWalletInfo: jest.fn().mockResolvedValue(mockGoogleWalletData),
-  getTokenStatus: jest.fn().mockResolvedValue(mockGoogleTokenStatus),
-  getEnvironment: jest.fn().mockResolvedValue('PRODUCTION'),
-  isTokenized: jest.fn().mockResolvedValue(true),
-  viewToken: jest.fn().mockResolvedValue(mockGoogleTokenInfo),
-  addCardToWallet: jest.fn().mockResolvedValue(null),
-  createWalletIfNeeded: jest.fn().mockResolvedValue(true),
-  listTokens: jest.fn().mockResolvedValue([mockGoogleTokenInfo]),
-  getConstants: jest.fn().mockReturnValue(mockGoogleWalletConstants),
-  setIntentListener: jest.fn().mockResolvedValue(true),
-  removeIntentListener: jest.fn().mockResolvedValue(true),
-  setActivationResult: jest.fn().mockResolvedValue(true),
-  finishActivity: jest.fn().mockResolvedValue(true),
-  openWallet: jest.fn().mockResolvedValue(true),
-  setLogListener: jest.fn().mockResolvedValue(true),
-  removeLogListener: jest.fn().mockResolvedValue(true),
+  checkWalletAvailability: jest.fn(),
+  getSecureWalletInfo: jest.fn(),
+  getTokenStatus: jest.fn(),
+  getEnvironment: jest.fn(),
+  isTokenized: jest.fn(),
+  viewToken: jest.fn(),
+  addCardToWallet: jest.fn(),
+  createWalletIfNeeded: jest.fn(),
+  listTokens: jest.fn(),
+  getConstants: jest.fn(),
+  setIntentListener: jest.fn(),
+  removeIntentListener: jest.fn(),
+  setActivationResult: jest.fn(),
+  finishActivity: jest.fn(),
+  openWallet: jest.fn(),
+  setLogListener: jest.fn(),
+  removeLogListener: jest.fn(),
 };
+
+// Retornos padrão: aplicados na criação e de novo em `resetAllMocks`.
+const applyGoogleDefaults = () => {
+  const m = mockGoogleWalletModule;
+  m.checkWalletAvailability.mockResolvedValue(true);
+  m.getSecureWalletInfo.mockResolvedValue(mockGoogleWalletData);
+  m.getTokenStatus.mockResolvedValue(mockGoogleTokenStatus);
+  m.getEnvironment.mockResolvedValue('PRODUCTION');
+  m.isTokenized.mockResolvedValue(true);
+  m.viewToken.mockResolvedValue(mockGoogleTokenInfo);
+  m.addCardToWallet.mockResolvedValue(null);
+  m.createWalletIfNeeded.mockResolvedValue(true);
+  m.listTokens.mockResolvedValue([mockGoogleTokenInfo]);
+  m.getConstants.mockReturnValue(mockGoogleWalletConstants);
+  m.setIntentListener.mockResolvedValue(true);
+  m.removeIntentListener.mockResolvedValue(true);
+  m.setActivationResult.mockResolvedValue(true);
+  m.finishActivity.mockResolvedValue(true);
+  m.openWallet.mockResolvedValue(true);
+  m.setLogListener.mockResolvedValue(true);
+  m.removeLogListener.mockResolvedValue(true);
+};
+applyGoogleDefaults();
 
 // ============================================================================
 // MOCKS DO SAMSUNG WALLET
@@ -262,23 +285,43 @@ export const mockSamsungCard: SamsungCard = {
 };
 
 export const mockSamsungWalletModule = {
-  init: jest.fn().mockResolvedValue(true),
-  getSamsungPayStatus: jest.fn().mockResolvedValue(0),
+  init: jest.fn(),
+  getSamsungPayStatus: jest.fn(),
   goToUpdatePage: jest.fn(),
   activateSamsungPay: jest.fn(),
-  getAllCards: jest.fn().mockResolvedValue([mockSamsungCard]),
-  getWalletInfo: jest.fn().mockResolvedValue(mockSamsungWalletInfo),
-  addCard: jest.fn().mockResolvedValue(mockSamsungCard),
-  checkWalletAvailability: jest.fn().mockResolvedValue(true),
-  getConstants: jest.fn().mockReturnValue(mockSamsungWalletConstants),
-  setIntentListener: jest.fn().mockResolvedValue(true),
-  removeIntentListener: jest.fn().mockResolvedValue(true),
-  setActivationResult: jest.fn().mockResolvedValue(true),
-  finishActivity: jest.fn().mockResolvedValue(true),
-  openWallet: jest.fn().mockResolvedValue(true),
-  setLogListener: jest.fn().mockResolvedValue(true),
-  removeLogListener: jest.fn().mockResolvedValue(true),
+  getAllCards: jest.fn(),
+  getWalletInfo: jest.fn(),
+  addCard: jest.fn(),
+  checkWalletAvailability: jest.fn(),
+  getConstants: jest.fn(),
+  setIntentListener: jest.fn(),
+  removeIntentListener: jest.fn(),
+  setActivationResult: jest.fn(),
+  finishActivity: jest.fn(),
+  openWallet: jest.fn(),
+  setLogListener: jest.fn(),
+  removeLogListener: jest.fn(),
 };
+
+// Retornos padrão: aplicados na criação e de novo em `resetAllMocks`.
+const applySamsungDefaults = () => {
+  const m = mockSamsungWalletModule;
+  m.init.mockResolvedValue(true);
+  m.getSamsungPayStatus.mockResolvedValue(0);
+  m.getAllCards.mockResolvedValue([mockSamsungCard]);
+  m.getWalletInfo.mockResolvedValue(mockSamsungWalletInfo);
+  m.addCard.mockResolvedValue(mockSamsungCard);
+  m.checkWalletAvailability.mockResolvedValue(true);
+  m.getConstants.mockReturnValue(mockSamsungWalletConstants);
+  m.setIntentListener.mockResolvedValue(true);
+  m.removeIntentListener.mockResolvedValue(true);
+  m.setActivationResult.mockResolvedValue(true);
+  m.finishActivity.mockResolvedValue(true);
+  m.openWallet.mockResolvedValue(true);
+  m.setLogListener.mockResolvedValue(true);
+  m.removeLogListener.mockResolvedValue(true);
+};
+applySamsungDefaults();
 
 // ============================================================================
 // MOCKS DO APPLE WALLET
@@ -342,24 +385,47 @@ export const mockAppleRemotePasses: ApplePaymentPass[] = [mockAppleWatchPass];
 const mockAppleSubscription = () => ({ remove: jest.fn() });
 
 export const mockAppleWalletModule = {
-  getConstants: jest.fn().mockReturnValue(mockAppleWalletConstants),
-  getEnvironment: jest.fn().mockResolvedValue('ios-simulator'),
-  openWallet: jest.fn().mockResolvedValue(true),
-  canAddPaymentPass: jest.fn().mockResolvedValue(true),
-  canAddSecureElementPass: jest.fn().mockResolvedValue(true),
-  startInAppProvisioning: jest.fn().mockResolvedValue('FAKE_REQUEST_ID'),
-  submitProvisioningData: jest.fn().mockResolvedValue(true),
-  cancelProvisioning: jest.fn().mockResolvedValue(true),
-  listPasses: jest.fn().mockResolvedValue(mockApplePasses),
-  listRemotePasses: jest.fn().mockResolvedValue(mockAppleRemotePasses),
-  isWatchPaired: jest.fn().mockResolvedValue(true),
-  activatePass: jest.fn().mockResolvedValue(true),
-  setLogListener: jest.fn().mockResolvedValue(true),
-  removeLogListener: jest.fn().mockResolvedValue(true),
-  onProvisioningCertificates: jest.fn(mockAppleSubscription),
-  onProvisioningResult: jest.fn(mockAppleSubscription),
-  onLog: jest.fn(mockAppleSubscription),
+  getConstants: jest.fn(),
+  getEnvironment: jest.fn(),
+  openWallet: jest.fn(),
+  canAddPaymentPass: jest.fn(),
+  canAddSecureElementPass: jest.fn(),
+  startInAppProvisioning: jest.fn(),
+  submitProvisioningData: jest.fn(),
+  cancelProvisioning: jest.fn(),
+  listPasses: jest.fn(),
+  listRemotePasses: jest.fn(),
+  isWatchPaired: jest.fn(),
+  activatePass: jest.fn(),
+  setLogListener: jest.fn(),
+  removeLogListener: jest.fn(),
+  onProvisioningCertificates: jest.fn(),
+  onProvisioningResult: jest.fn(),
+  onLog: jest.fn(),
 };
+
+// Retornos padrão: aplicados na criação e de novo em `resetAllMocks`.
+const applyAppleDefaults = () => {
+  const m = mockAppleWalletModule;
+  m.getConstants.mockReturnValue(mockAppleWalletConstants);
+  m.getEnvironment.mockResolvedValue('ios-simulator');
+  m.openWallet.mockResolvedValue(true);
+  m.canAddPaymentPass.mockResolvedValue(true);
+  m.canAddSecureElementPass.mockResolvedValue(true);
+  m.startInAppProvisioning.mockResolvedValue('FAKE_REQUEST_ID');
+  m.submitProvisioningData.mockResolvedValue(true);
+  m.cancelProvisioning.mockResolvedValue(true);
+  m.listPasses.mockResolvedValue(mockApplePasses);
+  m.listRemotePasses.mockResolvedValue(mockAppleRemotePasses);
+  m.isWatchPaired.mockResolvedValue(true);
+  m.activatePass.mockResolvedValue(true);
+  m.setLogListener.mockResolvedValue(true);
+  m.removeLogListener.mockResolvedValue(true);
+  m.onProvisioningCertificates.mockImplementation(mockAppleSubscription);
+  m.onProvisioningResult.mockImplementation(mockAppleSubscription);
+  m.onLog.mockImplementation(mockAppleSubscription);
+};
+applyAppleDefaults();
 
 // ============================================================================
 // MOCKS DOS EVENT EMITTERS
@@ -410,44 +476,31 @@ export const mockReactNative = {
 // ============================================================================
 
 /**
- * Reseta todos os mocks para um estado limpo
+ * Volta todos os mocks ao estado inicial: limpa as chamadas, desfaz o que um
+ * `setup*Mocks` (ou o próprio teste) configurou e reaplica os retornos
+ * padrão. `mockClear` não bastaria: ele mantém `mockResolvedValue` /
+ * `mockRejectedValue`, e o estado de um teste vazaria para o seguinte.
  */
 export const resetAllMocks = () => {
   jest.clearAllMocks();
 
-  // Reset Google Wallet mocks
-  Object.values(mockGoogleWalletModule).forEach((mock) => {
-    if (jest.isMockFunction(mock)) {
-      mock.mockClear();
-    }
-  });
+  for (const module of [
+    mockGoogleWalletModule,
+    mockSamsungWalletModule,
+    mockAppleWalletModule,
+    mockGoogleWalletEventEmitter,
+    mockSamsungWalletEventEmitter,
+  ]) {
+    Object.values(module).forEach((mock) => {
+      if (jest.isMockFunction(mock)) {
+        mock.mockReset();
+      }
+    });
+  }
 
-  // Reset Samsung Wallet mocks
-  Object.values(mockSamsungWalletModule).forEach((mock) => {
-    if (jest.isMockFunction(mock)) {
-      mock.mockClear();
-    }
-  });
-
-  // Reset Apple Wallet mocks
-  Object.values(mockAppleWalletModule).forEach((mock) => {
-    if (jest.isMockFunction(mock)) {
-      mock.mockClear();
-    }
-  });
-
-  // Reset Event Emitter mocks
-  Object.values(mockGoogleWalletEventEmitter).forEach((mock) => {
-    if (jest.isMockFunction(mock)) {
-      mock.mockClear();
-    }
-  });
-
-  Object.values(mockSamsungWalletEventEmitter).forEach((mock) => {
-    if (jest.isMockFunction(mock)) {
-      mock.mockClear();
-    }
-  });
+  applyGoogleDefaults();
+  applySamsungDefaults();
+  applyAppleDefaults();
 };
 
 /**

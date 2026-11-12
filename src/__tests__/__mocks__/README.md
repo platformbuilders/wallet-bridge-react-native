@@ -109,7 +109,7 @@ describe('Meu App - Testes de Wallet', () => {
 
 ### `resetAllMocks()`
 
-Reseta todos os mocks para um estado limpo.
+Volta todos os mocks ao estado inicial: limpa as chamadas, desfaz o que um `setup*Mocks` ou o próprio teste configurou (`mockResolvedValue`, `mockRejectedValue`, `mockImplementation`) e reaplica os retornos padrão.
 
 ### `setupSuccessMocks()`
 

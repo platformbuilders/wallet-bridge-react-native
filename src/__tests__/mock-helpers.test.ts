@@ -62,6 +62,29 @@ describe('mock helpers', () => {
     await expect(mockAppleWalletModule.canAddPaymentPass()).resolves.toBe(true);
   });
 
+  it('resetAllMocks undoes setupErrorMocks and restores the defaults', async () => {
+    setupErrorMocks();
+    await mockAppleWalletModule.canAddPaymentPass();
+
+    resetAllMocks();
+
+    expect(mockAppleWalletModule.canAddPaymentPass).not.toHaveBeenCalled();
+    await expect(
+      mockGoogleWalletModule.checkWalletAvailability(),
+    ).resolves.toBe(true);
+    await expect(
+      mockSamsungWalletModule.checkWalletAvailability(),
+    ).resolves.toBe(true);
+    await expect(mockAppleWalletModule.startInAppProvisioning()).resolves.toBe(
+      'FAKE_REQUEST_ID',
+    );
+    await expect(mockAppleWalletModule.submitProvisioningData()).resolves.toBe(
+      true,
+    );
+    await expect(mockAppleWalletModule.activatePass()).resolves.toBe(true);
+    expect(mockAppleWalletModule.onLog()).toHaveProperty('remove');
+  });
+
   it('setupUnavailableMocks makes every wallet unavailable', async () => {
     setupUnavailableMocks();
 
