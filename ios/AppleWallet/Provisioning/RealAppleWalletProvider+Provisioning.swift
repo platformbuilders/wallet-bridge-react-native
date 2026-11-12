@@ -44,6 +44,7 @@ extension RealAppleWalletProvider {
         )
 
         let requestId = UUID().uuidString
+        pendingRequestHandler = nil
         pendingRequestId = requestId
         pendingController = controller
 
@@ -188,8 +189,13 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
         completionHandler handler: @escaping (PKAddPaymentPassRequest) -> Void
     ) {
         // Passo 1: guarda o handler e entrega o material ao JS, que repassa
-        // ao emissor.
-        let requestId = pendingRequestId ?? ""
+        // ao emissor. Um controller que não é o do fluxo atual (cancelado
+        // enquanto o PassKit gerava o passo 1) é ignorado: o handler dele não
+        // pode receber o passo 2 de outro fluxo.
+        guard controller === pendingController, let requestId = pendingRequestId else {
+            log(.warn, "Passo 1 de um controller que não é o atual. Ignorado.")
+            return
+        }
         pendingRequestHandler = handler
 
         let event = AWProvisioningCertificatesEvent(
@@ -209,7 +215,13 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
         didFinishAdding pass: PKPaymentPass?,
         error: Error?
     ) {
-        let requestId = pendingRequestId ?? ""
+        // Um fluxo já encerrado (ex.: `cancelProvisioning()` emitiu o evento
+        // final e o PassKit avisa ao fechar a sheet) não emite um segundo
+        // evento: só fecha a sheet.
+        guard controller === pendingController, let requestId = pendingRequestId else {
+            DispatchQueue.main.async { controller.dismiss(animated: true) }
+            return
+        }
         clearPending()
         DispatchQueue.main.async {
             controller.dismiss(animated: true)
