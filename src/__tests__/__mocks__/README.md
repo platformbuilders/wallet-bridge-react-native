@@ -1,6 +1,6 @@
-# Mocks Exportáveis - BuildersWallet
+# Mocks internos - BuildersWallet
 
-Este diretório contém mocks exportáveis que podem ser utilizados em aplicações que fazem uso da biblioteca BuildersWallet para facilitar os testes.
+Mocks dos módulos nativos usados pelos testes da própria lib. **Não fazem parte do pacote publicado**: o `files` do `package.json` exclui `__tests__` (`"!**/__tests__"`), então um app consumidor não consegue importá-los. Eles usam `jest.fn` e só funcionam dentro do Jest. Os imports abaixo são relativos a `src/__tests__/`.
 
 ## Scripts de Teste Disponíveis
 
@@ -34,15 +34,15 @@ import {
   setupSuccessMocks,
   setupErrorMocks,
   setupUnavailableMocks,
-} from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';
+} from './__mocks__';
 ```
 
 ### 2. Configurar o Jest
 
-No seu `jest.setup.ts` ou arquivo de configuração de testes:
+No `jest.setup.ts` da lib (`src/__tests__/jest.setup.ts`):
 
 ```typescript
-import { mockReactNative } from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';
+import { mockReactNative } from './__mocks__';
 
 jest.mock('react-native', () => mockReactNative);
 ```
@@ -50,14 +50,8 @@ jest.mock('react-native', () => mockReactNative);
 ### 3. Usar nos Testes
 
 ```typescript
-import {
-  GoogleWalletModule,
-  SamsungWalletModule,
-} from '@platformbuilders/wallet-bridge-react-native';
-import {
-  setupSuccessMocks,
-  resetAllMocks,
-} from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';
+import { GoogleWalletModule, SamsungWalletModule } from '../index';
+import { setupSuccessMocks, resetAllMocks } from './__mocks__';
 
 describe('Meu App - Testes de Wallet', () => {
   beforeEach(() => {
@@ -84,6 +78,7 @@ describe('Meu App - Testes de Wallet', () => {
 
 - `mockGoogleWalletModule` - Mock completo do GoogleWalletModule
 - `mockSamsungWalletModule` - Mock completo do SamsungWalletModule
+- `mockAppleWalletModule` - Mock completo do AppleWalletModule
 
 ### Dados de Exemplo
 
@@ -92,11 +87,14 @@ describe('Meu App - Testes de Wallet', () => {
 - `mockGoogleTokenStatus` - Status de token do Google
 - `mockSamsungCard` - Cartão de exemplo do Samsung
 - `mockSamsungWalletInfo` - Informações da carteira Samsung
+- `mockApplePhonePass`, `mockAppleWatchPass`, `mockApplePendingPass` - Passes Apple de exemplo (iPhone ativo, Watch pendente, segundo cartão pendente)
+- `mockApplePasses` / `mockAppleRemotePasses` - Retornos de `listPasses` / `listRemotePasses`
 
 ### Constantes
 
 - `mockGoogleWalletConstants` - Constantes do Google Wallet
 - `mockSamsungWalletConstants` - Constantes do Samsung Wallet
+- `mockAppleWalletConstants` - Constantes do Apple Wallet
 
 ### Event Emitters
 
@@ -111,19 +109,19 @@ describe('Meu App - Testes de Wallet', () => {
 
 ### `resetAllMocks()`
 
-Reseta todos os mocks para um estado limpo.
+Volta todos os mocks ao estado inicial: limpa as chamadas, desfaz o que um `setup*Mocks` ou o próprio teste configurou (`mockResolvedValue`, `mockRejectedValue`, `mockImplementation`) e reaplica os retornos padrão.
 
 ### `setupSuccessMocks()`
 
-Configura todos os mocks para retornar sucesso.
+Configura todos os mocks (Google, Samsung e Apple) para retornar sucesso. Na Apple: `canAddPaymentPass` / `canAddSecureElementPass` / `isWatchPaired` `true`, passes locais e remotos de exemplo, e as ações resolvem.
 
 ### `setupErrorMocks()`
 
-Configura todos os mocks para retornar erro.
+Configura todos os mocks (Google, Samsung e Apple) para retornar erro. Na Apple, como no nativo, as consultas não rejeitam: cada ação rejeita com um código que o nativo produz para ela: `startInAppProvisioning` com `ENTITLEMENT_MISSING`, `submitProvisioningData` com `NOT_IN_PROGRESS` e `activatePass` com `ACTIVATION_FAILED`.
 
 ### `setupUnavailableMocks()`
 
-Configura todos os mocks para simular carteiras não disponíveis.
+Configura todos os mocks (Google, Samsung e Apple) para simular carteiras não disponíveis. Na Apple: `canAddPaymentPass` / `canAddSecureElementPass` / `isWatchPaired` `false` e listas de passes vazias.
 
 ## Exemplos de Cenários
 
@@ -191,10 +189,6 @@ module.exports = {
     '<rootDir>/android/',
     '<rootDir>/ios/',
   ],
-  moduleNameMapper: {
-    '^@platformbuilders/wallet-bridge-react-native$':
-      '<rootDir>/node_modules/@platformbuilders/wallet-bridge-react-native/src/index.ts',
-  },
 };
 ```
 
@@ -202,7 +196,7 @@ module.exports = {
 
 ```typescript
 // jest.setup.ts
-import { mockReactNative } from '@platformbuilders/wallet-bridge-react-native/src/__tests__/__mocks__';
+import { mockReactNative } from './__mocks__';
 
 jest.mock('react-native', () => mockReactNative);
 ```

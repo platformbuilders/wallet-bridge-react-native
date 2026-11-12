@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Liga o mock nativo do Apple Wallet (só tem efeito em Debug). Padrão
+	     da lib: desligado, provider real. -->
+	<key>APPLE_WALLET_USE_MOCK</key>
+	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -22,6 +26,19 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<!-- URL do In-App Verification: o apple-wallet-app-mock (no papel da
+	     Wallet) abre builderswalletexample://apple-wallet/verify?... -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.builders.wallet.example</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>builderswalletexample</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSApplicationQueriesSchemes</key>

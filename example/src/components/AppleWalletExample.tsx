@@ -1,128 +1,102 @@
+// Tela Apple Wallet do example, separada por fluxo: Push (In-App
+// Provisioning), Verificação (In-App Verification) e Passes. O example liga
+// APPLE_WALLET_USE_MOCK no Info.plist, então em build Debug a lib usa o mock
+// nativo; o painel de mock troca o cenário e a implementação.
 import { useEffect, useState } from 'react';
+import { Linking, ScrollView, StyleSheet, Text } from 'react-native';
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import AppleWallet, {
-  type AppleWalletLogEvent,
-} from '../../../src/specs/NativeAppleWallet';
+  AppleWalletModule,
+  useAppleWalletLogListener,
+} from '@platformbuilders/wallet-bridge-react-native';
+import { MockPanel } from './apple/MockPanel';
+import { PassesList } from './apple/PassesList';
+import { PushFlow } from './apple/PushFlow';
+import { VerificationFlow } from './apple/VerificationFlow';
+import { Card, Chips, Row, styles as ui } from './apple/ui';
 
-type TestResult = {
-  moduleFound: boolean;
-  constants?: Record<string, unknown>;
-  environment?: string;
-  openWallet?: boolean;
-  error?: string;
+const FLOWS = ['Push', 'Verificação', 'Passes'] as const;
+type Flow = (typeof FLOWS)[number];
+
+/** DPANID de `<scheme>://apple-wallet/verify?deviceAccountIdentifier=...`. */
+const verifyTarget = (url: string | null | undefined): string | null => {
+  if (!url?.includes('apple-wallet/verify')) return null;
+  const match = /[?&]deviceAccountIdentifier=([^&]+)/.exec(url);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
 };
 
-type LogEntry = AppleWalletLogEvent;
-
 export function AppleWalletExample(): React.JSX.Element {
-  const [result, setResult] = useState<TestResult | null>(null);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [running, setRunning] = useState(false);
+  const [flow, setFlow] = useState<Flow>('Push');
+  const [environment, setEnvironment] = useState<string | null>(null);
+  const [verifyDpan, setVerifyDpan] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [logs, setLogs] = useState<string[]>([]);
 
-  // Liga o log nativo → JS para validar também o evento da ponte.
+  const addLog = (message: string) =>
+    setLogs((current) => [message, ...current].slice(0, 30));
+  const refreshPasses = () => setRefreshKey((key) => key + 1);
+
+  useAppleWalletLogListener((event) =>
+    addLog(`[${event.level}] ${event.tag}: ${event.message}`),
+  );
+
   useEffect(() => {
-    if (!AppleWallet) return undefined;
-
-    const module = AppleWallet;
-    // Evento do codegen (EventEmitter na spec), sem NativeEventEmitter.
-    const subscription = module.onLog((event) => {
-      setLogs((current) => [event, ...current].slice(0, 20));
-    });
-    module.setLogListener().catch(() => undefined);
-
-    return () => {
-      subscription.remove();
-      module.removeLogListener().catch(() => undefined);
-    };
+    const loadEnvironment = async () =>
+      setEnvironment(await AppleWalletModule.getEnvironment());
+    void loadEnvironment();
   }, []);
 
-  const runTest = async (): Promise<void> => {
-    if (!AppleWallet) {
-      setResult({ moduleFound: false });
-      return;
-    }
-
-    setRunning(true);
-    try {
-      const constants = AppleWallet.getConstants();
-      const environment: string = await AppleWallet.getEnvironment();
-      const openWallet: boolean = await AppleWallet.openWallet();
-      setResult({ moduleFound: true, constants, environment, openWallet });
-    } catch (error) {
-      setResult({ moduleFound: true, error: String(error) });
-    } finally {
-      setRunning(false);
-    }
-  };
+  // In-App Verification: a "Wallet" (app mock) abre o example pela URL.
+  useEffect(() => {
+    const open = (url: string | null | undefined) => {
+      const dpan = verifyTarget(url);
+      if (!dpan) return;
+      setVerifyDpan(dpan);
+      setFlow('Verificação');
+    };
+    const openInitialURL = async () => open(await Linking.getInitialURL());
+    void openInitialURL();
+    const subscription = Linking.addEventListener('url', ({ url }) =>
+      open(url),
+    );
+    return () => subscription.remove();
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Apple Wallet</Text>
+      <Row label="getEnvironment()" value={environment} />
 
-      <TouchableOpacity
-        style={[styles.button, running && styles.buttonDisabled]}
-        onPress={runTest}
-        disabled={running}
-      >
-        <Text style={styles.buttonText}>
-          {running ? 'Testando...' : 'Testar módulo AppleWallet'}
-        </Text>
-      </TouchableOpacity>
+      <MockPanel onChange={refreshPasses} />
 
-      {result && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Resultado</Text>
-          <Row label="Módulo encontrado" value={result.moduleFound} />
-          {result.environment !== undefined && (
-            <Row label="getEnvironment()" value={result.environment} />
-          )}
-          {result.openWallet !== undefined && (
-            <Row label="openWallet()" value={result.openWallet} />
-          )}
-          {result.error && <Text style={styles.error}>{result.error}</Text>}
-          {result.constants && (
-            <>
-              <Text style={styles.cardSubtitle}>Constantes</Text>
-              {Object.entries(result.constants).map(([key, value]) => (
-                <Row key={key} label={key} value={String(value)} />
-              ))}
-            </>
-          )}
-        </View>
+      <Chips options={FLOWS} value={flow} onChange={setFlow} />
+
+      {flow === 'Push' && <PushFlow onLog={addLog} />}
+      {flow === 'Verificação' && (
+        <VerificationFlow
+          deviceAccountIdentifier={verifyDpan}
+          onDone={refreshPasses}
+        />
+      )}
+      {flow === 'Passes' && (
+        <PassesList
+          refreshKey={refreshKey}
+          onVerify={(dpan) => {
+            setVerifyDpan(dpan);
+            setFlow('Verificação');
+          }}
+        />
       )}
 
       {logs.length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Logs nativos</Text>
+        <Card title="Logs">
           {logs.map((log, index) => (
-            <Text key={index} style={styles.log}>
-              [{log.level}] {log.tag}: {log.message}
+            <Text key={index} style={ui.mono}>
+              {log}
             </Text>
           ))}
-        </View>
+        </Card>
       )}
     </ScrollView>
-  );
-}
-
-function Row({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | boolean;
-}): React.JSX.Element {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{String(value)}</Text>
-    </View>
   );
 }
 
@@ -135,64 +109,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
-  },
-  button: {
-    backgroundColor: '#000',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 15,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
     marginBottom: 12,
-  },
-  cardSubtitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
     color: '#333',
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  row: {
-    paddingVertical: 4,
-  },
-  rowLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  rowValue: {
-    fontSize: 14,
-    color: '#333',
-  },
-  error: {
-    color: 'red',
-    fontSize: 14,
-    marginTop: 8,
-  },
-  log: {
-    fontSize: 12,
-    color: '#333',
-    fontFamily: 'Menlo',
-    marginBottom: 4,
   },
 });

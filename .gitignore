@@ -98,3 +98,6 @@ coverage/
 
 # Misc
 example/android/libs/
+
+# apple-wallet-app-mock: projeto gerado por generate-project.rb
+apple-wallet-app-mock/AppleWalletMock.xcodeproj/

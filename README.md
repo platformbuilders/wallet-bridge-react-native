@@ -16,10 +16,10 @@ A React Native library that facilitates integration with digital wallets (Google
 | Aspect | Status |
 |---------|--------|
 | Development | ✅ Active |
-| Stable Version | 1.1.1 |
-| Tests | ✅ 100% coverage |
+| Stable Version | 1.3.0 (2.0.0 in progress) |
+| Tests | ✅ Jest + native build in CI |
 | Documentation | ✅ Complete |
-| iOS Support | 🚧 Planned |
+| iOS Support | ✅ Apple Wallet In-App Provisioning (PassKit) |
 | Open Issues | [View on GitHub](https://github.com/platformbuilders/wallet-bridge-react-native/issues) |
 
 ---
@@ -264,23 +264,141 @@ const tokens = await SamsungWalletModule.listTokens();
 
 ### Apple Wallet (iOS)
 
-`AppleWalletModule` is available on iOS. On other platforms it answers through a stub (`openWallet()` resolves `false`, no log events).
+`AppleWalletModule` wraps PassKit only. The library **does not call any backend, does not decide eligibility and knows no issuer**: the app sends the step 1 data to its issuer and hands the step 2 response back. On other platforms the module answers through a stub (queries resolve neutral values, actions reject with `NOT_SUPPORTED_ON_PLATFORM`).
+
+#### Setup
+
+- The pod links `PassKit`, `UIKit` and `WatchConnectivity` for every iOS app, also apps that do not use Apple Wallet. Linking PassKit alone needs no entitlement.
+- In-App Provisioning needs the restricted entitlement `com.apple.developer.payment-pass-provisioning`, granted by Apple, in the app provisioning profile. Without it `startInAppProvisioning` rejects with `ENTITLEMENT_MISSING` on a device and `canAddPaymentPass` answers `false`.
+- `listPasses`, `listRemotePasses` and `activatePass` see only the passes whose `associatedApplicationIdentifiers` include the app (configured by the issuer with Apple).
+
+#### In-App Provisioning (push)
 
 ```typescript
-import { AppleWalletModule } from '@platformbuilders/wallet-bridge-react-native';
+import {
+  AppleProvisioningStatus,
+  AppleWalletModule,
+  useAppleWalletListener,
+} from '@platformbuilders/wallet-bridge-react-native';
 
-const environment = await AppleWalletModule.getEnvironment(); // 'ios-device' | 'ios-simulator'
-const opened = await AppleWalletModule.openWallet();
+useAppleWalletListener({
+  // Step 1: certificates (leaf first), nonce and nonceSignature, standard Base64.
+  onProvisioningCertificates: async (event) => {
+    const payload = await myIssuerApi.pushProvisioning(event); // your backend
+    // Step 2: the three Base64 blobs from the issuer.
+    await AppleWalletModule.submitProvisioningData({
+      activationData: payload.activationData,
+      encryptedPassData: payload.encryptedPassData,
+      ephemeralPublicKey: payload.ephemeralPublicKey,
+    });
+  },
+  onProvisioningResult: (event) => {
+    if (event.status === AppleProvisioningStatus.ADDED) {
+      // event.pass. A copy on the Apple Watch shows up in listRemotePasses().
+    }
+  },
+});
 
-// Diagnostic logs are only emitted in Debug builds
-const subscription = AppleWalletModule.onLog((log) => debugLogStore.add(log));
-await AppleWalletModule.setLogListener();
-// ...
-subscription.remove();
-await AppleWalletModule.removeLogListener();
+// PassKit as is: deciding whether to offer "Add to Apple Wallet" is up to the app.
+const deviceCanAdd = await AppleWalletModule.canAddPaymentPass();
+const cardCanBeAdded = await AppleWalletModule.canAddSecureElementPass(fpanId);
+
+await AppleWalletModule.startInAppProvisioning({
+  cardholderName: 'NAME ON CARD',
+  primaryAccountSuffix: '1234',
+  localizedDescription: 'My card',
+  paymentNetwork: 'Visa', // PKPaymentNetwork raw value
+  primaryAccountIdentifier: fpanId, // optional, FPANID
+  expiration: '12/30', // optional, MM/YY
+});
 ```
 
-In-App Provisioning methods will be added to this module in a future release.
+`startInAppProvisioning` does no pre-check: deciding whether to start (card already in Wallet, pending activation) is up to the app. It only rejects when PassKit itself cannot proceed. `submitProvisioningData` resolves `true` once the data was handed to PassKit (within the step 2 deadline, see below); the added pass arrives in `onProvisioningResult` with status `ADDED`. The encryption scheme is always `ECC_V2`.
+
+#### Passes and In-App Verification
+
+```typescript
+const passes = await AppleWalletModule.listPasses(); // PKPassLibrary.passes(of: .secureElement)
+const remotePasses = await AppleWalletModule.listRemotePasses(); // remoteSecureElementPasses
+// Each pass, as PassKit returns it: primaryAccountIdentifier (FPANID),
+// deviceAccountIdentifier (DPANID), passActivationState (ACTIVATED |
+// REQUIRES_ACTIVATION | ACTIVATING | SUSPENDED | DEACTIVATED, or UNKNOWN for a
+// state PassKit adds later), isRemote,
+// deviceName, suffixes. Merging the lists and telling iPhone from Apple Watch
+// is up to the app.
+
+const watchPaired = await AppleWalletModule.isWatchPaired();
+
+// In-App Verification: Wallet opens the app through the pass appLaunchURL
+// (handled by the app with Linking). After ID&V, get the activation data from
+// the issuer and activate the pass on that device:
+await AppleWalletModule.activatePass(deviceAccountIdentifier, activationData);
+```
+
+#### API
+
+| Method | Returns | Notes |
+|---|---|---|
+| `canAddPaymentPass()` | `Promise<boolean>` | `PKAddPaymentPassViewController.canAddPaymentPass()` |
+| `canAddSecureElementPass(fpanId)` | `Promise<boolean>` | `PKPassLibrary.canAddSecureElementPass`; per Apple, it returns `false` without the entitlement |
+| `startInAppProvisioning(config)` | `Promise<string>` | `requestId`; presents the PassKit sheet |
+| `submitProvisioningData(payload)` | `Promise<boolean>` | Step 2; pass arrives in `onProvisioningResult` |
+| `cancelProvisioning()` | `Promise<boolean>` | `false` when nothing is in progress |
+| `listPasses()` | `Promise<ApplePaymentPass[]>` | `passes(of: .secureElement)` |
+| `listRemotePasses()` | `Promise<ApplePaymentPass[]>` | `remoteSecureElementPasses` (paired devices) |
+| `isWatchPaired()` | `Promise<boolean>` | `WCSession.isPaired`; waits for the session to activate (async), `false` after ~2 s without activation |
+| `activatePass(dpanId, activationData)` | `Promise<boolean>` | In-App Verification |
+| `openWallet()` / `getEnvironment()` | | |
+| `onProvisioningCertificates` / `onProvisioningResult` / `onLog` | subscription | or `useAppleWalletListener` / `useAppleWalletLogListener` |
+
+Errors carry `code` from `AppleWalletErrorCode` (`ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_IN_PROGRESS`, `NOT_IN_PROGRESS`, `INVALID_CONFIGURATION`, `INVALID_SECURE_PAYLOAD`, `USER_CANCELED`, `PASS_NOT_FOUND`, `ACTIVATION_FAILED`, ...).
+
+A provisioning flow that ends without a pass arrives in `onProvisioningResult` as `CANCELED`, with the code saying who ended it:
+
+| Who ended it | `errorCode` |
+|---|---|
+| The user closed the PassKit sheet | `USER_CANCELED` |
+| The app called `cancelProvisioning()` | `APP_CANCELED` |
+| PassKit ended it (`PKAddPaymentPassError.systemCancelled`) | `SYSTEM_CANCELED` |
+
+Any other PassKit error arrives as `FAILED` / `UNKNOWN`.
+
+**Step 2 has a 20-second deadline set by PassKit.** Once `onProvisioningCertificates` fires, PassKit waits at most 20 seconds for the step 2 data. After that it shows its own error and ignores the data, and `onProvisioningResult` arrives with whatever error PassKit reports (`FAILED` / `UNKNOWN` or `CANCELED` / `SYSTEM_CANCELED`): PassKit does not report that the cause was the deadline. The library adds no timer of its own, so it cannot tell when the deadline has passed. A `submitProvisioningData` sent after it may still resolve `true` even though PassKit ignores it. Call the issuer as soon as step 1 arrives, keep the request under that budget, and call `cancelProvisioning` if the issuer cannot answer in time. The mock waits in `AWAITING_HOST` indefinitely and does not simulate the deadline.
+
+Wallet Extensions (the issuer entries shown inside the Wallet app) run in a separate process and are native Swift in the app; they are not part of this library.
+
+#### Mock (Debug builds)
+
+The library always uses the real PassKit provider by default, also in Debug. To use the native mock (a look-alike sheet with a `MOCK` badge and an in-memory pass library), turn it on explicitly in the app `Info.plist`, as `GOOGLE_WALLET_USE_MOCK` / `SAMSUNG_WALLET_USE_MOCK` on Android:
+
+```xml
+<!-- ios/<App>/Info.plist -->
+<key>APPLE_WALLET_USE_MOCK</key>
+<true/>
+```
+
+The key only takes effect in Debug builds; Release builds do not compile the mock. A string value (`YES`, `true`, `1`) also works, so it can come from a build setting such as `$(APPLE_WALLET_USE_MOCK)`. With the key on, the control below also switches between the mock and the real provider at runtime; with it off, `setImplementation(MOCK)` rejects with `NOT_SUPPORTED_ON_PLATFORM`.
+
+```typescript
+import {
+  AppleWalletImplementation,
+  AppleWalletMockControl,
+  AppleWalletMockScenario,
+} from '@platformbuilders/wallet-bridge-react-native/testing';
+
+await AppleWalletMockControl.configure({
+  scenario: AppleWalletMockScenario.MULTIPLE_PENDING,
+  primaryAccountIdentifiers: ['FPANID_OF_MY_CARD'], // match your cards
+});
+await AppleWalletMockControl.setImplementation(AppleWalletImplementation.REAL);
+```
+
+Scenarios: `HAPPY_PUSH`, `PHONE_AND_WATCH`, `MIXED_DEVICE_STATES`, `MULTIPLE_PENDING`, `DEACTIVATED`, `ACTIVATING`, `USER_CANCELED`, `ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_ADDED`, `INVALID_ACTIVATION_DATA`, `ACTIVATION_FAILED`. In Release the mock is not compiled: `getImplementation` resolves `real`, `setImplementation(REAL)` resolves `true`, and `setImplementation(MOCK)`, `configure`, `reset` and `getState` reject with `NOT_SUPPORTED_ON_PLATFORM`.
+
+#### Example app and Wallet mock app
+
+- `yarn build:app-example:ios` runs the example; the Apple screen has Push, Verification and Passes flows and the mock panel.
+- `yarn build:apple-wallet-mock` builds the Wallet mock app on the booted Simulator. It opens `builderswalletexample://apple-wallet/verify?deviceAccountIdentifier=<DPANID>` as the Wallet would through the pass `appLaunchURL`. Set `APPLE_WALLET_MOCK_TARGET_SCHEME` to target another app.
 
 ### App2App (Manual Provisioning)
 
@@ -535,6 +653,15 @@ npx react-native run-android
 ```
 
 > **⚠️ Warning:** This second command is only for building on a physical device or emulator.
+
+### 🧪 Continuous Integration
+
+- `check.yml` runs on every PR: install, `yarn test` and `yarn lint` (which includes the typecheck).
+- `native-build.yml` runs on PRs that touch native code, the codegen specs, the example or the package manifest:
+  - **iOS:** builds the example in Debug and Release on the Simulator and fails if the Apple Wallet mock reaches the Release binary.
+  - **Android:** builds the example with `GOOGLE_WALLET_ENABLED=false` and `SAMSUNG_WALLET_ENABLED=false`, so only `src/main` and the `noGoogleWallet` / `noSamsungWallet` stubs are compiled.
+
+> **⚠️ The real Android source sets (`googleWallet`, `samsungWallet`) are not compiled in this repository's CI.** The Tap and Pay and Samsung Pay SDKs belong to the consumer app and are not committed here. Before merging a change under `android/`, build a consumer app with both flags set to `true`, the SDKs in its `android/libs/`, and the library dependency pointing to your branch.
 
 ## 🔗 Useful Links
 
