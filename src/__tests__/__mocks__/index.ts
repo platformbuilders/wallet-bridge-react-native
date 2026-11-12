@@ -492,14 +492,25 @@ export const setupErrorMocks = () => {
   mockSamsungWalletModule.getSamsungPayStatus.mockRejectedValue(error);
   mockSamsungWalletModule.getAllCards.mockRejectedValue(error);
 
-  // Como o nativo: as consultas do PassKit não rejeitam; as ações rejeitam
-  // com `code` de AppleWalletErrorCode.
-  const appleError = Object.assign(new Error('Apple Wallet not available'), {
-    code: AppleWalletErrorCode.ENTITLEMENT_MISSING,
-  });
-  mockAppleWalletModule.startInAppProvisioning.mockRejectedValue(appleError);
-  mockAppleWalletModule.submitProvisioningData.mockRejectedValue(appleError);
-  mockAppleWalletModule.activatePass.mockRejectedValue(appleError);
+  // Como o nativo: as consultas do PassKit não rejeitam; cada ação rejeita
+  // com um código que o nativo produz para ela.
+  const appleError = (code: AppleWalletErrorCode, message: string) =>
+    Object.assign(new Error(message), { code });
+  mockAppleWalletModule.startInAppProvisioning.mockRejectedValue(
+    appleError(
+      AppleWalletErrorCode.ENTITLEMENT_MISSING,
+      'Provisioning entitlement missing',
+    ),
+  );
+  mockAppleWalletModule.submitProvisioningData.mockRejectedValue(
+    appleError(
+      AppleWalletErrorCode.NOT_IN_PROGRESS,
+      'No provisioning awaiting step 2',
+    ),
+  );
+  mockAppleWalletModule.activatePass.mockRejectedValue(
+    appleError(AppleWalletErrorCode.ACTIVATION_FAILED, 'Activation failed'),
+  );
 };
 
 /**

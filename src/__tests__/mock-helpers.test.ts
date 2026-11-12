@@ -41,14 +41,22 @@ describe('mock helpers', () => {
     await expect(
       mockGoogleWalletModule.checkWalletAvailability(),
     ).rejects.toThrow();
-    for (const action of [
-      mockAppleWalletModule.startInAppProvisioning,
-      mockAppleWalletModule.submitProvisioningData,
-      mockAppleWalletModule.activatePass,
-    ]) {
-      await expect(action()).rejects.toMatchObject({
-        code: AppleWalletErrorCode.ENTITLEMENT_MISSING,
-      });
+    const expected = [
+      [
+        mockAppleWalletModule.startInAppProvisioning,
+        AppleWalletErrorCode.ENTITLEMENT_MISSING,
+      ],
+      [
+        mockAppleWalletModule.submitProvisioningData,
+        AppleWalletErrorCode.NOT_IN_PROGRESS,
+      ],
+      [
+        mockAppleWalletModule.activatePass,
+        AppleWalletErrorCode.ACTIVATION_FAILED,
+      ],
+    ] as const;
+    for (const [action, code] of expected) {
+      await expect(action()).rejects.toMatchObject({ code });
     }
     // As consultas do PassKit não rejeitam.
     await expect(mockAppleWalletModule.canAddPaymentPass()).resolves.toBe(true);

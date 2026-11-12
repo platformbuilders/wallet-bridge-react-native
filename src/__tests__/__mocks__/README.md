@@ -117,7 +117,7 @@ Configura todos os mocks (Google, Samsung e Apple) para retornar sucesso. Na App
 
 ### `setupErrorMocks()`
 
-Configura todos os mocks (Google, Samsung e Apple) para retornar erro. Na Apple, como no nativo, as consultas não rejeitam: `startInAppProvisioning`, `submitProvisioningData` e `activatePass` rejeitam com `code: ENTITLEMENT_MISSING`.
+Configura todos os mocks (Google, Samsung e Apple) para retornar erro. Na Apple, como no nativo, as consultas não rejeitam: cada ação rejeita com um código que o nativo produz para ela: `startInAppProvisioning` com `ENTITLEMENT_MISSING`, `submitProvisioningData` com `NOT_IN_PROGRESS` e `activatePass` com `ACTIVATION_FAILED`.
 
 ### `setupUnavailableMocks()`
 
