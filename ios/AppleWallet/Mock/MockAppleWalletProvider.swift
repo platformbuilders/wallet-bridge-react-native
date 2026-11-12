@@ -166,7 +166,10 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
             }
             sheet.modalPresentationStyle = .formSheet
             self.pendingSheet = sheet
-            self.presentWhenReady(sheet) { [weak self] in
+            self.presentWhenReady(
+                sheet,
+                isCurrent: { [weak self] in self?.pendingRequestId == requestId }
+            ) { [weak self] in
                 // Como o real: sem tela para a sheet, o fluxo falha.
                 guard let self, self.pendingRequestId == requestId else { return }
                 self.pendingSheet = nil
@@ -289,6 +292,15 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         emit(event)
     }
 
+    /// Encerra o fluxo pelo controle do mock (`configure` com cenário,
+    /// `reset`): fecha a sheet e limpa o estado, sem evento. Não é um caminho
+    /// do PassKit; o app que quer `CANCELED` chama `cancelProvisioning()`.
+    private func abandonPending() {
+        pendingSheet?.dismissSheet()
+        pendingSheet = nil
+        clearPending()
+    }
+
     private func clearPending() {
         pendingRequestId = nil
         pendingConfig = nil
@@ -366,7 +378,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         }
         if let raw = config["scenario"] as? String, let parsed = AWScenario(rawValue: raw) {
             scenario = parsed
-            clearPending()
+            abandonPending()
             passes = MockProvisioningFixtures.seed(
                 for: parsed,
                 primaryAccountIdentifiers: primaryAccountIdentifiers
@@ -377,9 +389,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
     }
 
     func reset() {
-        pendingSheet?.dismissSheet()
-        pendingSheet = nil
-        clearPending()
+        abandonPending()
         scenario = .happyPush
         latencyMs = Self.defaultLatencyMs
         primaryAccountIdentifiers = MockProvisioningFixtures.defaultPrimaryAccountIdentifiers()

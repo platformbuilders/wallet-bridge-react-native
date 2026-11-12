@@ -51,7 +51,10 @@ extension RealAppleWalletProvider {
         emit(AWProvisioningResultEvent(requestId: requestId, status: .presenting))
 
         DispatchQueue.main.async { [weak self] in
-            self?.presentWhenReady(controller) { [weak self] in
+            self?.presentWhenReady(
+                controller,
+                isCurrent: { [weak self] in self?.pendingRequestId == requestId }
+            ) { [weak self] in
                 guard let self, self.pendingRequestId == requestId else { return }
                 let message = AWMessage.noPresenter
                 self.log(.error, message)

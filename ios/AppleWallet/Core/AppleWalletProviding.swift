@@ -140,11 +140,18 @@ extension AppleWalletProviding {
 
     /// Apresenta quando a hierarquia estiver estável (sem transição em curso).
     /// Desiste depois de ~1,5 s e chama `onFailure`.
+    ///
+    /// `isCurrent` é conferido antes de cada tentativa: se o fluxo acabou
+    /// (cancelado, reset) enquanto esperava, não apresenta nem chama
+    /// `onFailure`.
     func presentWhenReady(
         _ controller: UIViewController,
         attempt: Int = 0,
+        isCurrent: @escaping () -> Bool,
         onFailure: @escaping () -> Void
     ) {
+        guard isCurrent() else { return }
+
         let maxAttempts = 15
         guard attempt < maxAttempts else {
             onFailure()
@@ -162,6 +169,7 @@ extension AppleWalletProviding {
                 self.presentWhenReady(
                     controller,
                     attempt: attempt + 1,
+                    isCurrent: isCurrent,
                     onFailure: onFailure
                 )
             }
