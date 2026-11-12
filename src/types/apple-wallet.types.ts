@@ -135,9 +135,19 @@ export interface AppleWalletSpec {
   startInAppProvisioning(config: AppleProvisioningConfig): Promise<string>;
 
   /**
-   * Entrega o passo 2 ao PassKit. Resolve `true` quando o PassKit recebeu os
-   * dados; o pass adicionado chega em `onProvisioningResult` (status `ADDED`).
-   * Rejeita com `NOT_IN_PROGRESS` ou `INVALID_SECURE_PAYLOAD`.
+   * Entrega o passo 2 ao PassKit. Resolve `true` quando os dados foram
+   * entregues ao PassKit; o pass adicionado chega em `onProvisioningResult`
+   * (status `ADDED`). Rejeita com `NOT_IN_PROGRESS` ou
+   * `INVALID_SECURE_PAYLOAD`.
+   *
+   * Prazo do PassKit: até 20 s depois de `onProvisioningCertificates`.
+   * Passado o prazo, o PassKit mostra o próprio erro, ignora os dados e o
+   * fluxo termina com o erro que o PassKit informar (`FAILED` / `UNKNOWN` ou
+   * `CANCELED` / `SYSTEM_CANCELED`), sem indicar que foi o prazo. A lib
+   * não tem timer próprio: uma chamada depois do prazo ainda pode resolver
+   * `true`. O app deve chamar o emissor assim que o passo 1 chegar e usar
+   * `cancelProvisioning()` se não houver resposta a tempo. O mock não simula
+   * o prazo.
    */
   submitProvisioningData(payload: AppleSecurePayload): Promise<boolean>;
 

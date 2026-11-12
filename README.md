@@ -313,7 +313,7 @@ await AppleWalletModule.startInAppProvisioning({
 });
 ```
 
-`startInAppProvisioning` does no pre-check: deciding whether to start (card already in Wallet, pending activation) is up to the app. It only rejects when PassKit itself cannot proceed. `submitProvisioningData` resolves `true` once PassKit received the data; the added pass arrives in `onProvisioningResult` with status `ADDED`. The encryption scheme is always `ECC_V2`.
+`startInAppProvisioning` does no pre-check: deciding whether to start (card already in Wallet, pending activation) is up to the app. It only rejects when PassKit itself cannot proceed. `submitProvisioningData` resolves `true` once the data was handed to PassKit (within the step 2 deadline, see below); the added pass arrives in `onProvisioningResult` with status `ADDED`. The encryption scheme is always `ECC_V2`.
 
 #### Passes and In-App Verification
 
@@ -353,7 +353,17 @@ await AppleWalletModule.activatePass(deviceAccountIdentifier, activationData);
 
 Errors carry `code` from `AppleWalletErrorCode` (`ENTITLEMENT_MISSING`, `NO_SECURE_ELEMENT`, `ALREADY_IN_PROGRESS`, `NOT_IN_PROGRESS`, `INVALID_CONFIGURATION`, `INVALID_SECURE_PAYLOAD`, `USER_CANCELED`, `PASS_NOT_FOUND`, `ACTIVATION_FAILED`, ...).
 
-The library sets no deadline for step 2: how long to wait for the issuer, and when to call `cancelProvisioning`, is up to the app.
+A provisioning flow that ends without a pass arrives in `onProvisioningResult` as `CANCELED`, with the code saying who ended it:
+
+| Who ended it | `errorCode` |
+|---|---|
+| The user closed the PassKit sheet | `USER_CANCELED` |
+| The app called `cancelProvisioning()` | `APP_CANCELED` |
+| PassKit ended it (`PKAddPaymentPassError.systemCancelled`) | `SYSTEM_CANCELED` |
+
+Any other PassKit error arrives as `FAILED` / `UNKNOWN`.
+
+**Step 2 has a 20-second deadline set by PassKit.** Once `onProvisioningCertificates` fires, PassKit waits at most 20 seconds for the step 2 data. After that it shows its own error and ignores the data, and `onProvisioningResult` arrives with whatever error PassKit reports (`FAILED` / `UNKNOWN` or `CANCELED` / `SYSTEM_CANCELED`): PassKit does not report that the cause was the deadline. The library adds no timer of its own, so it cannot tell when the deadline has passed. A `submitProvisioningData` sent after it may still resolve `true` even though PassKit ignores it. Call the issuer as soon as step 1 arrives, keep the request under that budget, and call `cancelProvisioning` if the issuer cannot answer in time. The mock waits in `AWAITING_HOST` indefinitely and does not simulate the deadline.
 
 Wallet Extensions (the issuer entries shown inside the Wallet app) run in a separate process and are native Swift in the app; they are not part of this library.
 
