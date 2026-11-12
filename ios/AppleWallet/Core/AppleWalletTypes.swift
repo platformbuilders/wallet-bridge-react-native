@@ -282,7 +282,9 @@ enum AWMessage {
     var deviceAccountNumberSuffix = ""
     var serialNumber = ""
     var passTypeIdentifier = ""
-    var activationState: AWActivationState = .activated
+    /// `.unknown` até o PassKit dizer o estado: um caminho que esqueça de
+    /// preencher nunca mostra o pass como ativo.
+    var activationState: AWActivationState = .unknown
     /// `PKPass.isRemotePass`: o pass está em um device pareado.
     var isRemote = false
     /// `PKPass.deviceName`, como o PassKit devolve.
