@@ -167,7 +167,7 @@ extension RealAppleWalletProvider {
         }
 
         let event = AWProvisioningResultEvent(requestId: requestId, status: .canceled)
-        event.errorCode = .systemCanceled
+        event.errorCode = .appCanceled
         event.errorMessage = AWMessage.canceledByApp
         emit(event)
         return true
@@ -217,13 +217,13 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
 
         if let error {
             let nsError = error as NSError
-            let canceled = nsError.code == PKAddPaymentPassError.userCancelled.rawValue
+            let cancelCode = Self.cancelCode(for: nsError)
             log(.error, "PassKit concluiu com erro (\(nsError.code)).")
             let event = AWProvisioningResultEvent(
                 requestId: requestId,
-                status: canceled ? .canceled : .failed
+                status: cancelCode == nil ? .failed : .canceled
             )
-            event.errorCode = canceled ? .userCanceled : .unknown
+            event.errorCode = cancelCode ?? .unknown
             event.errorMessage = nsError.localizedDescription
             emit(event)
             return
@@ -242,5 +242,15 @@ extension RealAppleWalletProvider: PKAddPaymentPassViewControllerDelegate {
         let event = AWProvisioningResultEvent(requestId: requestId, status: .added)
         event.pass = Self.makePass(pass)
         emit(event)
+    }
+
+    /// Cancelamentos do PassKit: usuário fechou a sheet ou o sistema encerrou
+    /// o fluxo. `nil` para os demais erros, que viram `FAILED` / `UNKNOWN`.
+    static func cancelCode(for error: NSError) -> AWErrorCode? {
+        switch error.code {
+        case PKAddPaymentPassError.userCancelled.rawValue: return .userCanceled
+        case PKAddPaymentPassError.systemCancelled.rawValue: return .systemCanceled
+        default: return nil
+        }
     }
 }

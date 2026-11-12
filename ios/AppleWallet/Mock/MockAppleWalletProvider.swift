@@ -276,7 +276,7 @@ final class MockAppleWalletProvider: NSObject, AppleWalletProviding,
         }
         finishCanceled(
             requestId: requestId,
-            errorCode: .systemCanceled,
+            errorCode: .appCanceled,
             message: AWMessage.canceledByApp
         )
         return true

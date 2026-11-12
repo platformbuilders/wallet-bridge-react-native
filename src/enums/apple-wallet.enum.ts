@@ -31,7 +31,11 @@ export enum AppleProvisioningStatus {
 /** `code` dos erros (reject e evento de resultado). */
 export enum AppleWalletErrorCode {
   UNKNOWN = 'UNKNOWN',
+  /** O usuário fechou a sheet do PassKit. */
   USER_CANCELED = 'USER_CANCELED',
+  /** O app encerrou o fluxo com `cancelProvisioning()`. */
+  APP_CANCELED = 'APP_CANCELED',
+  /** O PassKit encerrou o fluxo (`PKAddPaymentPassError.systemCancelled`). */
   SYSTEM_CANCELED = 'SYSTEM_CANCELED',
   ENTITLEMENT_MISSING = 'ENTITLEMENT_MISSING',
   NO_SECURE_ELEMENT = 'NO_SECURE_ELEMENT',

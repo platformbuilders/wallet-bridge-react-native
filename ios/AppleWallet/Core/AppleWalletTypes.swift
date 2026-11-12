@@ -64,7 +64,11 @@ public enum AWStatus: String {
 /// Códigos legíveis entregues ao JS. Espelha AppleWalletErrorCode.
 public enum AWErrorCode: String {
     case unknown = "UNKNOWN"
+    /// O usuário fechou a sheet do PassKit.
     case userCanceled = "USER_CANCELED"
+    /// O app encerrou o fluxo com `cancelProvisioning()`.
+    case appCanceled = "APP_CANCELED"
+    /// O PassKit encerrou o fluxo (`PKAddPaymentPassError.systemCancelled`).
     case systemCanceled = "SYSTEM_CANCELED"
     case entitlementMissing = "ENTITLEMENT_MISSING"
     case noSecureElement = "NO_SECURE_ELEMENT"

@@ -141,7 +141,10 @@ export interface AppleWalletSpec {
    */
   submitProvisioningData(payload: AppleSecurePayload): Promise<boolean>;
 
-  /** Cancela o provisioning em andamento. `false` se não havia nenhum. */
+  /**
+   * Cancela o provisioning em andamento. `false` se não havia nenhum. O
+   * fluxo termina em `onProvisioningResult` com `CANCELED` / `APP_CANCELED`.
+   */
   cancelProvisioning(): Promise<boolean>;
 
   // --- Passes -------------------------------------------------------------
